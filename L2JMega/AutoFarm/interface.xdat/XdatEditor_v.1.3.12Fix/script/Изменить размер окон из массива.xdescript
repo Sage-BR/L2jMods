@@ -1,0 +1,19 @@
+def name = [ "InventoryWnd", "AbnormalStatusWnd" ] //окна у которых меняем размер
+
+//ищем окно и изменяем его размер
+
+for (name_emp in name)
+{
+
+println   "\n----------------------\n  $name_emp \n" //выводим в консоль имена окон
+
+    xdat.windows[name_emp].size_absolute_width = 400 // Задаем ширину окна
+
+    xdat.windows[name_emp].size_absolute_height = 40 //Задаем высоту окна
+
+println "  width = "+xdat.windows[name_emp].size_absolute_width //выводим в консоль ширину
+println"  height = "+xdat.windows[name_emp].size_absolute_height //выводим в консоль высоту
+
+
+}
+println   "\n----------------------\n Все прошло успешно!!!\n----------------------\n"

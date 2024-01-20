@@ -1,0 +1,865 @@
+diff --git a/java/Base/auction/AuctionItem.java b/java/Base/auction/AuctionItem.java
+new file mode 100644
+index 0000000..a3faa58
+--- /dev/null
++++ b/java/Base/auction/AuctionItem.java
+@@ -0,0 +1,76 @@
++/*
++ * This program is free software: you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later
++ * version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++ * details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package Base.auction;
++
++/**
++ * @author Anarchy
++ *
++ */
++public class AuctionItem
++{
++	private int auctionId;
++	private int ownerId;
++	private int itemId;
++	private int count;
++	private int enchant;
++	private int costId;
++	private int costCount;
++	
++	public AuctionItem(int auctionId, int ownerId, int itemId, int count, int enchant, int costId, int costCount)
++	{
++		this.auctionId = auctionId;
++		this.ownerId = ownerId;
++		this.itemId = itemId;
++		this.count = count;
++		this.enchant = enchant;
++		this.costId = costId;
++		this.costCount = costCount;
++	}
++	
++	public int getAuctionId()
++	{
++		return auctionId;
++	}
++	
++	public int getOwnerId()
++	{
++		return ownerId;
++	}
++	
++	public int getItemId()
++	{
++		return itemId;
++	}
++	
++	public int getCount()
++	{
++		return count;
++	}
++	
++	public int getEnchant()
++	{
++		return enchant;
++	}
++	
++	public int getCostId()
++	{
++		return costId;
++	}
++	
++	public int getCostCount()
++	{
++		return costCount;
++	}
++}
+\ No newline at end of file
+diff --git a/java/Base/datatables/AuctionTable.java b/java/Base/datatables/AuctionTable.java
+new file mode 100644
+index 0000000..3a7e27e
+--- /dev/null
++++ b/java/Base/datatables/AuctionTable.java
+@@ -0,0 +1,199 @@
++/*
++ * This program is free software: you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later
++ * version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++ * details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package Base.datatables;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.util.ArrayList;
++import java.util.logging.Logger;
++
++import com.l2j4team.L2DatabaseFactory;
++import Base.auction.AuctionItem;
++
++/**
++ * @author Anarchy
++ *
++ */
++public class AuctionTable
++{
++	private static Logger log = Logger.getLogger(AuctionTable.class.getName());
++	
++	private ArrayList<AuctionItem> items;
++	private int maxId;
++	
++	public static AuctionTable getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	
++	protected AuctionTable()
++	{
++		items = new ArrayList<>();
++		maxId = 0;
++		
++		load();
++	}
++	
++	private void load()
++	{
++		Connection con = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			PreparedStatement stm = con.prepareStatement("SELECT * FROM auction_table");
++			ResultSet rset = stm.executeQuery();
++			
++			while (rset.next())
++			{
++				int auctionId = rset.getInt("auctionid");
++				int ownerId = rset.getInt("ownerid");
++				int itemId = rset.getInt("itemid");
++				int count = rset.getInt("count");
++				int enchant = rset.getInt("enchant");
++				int costId = rset.getInt("costid");
++				int costCount = rset.getInt("costcount");
++				
++				items.add(new AuctionItem(auctionId, ownerId, itemId, count, enchant, costId, costCount));
++				
++				if (auctionId > maxId)
++					maxId = auctionId;
++			}
++			
++			rset.close();
++			stm.close();
++		}
++		catch (Exception e)
++		{
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (con != null)
++					con.close();
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++		
++		log.info("AuctionTable: Loaded "+items.size()+" items.");
++	}
++	
++	public void addItem(AuctionItem item)
++	{
++		items.add(item);
++		
++		Connection con = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			PreparedStatement stm = con.prepareStatement("INSERT INTO auction_table VALUES (?,?,?,?,?,?,?)");
++			stm.setInt(1, item.getAuctionId());
++			stm.setInt(2, item.getOwnerId());
++			stm.setInt(3, item.getItemId());
++			stm.setInt(4, item.getCount());
++			stm.setInt(5, item.getEnchant());
++			stm.setInt(6, item.getCostId());
++			stm.setInt(7, item.getCostCount());
++			
++			stm.execute();
++			stm.close();
++		}
++		catch (Exception e)
++		{
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (con != null)
++					con.close();
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++	}
++	
++	public void deleteItem(AuctionItem item)
++	{
++		items.remove(item);
++		
++		Connection con = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			PreparedStatement stm = con.prepareStatement("DELETE FROM auction_table WHERE auctionid=?");
++			stm.setInt(1, item.getAuctionId());
++			
++			stm.execute();
++			stm.close();
++		}
++		catch (Exception e)
++		{
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (con != null)
++					con.close();
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++	}
++	
++	public AuctionItem getItem(int auctionId)
++	{
++		AuctionItem ret = null;
++		
++		for (AuctionItem item : items)
++		{
++			if (item.getAuctionId() == auctionId)
++			{
++				ret = item;
++				break;
++			}
++		}
++		
++		return ret;
++	}
++	
++	public ArrayList<AuctionItem> getItems()
++	{
++		return items;
++	}
++	
++	public int getNextAuctionId()
++	{
++		maxId++;
++		return maxId;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final AuctionTable _instance = new AuctionTable();
++	}
++}
+diff --git a/java/com/l2j4team/gameserver/GameServer.java b/java/com/l2j4team/gameserver/GameServer.java
+index 11ceed3..6e1d51c 100644
+--- a/java/com/l2j4team/gameserver/GameServer.java
++++ b/java/com/l2j4team/gameserver/GameServer.java
+@@ -113,6 +113,7 @@
+ import com.l2j4team.gameserver.xmlfactory.XMLDocumentFactory;
+ import com.l2j4team.util.DeadLockDetector;
+ import com.l2j4team.util.IPv4Filter;
++import Base.datatables.AuctionTable;
+ 
+ import java.io.File;
+ import java.io.FileInputStream;
+@@ -448,7 +449,8 @@
+ 		LOGGER.info("Loaded {} skill handlers.", SkillHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} user command handlers.", UserCommandHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} voiced command handlers.", +VoicedCommandHandler.getInstance().size());
+-
++		LOGGER.info("Loaded {} Auction Manager.", AuctionTable.getInstance());
++		
+ 		StringUtil.printSection("System");
+ 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
+ 		ForumsBBSManager.getInstance();
+diff --git a/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java b/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
+new file mode 100644
+index 0000000..fac57f2
+--- /dev/null
++++ b/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
+@@ -0,0 +1,513 @@
++/*
++ * This program is free software: you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later
++ * version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++ * details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package com.l2j4team.gameserver.model.actor.instance;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.util.ArrayList;
++import java.util.HashMap;
++
++import com.l2j4team.L2DatabaseFactory;
++import com.l2j4team.gameserver.data.ItemTable;
++import com.l2j4team.gameserver.idfactory.IdFactory;
++import Base.auction.AuctionItem;
++import Base.datatables.AuctionTable;
++
++import com.l2j4team.gameserver.model.World;
++import com.l2j4team.gameserver.model.actor.Npc;
++import com.l2j4team.gameserver.model.actor.template.NpcTemplate;
++import com.l2j4team.gameserver.model.item.instance.ItemInstance;
++import com.l2j4team.gameserver.network.serverpackets.InventoryUpdate;
++import com.l2j4team.gameserver.network.serverpackets.NpcHtmlMessage;
++
++/**
++ * @author Anarchy
++ *
++ */
++public class AuctionManager extends Npc
++{
++	public AuctionManager(int objectId, NpcTemplate template)
++	{
++		super(objectId, template);
++	}
++	
++	@Override
++	public void onBypassFeedback(Player player, String command)
++	{
++		if (command.startsWith("auction"))
++		{
++			try
++			{
++				String[] data = command.substring(8).split(" - ");
++				int page = Integer.parseInt(data[0]);
++				String search = data[1];
++				showAuction(player, page, search);
++			}
++			catch (Exception e)
++			{
++				showChatWindow(player);
++				player.sendMessage("Invalid input. Please try again.");
++				return;
++			}
++		}
++		else if (command.startsWith("buy"))
++		{
++			int auctionId = Integer.parseInt(command.substring(4));
++			AuctionItem item = AuctionTable.getInstance().getItem(auctionId);
++			
++			if (item == null)
++			{
++				showChatWindow(player);
++				player.sendMessage("Invalid choice. Please try again.");
++				return;
++			}
++			
++			if (player.getInventory().getItemByItemId(item.getCostId()) == null || player.getInventory().getItemByItemId(item.getCostId()).getCount() < item.getCostCount())
++			{
++				showChatWindow(player);
++				player.sendMessage("Incorrect item count.");
++				return;
++			}
++			
++			player.destroyItemByItemId("auction", item.getCostId(), item.getCostCount(), this, true);
++			
++			Player owner = World.getInstance().getPlayer(item.getOwnerId());
++			if (owner != null && owner.isOnline())
++			{
++				owner.addItem("auction", item.getCostId(), item.getCostCount(), null, true);
++				owner.sendMessage("You have sold an item in the Auction Shop.");
++			}
++			else
++			{
++				addItemToOffline(item.getOwnerId(), item.getCostId(), item.getCostCount());
++			}
++			
++			ItemInstance i = player.addItem("auction", item.getItemId(), item.getCount(), this, true);
++			i.setEnchantLevel(item.getEnchant());
++			player.sendPacket(new InventoryUpdate());
++			player.sendMessage("You have purchased an item from the Auction Shop.");
++			
++			AuctionTable.getInstance().deleteItem(item);
++			
++			showChatWindow(player);
++		}
++		else if (command.startsWith("addpanel"))
++		{
++			int page = Integer.parseInt(command.substring(9));
++			
++			showAddPanel(player, page);
++		}
++		else if (command.startsWith("additem"))
++		{
++			int itemId = Integer.parseInt(command.substring(8));
++			
++			if (player.getInventory().getItemByObjectId(itemId) == null)
++			{
++				showChatWindow(player);
++				player.sendMessage("Invalid item. Please try again.");
++				return;
++			}
++			
++			showAddPanel2(player, itemId);
++		}
++		else if (command.startsWith("addit2"))
++		{
++			try
++			{
++				String[] data = command.substring(7).split(" ");
++				int itemId = Integer.parseInt(data[0]);
++				String costitemtype = data[1];
++				int costCount = Integer.parseInt(data[2]);
++				int itemAmount = Integer.parseInt(data[3]);
++				
++				if (player.getInventory().getItemByObjectId(itemId) == null)
++				{
++					showChatWindow(player);
++					player.sendMessage("Invalid item. Please try again.");
++					return;
++				}
++				if (player.getInventory().getItemByObjectId(itemId).getCount() < itemAmount)
++				{
++					showChatWindow(player);
++					player.sendMessage("Invalid item. Please try again.");
++					return;
++				}
++				if (!player.getInventory().getItemByObjectId(itemId).isTradable())
++				{
++					showChatWindow(player);
++					player.sendMessage("Invalid item. Please try again.");
++					return;
++				}
++				
++				int costId = 0;
++				if (costitemtype.equals("Adena"))
++				{
++					costId = 57;
++				}
++				
++				AuctionTable.getInstance().addItem(new AuctionItem(AuctionTable.getInstance().getNextAuctionId(), player.getObjectId(), player.getInventory().getItemByObjectId(itemId).getItemId(), itemAmount, player.getInventory().getItemByObjectId(itemId).getEnchantLevel(), costId, costCount));
++				
++				player.destroyItem("auction", itemId, itemAmount, this, true);
++				player.sendPacket(new InventoryUpdate());
++				player.sendMessage("You have added an item for sale in the Auction Shop.");
++				showChatWindow(player);
++			}
++			catch (Exception e)
++			{
++				showChatWindow(player);
++				player.sendMessage("Invalid input. Please try again.");
++				return;
++			}
++		}
++		else if (command.startsWith("myitems"))
++		{
++			int page = Integer.parseInt(command.substring(8));
++			showMyItems(player, page);
++		}
++		else if (command.startsWith("remove"))
++		{
++			int auctionId = Integer.parseInt(command.substring(7));
++			AuctionItem item = AuctionTable.getInstance().getItem(auctionId);
++			
++			if (item == null)
++			{
++				showChatWindow(player);
++				player.sendMessage("Invalid choice. Please try again.");
++				return;
++			}
++			
++			AuctionTable.getInstance().deleteItem(item);
++			
++			ItemInstance i = player.addItem("auction", item.getItemId(), item.getCount(), this, true);
++			i.setEnchantLevel(item.getEnchant());
++			player.sendPacket(new InventoryUpdate());
++			player.sendMessage("You have removed an item from the Auction Shop.");
++			showChatWindow(player);
++		}
++		else
++		{
++			super.onBypassFeedback(player, command);
++		}
++	}
++	
++	private void showMyItems(Player player, int page)
++	{
++		HashMap<Integer, ArrayList<AuctionItem>> items = new HashMap<>();
++		int curr = 1;
++		int counter = 0;
++		
++		ArrayList<AuctionItem> temp = new ArrayList<>();
++		for (AuctionItem item : AuctionTable.getInstance().getItems())
++		{
++			if (item.getOwnerId() == player.getObjectId())
++			{
++				temp.add(item);
++				
++				counter++;
++				
++				if (counter == 10)
++				{
++					items.put(curr, temp);
++					temp = new ArrayList<>();
++					curr++;
++					counter = 0;
++				}
++			}
++		}
++		items.put(curr, temp);
++		
++		if (!items.containsKey(page))
++		{
++			showChatWindow(player);
++			player.sendMessage("Invalid page. Please try again.");
++			return;
++		}
++		
++		String html = "";
++		html += "<html><title>Auction Shop</title><body><center><br1>";
++		html += "<table width=310 bgcolor=000000 border=1>";
++		html += "<tr><td>Item</td><td>Cost</td><td></td></tr>";
++		for (AuctionItem item : items.get(page))
++		{
++			html += "<tr>";
++			html += "<td><img src=\""+(item.getItemId())+"\" width=32 height=32 align=center></td>";
++			html += "<td>Item: "+(item.getEnchant() > 0 ? "+"+item.getEnchant()+" "+ItemTable.getInstance().getTemplate(item.getItemId()).getName()+" - "+item.getCount() : ItemTable.getInstance().getTemplate(item.getItemId()).getName()+" - "+item.getCount());
++			html += "<br1>Cost: "+item.getCostCount()+" "+ItemTable.getInstance().getTemplate(item.getCostId()).getName();
++			html += "</td>";
++			html += "<td fixwidth=71><button value=\"Remove\" action=\"bypass -h npc_"+getObjectId()+"_remove "+item.getAuctionId()+"\" width=70 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\">";
++			html += "</td></tr>";
++		}
++		html += "</table><br><br>";
++		
++		html += "Page: "+page;
++		html += "<br1>";
++		
++		if (items.keySet().size() > 1)
++		{
++			if (page > 1)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_myitems "+(page-1)+"\"><- Prev</a>";
++			
++			if (items.keySet().size() > page)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_myitems "+(page+1)+"\">Next -></a>";
++		}
++		
++		html += "</center></body></html>";
++		
++		NpcHtmlMessage htm = new NpcHtmlMessage(getObjectId());
++		htm.setHtml(html);
++		player.sendPacket(htm);
++	}
++	
++	private void showAddPanel2(Player player, int itemId)
++	{
++		ItemInstance item = player.getInventory().getItemByObjectId(itemId);
++		
++		String html = "";
++		html += "<html><title>Auction Shop</title><body><center><br1>";
++		html += "<img src=\""+(item.getItemId())+"\" width=32 height=32 align=center>";
++		html += "Item: "+(item.getEnchantLevel() > 0 ? "+"+item.getEnchantLevel()+" "+item.getName() : item.getName());
++		
++		if (item.isStackable())
++		{
++			html += "<br>Set amount of items to sell:";
++			html += "<edit var=amm type=number width=120 height=17>";
++		}
++		
++		html += "<br>Select price:";
++		html += "<br><combobox width=120 height=17 var=ebox list=Adena;>";
++		html += "<br><edit var=count type=number width=120 height=17>";
++		html += "<br><button value=\"Add item\" action=\"bypass -h npc_"+getObjectId()+"_addit2 "+itemId+" $ebox $count "+(item.isStackable() ? "$amm" : "1")+"\" width=70 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\">";
++		html += "</center></body></html>";
++		
++		NpcHtmlMessage htm = new NpcHtmlMessage(getObjectId());
++		htm.setHtml(html);
++		player.sendPacket(htm);
++	}
++	
++	private void showAddPanel(Player player, int page)
++	{
++		HashMap<Integer, ArrayList<ItemInstance>> items = new HashMap<>();
++		int curr = 1;
++		int counter = 0;
++		
++		ArrayList<ItemInstance> temp = new ArrayList<>();
++		for (ItemInstance item : player.getInventory().getItems())
++		{
++			if (item.getItemId() != 57 && item.isTradable())
++			{
++				temp.add(item);
++				
++				counter++;
++				
++				if (counter == 10)
++				{
++					items.put(curr, temp);
++					temp = new ArrayList<>();
++					curr++;
++					counter = 0;
++				}
++			}
++		}
++		items.put(curr, temp);
++		
++		if (!items.containsKey(page))
++		{
++			showChatWindow(player);
++			player.sendMessage("Invalid page. Please try again.");
++			return;
++		}
++		
++		String html = "";
++		html += "<html><title>Auction Shop</title><body><center><br1>";
++		html += "Select item:";
++		html += "<br><table width=310 bgcolor=000000 border=1>";
++		
++		for (ItemInstance item : items.get(page))
++		{
++			html += "<tr>";
++			html += "<td>";
++			html += "<img src=\""+(item.getItemId())+"\" width=32 height=32 align=center></td>";
++			html += "<td>"+(item.getEnchantLevel() > 0 ? "+"+item.getEnchantLevel()+" "+item.getName() : item.getName());
++			html += "</td>";
++			html += "<td><button value=\"Select\" action=\"bypass -h npc_"+getObjectId()+"_additem "+item.getObjectId()+"\" width=70 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\">";
++			html += "</td>";
++			html += "</tr>";
++		}
++		html += "</table><br><br>";
++		
++		html += "Page: "+page;
++		html += "<br1>";
++		
++		if (items.keySet().size() > 1)
++		{
++			if (page > 1)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_addpanel "+(page-1)+"\"><- Prev</a>";
++			
++			if (items.keySet().size() > page)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_addpanel "+(page+1)+"\">Next -></a>";
++		}
++		
++		html += "</center></body></html>";
++		
++		NpcHtmlMessage htm = new NpcHtmlMessage(getObjectId());
++		htm.setHtml(html);
++		player.sendPacket(htm);
++	}
++	
++	@SuppressWarnings("resource")
++	private static void addItemToOffline(int playerId, int itemId, int count)
++	{
++		Connection con = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			PreparedStatement stm = con.prepareStatement("SELECT count FROM items WHERE owner_id=? AND item_id=?");
++			stm.setInt(1, playerId);
++			stm.setInt(2, itemId);
++			ResultSet rset = stm.executeQuery();
++			
++			if (rset.next())
++			{
++				stm = con.prepareStatement("UPDATE items SET count=? WHERE owner_id=? AND item_id=?");
++				stm.setInt(1, rset.getInt("count") + count);
++				stm.setInt(2, playerId);
++				stm.setInt(3, itemId);
++				
++				stm.execute();
++			}
++			else
++			{
++				stm = con.prepareStatement("INSERT INTO items VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
++				stm.setInt(1, playerId);
++				stm.setInt(2, IdFactory.getInstance().getNextId());
++				stm.setInt(3, itemId);
++				stm.setInt(4, count);
++				stm.setInt(5, 0);
++				stm.setString(6, "INVENTORY");
++				stm.setInt(7, 0);
++				stm.setInt(8, 0);
++				stm.setInt(9, 0);
++				stm.setInt(10, 0);
++				stm.setInt(11, -1);
++				stm.setInt(12, 0);
++				
++				stm.execute();
++			}
++			
++			rset.close();
++			stm.close();
++		}
++		catch (Exception e)
++		{
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (con != null)
++					con.close();
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++	}
++	
++	private void showAuction(Player player, int page, String search)
++	{
++		boolean src = !search.equals("*null*");
++		
++		HashMap<Integer, ArrayList<AuctionItem>> items = new HashMap<>();
++		int curr = 1;
++		int counter = 0;
++		
++		ArrayList<AuctionItem> temp = new ArrayList<>();
++		for (AuctionItem item : AuctionTable.getInstance().getItems())
++		{
++			if (item.getOwnerId() != player.getObjectId() && (!src || (src && ItemTable.getInstance().getTemplate(item.getItemId()).getName().contains(search))))
++			{
++				temp.add(item);
++				
++				counter++;
++				
++				if (counter == 10)
++				{
++					items.put(curr, temp);
++					temp = new ArrayList<>();
++					curr++;
++					counter = 0;
++				}
++			}
++		}
++		items.put(curr, temp);
++		
++		if (!items.containsKey(page))
++		{
++			showChatWindow(player);
++			player.sendMessage("Invalid page. Please try again.");
++			return;
++		}
++		
++		String html = "<html><title>Auction Shop</title><body><center><br1>";
++		html += "<multiedit var=srch width=150 height=20><br1>";
++		html += "<button value=\"Search\" action=\"bypass -h npc_"+getObjectId()+"_auction 1 - $srch\" width=70 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\">";
++		html += "<br><table width=310 bgcolor=000000 border=1>";
++		html += "<tr><td>Item</td><td>Cost</td><td></td></tr>";
++		for (AuctionItem item : items.get(page))
++		{
++			html += "<tr>";
++			html += "<td><img src=\""+(item.getItemId())+"\" width=32 height=32 align=center></td>";
++			html += "<td>Item: "+(item.getEnchant() > 0 ? "+"+item.getEnchant()+" "+ItemTable.getInstance().getTemplate(item.getItemId()).getName()+" - "+item.getCount() : ItemTable.getInstance().getTemplate(item.getItemId()).getName()+" - "+item.getCount());
++			html += "<br1>Cost: "+item.getCostCount()+" "+ItemTable.getInstance().getTemplate(item.getCostId()).getName();
++			html += "</td>";
++			html += "<td fixwidth=71><button value=\"Buy\" action=\"bypass -h npc_"+getObjectId()+"_buy "+item.getAuctionId()+"\" width=70 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\">";
++			html += "</td></tr>";
++		}
++		html += "</table><br><br>";
++		
++		html += "Page: "+page;
++		html += "<br1>";
++		
++		if (items.keySet().size() > 1)
++		{
++			if (page > 1)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_auction "+(page-1)+" - "+search+"\"><- Prev</a>";
++			
++			if (items.keySet().size() > page)
++				html += "<a action=\"bypass -h npc_"+getObjectId()+"_auction "+(page+1)+" - "+search+"\">Next -></a>";
++		}
++		
++		html += "</center></body></html>";
++		
++		NpcHtmlMessage htm = new NpcHtmlMessage(getObjectId());
++		htm.setHtml(html);
++		player.sendPacket(htm);
++	}
++	
++    @Override
++	public String getHtmlPath(int npcId, int val)
++    {
++        String pom = "";
++        if (val == 0)
++            pom = "" + npcId;
++        else
++            pom = npcId + "-" + val;
++                
++        return "data/html/mods/auction/" + pom + ".htm";
++    }
++}
+\ No newline at end of file
+diff --git a/server/game/data/html/mods/auction/65529.htm b/server/game/data/html/mods/auction/65529.htm
+new file mode 100644
+index 0000000..c3117f8
+--- /dev/null
++++ b/server/game/data/html/mods/auction/65529.htm
+@@ -0,0 +1,23 @@
++<html>
++<title>
++Auction Shop
++</title>
++<body>
++<center>
++<br>
++Welcome to auction shop!
++<br>
++<table width=230 bgcolor="000000">
++	<tr>
++		<td align=center>
++			<button value="Shop" action="bypass -h npc_%objectId%_auction 1 - *null*" width=204 height=20 back="sek.cbui81" fore="sek.cbui82">
++			<button value="Add item" action="bypass -h npc_%objectId%_addpanel 1" width=204 height=20 back="sek.cbui81" fore="sek.cbui82">
++			<button value="My items" action="bypass -h npc_%objectId%_myitems 1" width=204 height=20 back="sek.cbui81" fore="sek.cbui82">
++		</td>
++	</tr>
++</table>
++<br>
++<img src="l2spike.splitter" width=256 height=8 align=center>
++</center>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/server/game/libs/l2j4team.jar b/server/game/libs/l2j4team.jar
+index 63f16e3..58b527b 100644
+--- a/server/game/libs/l2j4team.jar
++++ b/server/game/libs/l2j4team.jar
+Binary files differ

@@ -1,0 +1,7 @@
+2154	1	Has Usado Gk Interface.	0	79	9B	B0	FF			0	0	0	0	0		none
+2155	1	AutoFarming Deactivated..	0	79	9B	B0	FF			0	0	0	0	0		none
+2156	1	Summon Attack On..	0	79	9B	B0	FF			0	0	0	0	0		none
+2157	1	Summon Attack Off..	0	79	9B	B0	FF			0	0	0	0	0		none
+2158	1	Respect Hunt On..	0	79	9B	B0	FF			0	0	0	0	0		none
+2159	1	Respect Hunt Off..	0	79	9B	B0	FF			0	0	0	0	0		none
+2160	1	AutoFarming Activate..	0	79	9B	B0	FF			0	0	0	0	0		none

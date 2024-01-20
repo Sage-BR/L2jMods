@@ -1,0 +1,15 @@
+ //окна у которых меняем размер
+
+[ "InventoryWnd", "AbnormalStatusWnd" ].each{ name ->
+
+println   "\n----------------------\n  $name \n" //выводим в консоль имена окон
+
+    xdat.windows[name].size_absolute_width = 400 // Задаем ширину окна
+
+    xdat.windows[name].size_absolute_height = 40 //Задаем высоту окна
+
+println "  width = "+xdat.windows[name].size_absolute_width //выводим в консоль ширину
+println"  height = "+xdat.windows[name].size_absolute_height //выводим в консоль высоту
+
+}
+println   "\n----------------------\n Все прошло успешно!!!\n----------------------\n"

@@ -1,0 +1,15 @@
+void print(ui, n){
+  print "\t"*n
+  println ui
+  if (ui instanceof Iterable)
+    ui.each{child->
+      print(child, n+1)
+    }
+}
+
+xdat.windows.each{window->
+print("\n $window ",0)
+
+  print(window.children.size_absolute_height, 1)
+print("\n-------------------------------------------------",0)
+}  

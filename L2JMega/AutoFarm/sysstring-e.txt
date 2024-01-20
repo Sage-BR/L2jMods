@@ -1,0 +1,10 @@
+2007	Click: To Config AutoFarm
+2008	Click: To Inc Range Max
+2009	Click: To Dec Range Max
+2010	Click: To Activate RespectHunt
+2013	Minimized
+2014	Expand
+2015	Inc Bar Skill
+2016	Dec Bar Skill
+2017	Summon Attack
+2018	Buff Protection

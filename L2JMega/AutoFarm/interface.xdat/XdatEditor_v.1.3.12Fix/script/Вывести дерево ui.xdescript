@@ -1,0 +1,12 @@
+void print(ui, n){
+  print "\t"*n
+  println ui
+  if (ui instanceof Iterable)
+    ui.each{child->
+      print(child, n+1)
+    }
+}
+
+xdat.windows.each{window->
+  print(window, 0)
+}  
