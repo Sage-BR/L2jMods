@@ -1,0 +1,151 @@
+diff --git a/L2J4TeamC3/java/config/L24Team.properties b/L2J4TeamC3/java/config/L24Team.properties
+index 6580221..6eb9715 100644
+--- a/L2J4TeamC3/java/config/L24Team.properties
++++ b/L2J4TeamC3/java/config/L24Team.properties
+@@ -2,6 +2,9 @@
+ #              L2J4TEAM CUSTOMS				 #
+ #################################################
+ 
++# ------------------------
++#  Anti Heavy System
++# ------------------------
+ # Enable or Disable anti-heavy system.
+ # Dagger, tyrant, and bow classes won't be able to equip heavy type armours.
+ EnableAntiHeavySystem = True
+@@ -9,63 +12,63 @@
+ # Allow custom starter items?
+ AllowCustomStarterItems = false
+ 
++# ------------------------
++#  Custom Starter Items 
++# ------------------------
+ # You must allow custom starter items!
+ # Usage: id,count;id,count;
+ CustomStarterItems = 57,1000;
+ 
+ # ------------------------
++#  Custom Start Lvl 
++# ------------------------
++# Allow custom starting lvl default:false
++AllowCustomStartLvl = false
++
++#Custom Start lvl for 85 lvl and 100% put 86
++CustomStartLvl = 1
++
++# ------------------------
+ #  Buff Time Rates
+ # ------------------------
+ BuffMultiplier=1.00
+ SpiritMultiplier=1.00
+ DanceTimeMultiplier=1.00
+ 
+-# ClassBalance Config
+-#---------------------------------------------
++# ------------------------
++#  ClassBalance Config
++# ------------------------
+ # Balance Dagger Classes -
+-#---------------------------------------------
+ DaggerVsHeavy = 2.50
+ DaggerVsLight = 2.00
+ DaggerVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Archer Classes -
+-#---------------------------------------------
+ ArcherVsHeavy = 2.50
+ ArcherVsLight = 2.00
+ ArcherVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Blunt Classes -
+-#---------------------------------------------
+ BluntVsHeavy = 2.50
+ BluntVsLight = 2.00
+ BluntVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Dual-Weapon Classes -
+-#---------------------------------------------
+ DualVsHeavy = 2.50
+ DualVsLight = 2.00
+ DualVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Fist Classes -
+-#---------------------------------------------
+ FistVsHeavy = 2.50
+ FistVsLight = 2.00
+ FistVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Sword Classes -
+-#---------------------------------------------
+ SwordVsHeavy = 2.50
+ SwordVsLight = 2.00
+ SwordVsRobe = 1.80
+ 
+-#---------------------------------------------
+ # Balance Pole Classes -
+-#---------------------------------------------
+ PoleVsHeavy = 2.50
+ PoleVsLight = 2.00
+ PoleVsRobe = 1.80
+diff --git a/L2J4TeamC3/java/net/sf/l2j/Config.java b/L2J4TeamC3/java/net/sf/l2j/Config.java
+index 949c54a..87cef5f 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/Config.java
++++ b/L2J4TeamC3/java/net/sf/l2j/Config.java
+@@ -449,6 +449,10 @@
+ 	public static int	TITLE_COLOR_FOR_AMMOUNT9;
+ 	public static int	TITLE_COLOR_FOR_AMMOUNT10;
+ 	
++	public static boolean ALLOW_CUSTOM_CHAR_LVL;
++	public static int CUSTOM_CHAR_LVL;
++
++	
+ 	//============================================================
+ 
+ 	/*
+@@ -1645,6 +1649,10 @@
+ 				PVP_AMMOUNT3 = Integer.parseInt(L24Team.getProperty("PvpAmmount8", "4500"));
+ 				PVP_AMMOUNT4 = Integer.parseInt(L24Team.getProperty("PvpAmmount9", "5500"));
+ 				PVP_AMMOUNT5 = Integer.parseInt(L24Team.getProperty("PvpAmmount10", "7000"));
++				
++				ALLOW_CUSTOM_CHAR_LVL = Boolean.parseBoolean(L24Team.getProperty("AllowCustomStartLvl", "false"));
++				CUSTOM_CHAR_LVL = Integer.parseInt(L24Team.getProperty("CustomStartLvl", "1"));
++				
+ 			} catch (Exception e)
+ 			{
+ 				e.printStackTrace();
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
+index b63fa46..a6f368f 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
+@@ -42,6 +42,7 @@
+ import net.sf.l2j.gameserver.model.L2Effect;
+ import net.sf.l2j.gameserver.model.L2World;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.model.base.Experience;
+ import net.sf.l2j.gameserver.model.actor.appearance.PcAppearance;
+ import net.sf.l2j.gameserver.model.entity.Hero;
+ import net.sf.l2j.gameserver.model.entity.L2Event;
+@@ -113,6 +114,11 @@
+ 			// activeChar.closeNetConnection();
+ 		}
+ 
++		if (Config.ALLOW_CUSTOM_CHAR_LVL && (activeChar.getLevel() == 1))
++		{
++			activeChar.getStat().addExp(Experience.LEVEL[Config.CUSTOM_CHAR_LVL]);
++		}
++		
+ 		if (activeChar.isGM())
+ 		{
+ 			if (Config.GM_STARTUP_INVULNERABLE && (!Config.ALT_PRIVILEGES_ADMIN
+@@ -257,6 +263,7 @@
+ 		}
+ 		// Custom PVP Color System
+ 		
++		
+ 		// Expand Skill
+ 		ExStorageMaxCount esmc = new ExStorageMaxCount(activeChar);
+ 		activeChar.sendPacket(esmc);

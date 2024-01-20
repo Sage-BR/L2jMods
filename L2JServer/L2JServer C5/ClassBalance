@@ -1,0 +1,288 @@
+diff --git a/L2J4TeamC3/java/config/L24Team.properties b/L2J4TeamC3/java/config/L24Team.properties
+index 5b4b222..8830b02 100644
+--- a/L2J4TeamC3/java/config/L24Team.properties
++++ b/L2J4TeamC3/java/config/L24Team.properties
+@@ -6,7 +6,6 @@
+ # Dagger, tyrant, and bow classes won't be able to equip heavy type armours.
+ EnableAntiHeavySystem = True
+ 
+-
+ # Allow custom starter items?
+ AllowCustomStarterItems = false
+ 
+@@ -19,4 +18,54 @@
+ # ------------------------
+ BuffMultiplier=1.00
+ SpiritMultiplier=1.00
+-DanceTimeMultiplier=1.00
+\ No newline at end of file
++DanceTimeMultiplier=1.00
++
++# ClassBalance Config
++#---------------------------------------------
++# Balance Dagger Classes -
++#---------------------------------------------
++DaggerVsHeavy = 2.50
++DaggerVsLight = 2.00
++DaggerVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Archer Classes -
++#---------------------------------------------
++ArcherVsHeavy = 2.50
++ArcherVsLight = 2.00
++ArcherVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Blunt Classes -
++#---------------------------------------------
++BluntVsHeavy = 2.50
++BluntVsLight = 2.00
++BluntVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Dual-Weapon Classes -
++#---------------------------------------------
++DualVsHeavy = 2.50
++DualVsLight = 2.00
++DualVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Fist Classes -
++#---------------------------------------------
++FistVsHeavy = 2.50
++FistVsLight = 2.00
++FistVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Sword Classes -
++#---------------------------------------------
++SwordVsHeavy = 2.50
++SwordVsLight = 2.00
++SwordVsRobe = 1.80
++
++#---------------------------------------------
++# Balance Pole Classes -
++#---------------------------------------------
++PoleVsHeavy = 2.50
++PoleVsLight = 2.00
++PoleVsRobe = 1.80
+\ No newline at end of file
+diff --git a/L2J4TeamC3/java/net/sf/l2j/Config.java b/L2J4TeamC3/java/net/sf/l2j/Config.java
+index 4535652..5449359 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/Config.java
++++ b/L2J4TeamC3/java/net/sf/l2j/Config.java
+@@ -393,6 +393,29 @@
+ 	public static int PCB_CHANCE_DUAL_POINT;
+ 	public static int PCB_INTERVAL;
+ 
++	/** Class Balances */
++	public static float DAGGER_VS_HEAVY;
++	public static float DAGGER_VS_LIGHT;
++	public static float DAGGER_VS_ROBE;
++	public static float ARCHER_VS_HEAVY;
++	public static float ARCHER_VS_LIGHT;
++	public static float ARCHER_VS_ROBE;
++	public static float BLUNT_VS_HEAVY;
++	public static float BLUNT_VS_LIGHT;
++	public static float BLUNT_VS_ROBE;
++	public static float FIST_VS_HEAVY;
++	public static float FIST_VS_LIGHT;
++	public static float FIST_VS_ROBE;
++	public static float DUAL_VS_HEAVY;
++	public static float DUAL_VS_LIGHT;
++	public static float DUAL_VS_ROBE;
++	public static float SWORD_VS_HEAVY;
++	public static float SWORD_VS_LIGHT;
++	public static float SWORD_VS_ROBE;
++	public static float POLE_VS_HEAVY;
++	public static float POLE_VS_LIGHT;
++	public static float POLE_VS_ROBE;
++	
+ 	//============================================================
+ 
+ 
+@@ -837,12 +860,6 @@
+ 	/** Properties file for telnet configuration */
+ 	public static final String TELNET_FILE = "./config/telnet.properties";
+ 
+-	/** Properties file for l2j server version configurations */
+-	public static final String SERVER_VERSION_FILE = "./config/l2j-version.properties";
+-
+-	/** Properties file for l2j datapack version configurations */
+-	public static final String DATAPACK_VERSION_FILE = "./config/l2jdp-version.properties";
+-
+ 	/** Properties file for siege configuration */
+ 	public static final String SIEGE_CONFIGURATION_FILE = "./config/siege.properties";
+ 
+@@ -1536,6 +1553,35 @@
+ 
+ 				PCB_CHANCE_DUAL_POINT = Integer.parseInt(L24Team.getProperty("PcBangPointDualChance", "20"));
+ 				PCB_INTERVAL = Integer.parseInt(L24Team.getProperty("PcBangPointTimeStamp", "900"));
++				
++				DAGGER_VS_HEAVY = Float.parseFloat(L24Team.getProperty("DaggerVsHeavy", "2.50"));
++				DAGGER_VS_LIGHT = Float.parseFloat(L24Team.getProperty("DaggerVsHeavy", "2.00"));
++				DAGGER_VS_ROBE = Float.parseFloat(L24Team.getProperty("DaggerVsHeavy", "1.80"));
++				
++				ARCHER_VS_HEAVY = Float.parseFloat(L24Team.getProperty("ArcherVsHeavy", "2.50"));
++				ARCHER_VS_LIGHT = Float.parseFloat(L24Team.getProperty("ArcherVsHeavy", "2.00"));
++				ARCHER_VS_ROBE = Float.parseFloat(L24Team.getProperty("ArcherVsHeavy", "1.80"));
++				
++				BLUNT_VS_HEAVY = Float.parseFloat(L24Team.getProperty("BluntVsHeavy", "2.50"));
++				BLUNT_VS_LIGHT = Float.parseFloat(L24Team.getProperty("BluntVsHeavy", "2.00"));
++				BLUNT_VS_ROBE = Float.parseFloat(L24Team.getProperty("BluntVsHeavy", "1.80"));
++				
++				FIST_VS_HEAVY = Float.parseFloat(L24Team.getProperty("FistVsHeavy", "2.50"));
++				FIST_VS_LIGHT = Float.parseFloat(L24Team.getProperty("FistVsHeavy", "2.00"));
++				FIST_VS_ROBE = Float.parseFloat(L24Team.getProperty("FistVsHeavy", "1.80"));
++				
++				DUAL_VS_HEAVY = Float.parseFloat(L24Team.getProperty("DualVsHeavy", "2.50"));
++				DUAL_VS_LIGHT = Float.parseFloat(L24Team.getProperty("DualVsHeavy", "2.00"));
++				DUAL_VS_ROBE = Float.parseFloat(L24Team.getProperty("DualVsHeavy", "1.80"));
++				
++				SWORD_VS_HEAVY = Float.parseFloat(L24Team.getProperty("SwordVsHeavy", "2.50"));
++				SWORD_VS_LIGHT = Float.parseFloat(L24Team.getProperty("SwordVsHeavy", "2.00"));
++				SWORD_VS_ROBE = Float.parseFloat(L24Team.getProperty("SwordVsHeavy", "1.80"));
++				
++				POLE_VS_HEAVY = Float.parseFloat(L24Team.getProperty("PoleVsHeavy", "2.50"));
++				POLE_VS_LIGHT = Float.parseFloat(L24Team.getProperty("PoleVsHeavy", "2.00"));
++				POLE_VS_ROBE = Float.parseFloat(L24Team.getProperty("PoleVsHeavy", "1.80"));
++				
+ 			} catch (Exception e)
+ 			{
+ 				e.printStackTrace();
+@@ -1788,25 +1834,6 @@
+ 				throw new Error("Failed to Load " + OPTIONS_FILE + " File.");
+ 			}
+ 
+-			/*
+-			 * Load L2J Datapack Version Properties file (if exists)
+-			 */
+-			try
+-			{
+-				Properties serverVersion = new Properties();
+-				InputStream is = new FileInputStream(
+-						new File(DATAPACK_VERSION_FILE));
+-				serverVersion.load(is);
+-				is.close();
+-
+-				DATAPACK_VERSION = serverVersion.getProperty("version",
+-						"Unsupported Custom Version.");
+-			} catch (Exception e)
+-			{
+-				// Ignore Properties file if it doesnt exist
+-				DATAPACK_VERSION = "Unsupported Custom Version.";
+-			}
+-
+ 			// telnet
+ 			try
+ 			{
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/skills/Formulas.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/skills/Formulas.java
+index 2b5e94e..6efe829 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/skills/Formulas.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/skills/Formulas.java
+@@ -1291,6 +1291,104 @@
+ 		{
+ 			defence += target.getShldDef();
+ 		}
++		
++		if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.DAGGER && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++				 damage /= Config.DAGGER_VS_HEAVY;
++		 	 if (((L2PcInstance) target).isWearingLightArmor())
++		 		 damage /= Config.DAGGER_VS_LIGHT;
++		 	 if (((L2PcInstance) target).isWearingMagicArmor())
++		 		 damage /= Config.DAGGER_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.BOW && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++				 damage /= Config.ARCHER_VS_HEAVY;
++			 if (((L2PcInstance) target).isWearingLightArmor())
++				 damage /= Config.ARCHER_VS_LIGHT;
++			 if (((L2PcInstance) target).isWearingMagicArmor())
++				 damage /= Config.ARCHER_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.BLUNT && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++				 damage /= Config.BLUNT_VS_HEAVY;
++			 if (((L2PcInstance) target).isWearingLightArmor())
++				 damage /= Config.BLUNT_VS_LIGHT;
++			 if (((L2PcInstance) target).isWearingMagicArmor())
++				 damage /= Config.BLUNT_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.DUALFIST && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++				 damage /= Config.FIST_VS_HEAVY;
++			 if (((L2PcInstance) target).isWearingLightArmor())
++				 damage /= Config.FIST_VS_LIGHT;
++			 if (((L2PcInstance) target).isWearingMagicArmor())
++				 damage /= Config.FIST_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.DUAL && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++			 damage /= Config.DUAL_VS_HEAVY;
++			 if (((L2PcInstance) target).isWearingLightArmor())
++			 damage /= Config.DUAL_VS_LIGHT;
++		 	if (((L2PcInstance) target).isWearingMagicArmor())
++			 damage /= Config.DUAL_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.SWORD && skill != null)
++		 {
++		 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++			 damage /= Config.SWORD_VS_HEAVY;
++		 	if (((L2PcInstance) target).isWearingLightArmor())
++			 damage /= Config.SWORD_VS_LIGHT;
++		 	if (((L2PcInstance) target).isWearingMagicArmor())
++			 damage /= Config.SWORD_VS_ROBE;
++		 	}
++		 }
++		
++		 if (target instanceof L2PcInstance && weapon != null && weapon.getItemType() == L2WeaponType.POLE && skill != null)
++		 {
++			 L2Armor armor = ((L2PcInstance) target).getActiveChestArmorItem();
++		 if (armor != null)
++		 {
++			 if (((L2PcInstance) target).isWearingHeavyArmor())
++				 damage /= Config.POLE_VS_HEAVY;
++			 if (((L2PcInstance) target).isWearingLightArmor())
++				 damage /= Config.POLE_VS_LIGHT;
++			 if (((L2PcInstance) target).isWearingMagicArmor())
++				 damage /= Config.POLE_VS_ROBE;
++		 	}
++		 }
+ 		// if (!(attacker instanceof L2RaidBossInstance) &&
+ 		/*
+ 		 * if ((attacker instanceof L2NpcInstance || attacker instanceof

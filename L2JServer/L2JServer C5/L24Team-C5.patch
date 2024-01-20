@@ -1,0 +1,488 @@
+diff --git a/L2J4TeamC3/java/net/sf/l2j/Config.java b/L2J4TeamC3/java/net/sf/l2j/Config.java
+index e91f41c..4535652 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/Config.java
++++ b/L2J4TeamC3/java/net/sf/l2j/Config.java
+@@ -385,6 +385,17 @@
+ 
+ 	public static List<int[]> CUSTOM_STARTER_ITEMS = new FastList<>();
+ 
++	//============================================================
++	public static boolean PCB_ENABLE;
++	public static int PCB_MIN_LEVEL;
++	public static int PCB_POINT_MIN;
++	public static int PCB_POINT_MAX;
++	public static int PCB_CHANCE_DUAL_POINT;
++	public static int PCB_INTERVAL;
++
++	//============================================================
++
++
+ 	/*
+ 	 * *************************************************************************
+ 	 * * GM CONFIG General GM AccessLevel *
+@@ -1513,7 +1524,18 @@
+ 						}
+ 					}
+ 				}
++			 PCB_ENABLE = Boolean.parseBoolean(L24Team.getProperty("PcBangPointEnable", "true"));
++			 PCB_MIN_LEVEL = Integer.parseInt(L24Team.getProperty("PcBangPointMinLevel", "20"));
++			 PCB_POINT_MIN = Integer.parseInt(L24Team.getProperty("PcBangPointMinCount", "20"));
++			 PCB_POINT_MAX = Integer.parseInt(L24Team.getProperty("PcBangPointMaxCount", "1000000"));
+ 
++			if(PCB_POINT_MAX < 1)
++			{
++				PCB_POINT_MAX = Integer.MAX_VALUE;
++			}
++
++				PCB_CHANCE_DUAL_POINT = Integer.parseInt(L24Team.getProperty("PcBangPointDualChance", "20"));
++				PCB_INTERVAL = Integer.parseInt(L24Team.getProperty("PcBangPointTimeStamp", "900"));
+ 			} catch (Exception e)
+ 			{
+ 				e.printStackTrace();
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/GameServer.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/GameServer.java
+index 0e4bcf1..d9eb161 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/GameServer.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/GameServer.java
+@@ -564,6 +564,11 @@
+ 			if (Config.DEBUG)
+ 				e.printStackTrace();
+ 		}
++		if(Config.PCB_ENABLE)
++			{
++			System.out.println("############PCB_ENABLE##############");
++			ThreadPoolManager.getInstance().scheduleGeneralAtFixedRate(PcPoint.getInstance(), Config.PCB_INTERVAL * 1000, Config.PCB_INTERVAL * 1000);
++		}
+ 		ClanTable.getInstance();
+ 		ForumsBBSManager.getInstance();
+ 		_log.config("IdFactory: Free ObjectID's remaining: "
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/PcPoint.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/PcPoint.java
+new file mode 100644
+index 0000000..71d9b83
+--- /dev/null
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/PcPoint.java
+@@ -0,0 +1,77 @@
++package net.sf.l2j.gameserver;
++
++import java.util.logging.Logger;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.lib.Rnd;
++import net.sf.l2j.gameserver.model.L2World;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.serverpackets.SystemMessage;
++
++
++/**
++ * @author Anumis
++ */
++
++public class PcPoint implements Runnable
++{
++ Logger _log = Logger.getLogger(PcPoint.class.getName());
++ private static PcPoint _instance;
++
++ public static PcPoint getInstance()
++ {
++ if(_instance == null)
++ {
++ _instance = new PcPoint();
++ }
++
++ return _instance;
++ }
++
++ private PcPoint()
++ {
++ _log.info("PcBang point event started.");
++ }
++
++ @Override
++ public void run()
++ {
++
++ int score = 0;
++ for(L2PcInstance activeChar: L2World.getInstance().getAllPlayers())
++ {
++
++ if(activeChar.getLevel() > Config.PCB_MIN_LEVEL )
++ {
++ score = Rnd.get(Config.PCB_POINT_MIN, Config.PCB_POINT_MAX);
++
++ if(Rnd.get(100) <= Config.PCB_CHANCE_DUAL_POINT)
++ {
++ score *= 2;
++
++ activeChar.addPcBangScore(score);
++
++ SystemMessage sm = new SystemMessage(SystemMessage.DOUBLE_POINTS_YOU_GOT_$51_GLASSES_PC);
++ sm.addNumber(score);
++ activeChar.sendPacket(sm);
++ sm = null;
++
++ activeChar.updatePcBangWnd(score, true, true);
++ }
++ else
++ {
++ activeChar.addPcBangScore(score);
++
++ SystemMessage sm = new SystemMessage(SystemMessage.YOU_RECEVIED_$51_GLASSES_PC);
++ sm.addNumber(score);
++ activeChar.sendPacket(sm);
++ sm = null;
++
++ activeChar.updatePcBangWnd(score, true, false);
++ }
++ }
++
++ activeChar = null;
++ }
++ }
++}
+\ No newline at end of file
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/CharacterCreate.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/CharacterCreate.java
+index 087eefd..db40b11 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/CharacterCreate.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/CharacterCreate.java
+@@ -37,8 +37,8 @@
+ import net.sf.l2j.gameserver.model.L2ShortCut;
+ import net.sf.l2j.gameserver.model.L2SkillLearn;
+ import net.sf.l2j.gameserver.model.L2World;
+-import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ import net.sf.l2j.gameserver.model.PcInventory;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ import net.sf.l2j.gameserver.serverpackets.CharCreateFail;
+ import net.sf.l2j.gameserver.serverpackets.CharCreateOk;
+ import net.sf.l2j.gameserver.serverpackets.CharSelectInfo;
+@@ -253,7 +253,7 @@
+ 			if (ItemTable.getInstance().createDummyItem(startingItems[0]).isStackable())
+ 			{
+ 				inv.addItem("Starter Items", startingItems[0], startingItems[1], newChar, null);
+-			} 
++			}
+ 			else
+ 			{
+ 				for (int i = 0; i < startingItems[1]; i++)
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
+index 3bc9cd8..2ca6a25 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/EnterWorld.java
+@@ -299,6 +299,11 @@
+ 
+ 		activeChar.onPlayerEnter();
+ 
++		if(Config.PCB_ENABLE)
++		{
++			activeChar.showPcBangWindow();
++		}
++
+ 		if (Olympiad.getInstance().playerInStadia(activeChar))
+ 		{
+ 			activeChar.teleToLocation(MapRegionTable.TeleportWhereType.Town);
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/MultiSellChoose.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/MultiSellChoose.java
+index f2d28f8..de5514f 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/MultiSellChoose.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/MultiSellChoose.java
+@@ -157,6 +157,11 @@
+ 				_ingredientsList.clear();
+ 				_ingredientsList = null;
+ 				return;
++				}
++				if(e.getItemId() == 65436 && e.getItemCount() * _amount > player.getPcBangScore())
++				{
++				player.sendPacket(new SystemMessage(SystemMessage.NOT_ENOUGH_ITEMS));
++				return;
+ 			}
+ 		}
+ 
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/UseItem.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/UseItem.java
+index 6436f35..9d4d682 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/UseItem.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/clientpackets/UseItem.java
+@@ -88,7 +88,7 @@
+ 
+ 		if (item == null)
+ 			return;
+-		
++
+ 		if (Config.ENABLE_ANTI_HEAVY && item.getItemType() == L2ArmorType.HEAVY) {
+ 			if (activeChar.getClassId().getId() == 48 || activeChar.getClassId().getId() == 114 || activeChar.getClassId().getId() == 109
+ 			|| activeChar.getClassId().getId() == 37 || activeChar.getClassId().getId() == 108 || activeChar.getClassId().getId() == 36
+@@ -98,7 +98,7 @@
+ 			activeChar.sendMessage("Your class can't equip heavy type armors.");
+ 			return;
+ 			}
+-		} 
++		}
+ 
+ 		// Alt game - Karma punishment // SOE
+ 		int itemId = item.getItemId();
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/model/L2Character.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/model/L2Character.java
+index d23dd00..5c466c7 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/model/L2Character.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/model/L2Character.java
+@@ -125,7 +125,7 @@
+  */
+ public abstract class L2Character extends L2Object
+ {
+-	protected static final Logger _log = Logger
++	public static final Logger _log = Logger
+ 			.getLogger(L2Character.class.getName());
+ 
+ 	// =========================================================
+@@ -3725,7 +3725,7 @@
+ 	protected L2CharacterAI _ai;
+ 
+ 	/** Future Skill Cast */
+-	protected Future _skillCast;
++	protected Future<?> _skillCast;
+ 
+ 	/** Char Coords from Client */
+ 	private int _clientX;
+@@ -6504,7 +6504,7 @@
+ 		return 1;
+ 	}
+ 
+-	public final void setSkillCast(Future newSkillCast)
++	public final void setSkillCast(Future<?> newSkillCast)
+ 	{
+ 		_skillCast = newSkillCast;
+ 	}
+@@ -6522,7 +6522,7 @@
+ 	{
+ 	}
+ 
+-	private Future _PvPRegTask;
++	private Future<?> _PvPRegTask;
+ 
+ 	private long _lastPvpAttack;
+ 
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+index 83504be..71263ca 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+@@ -141,6 +141,7 @@
+ import net.sf.l2j.gameserver.serverpackets.ExFishingStart;
+ import net.sf.l2j.gameserver.serverpackets.ExOlympiadMode;
+ import net.sf.l2j.gameserver.serverpackets.ExOlympiadUserInfo;
++import net.sf.l2j.gameserver.serverpackets.ExPCCafePointInfo;
+ import net.sf.l2j.gameserver.serverpackets.HennaInfo;
+ import net.sf.l2j.gameserver.serverpackets.InventoryUpdate;
+ import net.sf.l2j.gameserver.serverpackets.ItemList;
+@@ -210,9 +211,9 @@
+ 
+ 	private static final String DELETE_SKILL_SAVE = "DELETE FROM character_skills_save WHERE char_obj_id=? AND class_index=?";
+ 
+-	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,str=?,con=?,dex=?,_int=?,men=?,wit=?,face=?,hairStyle=?,hairColor=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,maxload=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,isin7sdungeon=?,clan_privs=?,wantspeace=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,newbie=?,nobless=?,power_grade=?,subpledge=?,last_recom_date=?,lvl_joined_academy=?,apprentice=?,sponsor=?,varka_ketra_ally=?,clan_join_expiry_time=?,clan_create_expiry_time=? WHERE obj_id=?";
++	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,str=?,con=?,dex=?,_int=?,men=?,wit=?,face=?,hairStyle=?,hairColor=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,maxload=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,isin7sdungeon=?,clan_privs=?,wantspeace=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,newbie=?,nobless=?,power_grade=?,subpledge=?,last_recom_date=?,lvl_joined_academy=?,apprentice=?,sponsor=?,varka_ketra_ally=?,clan_join_expiry_time=?,clan_create_expiry_time=?,pc_point=? WHERE obj_id=?";
+ 
+-	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, acc, crit, evasion, mAtk, mDef, mSpd, pAtk, pDef, pSpd, runSpd, walkSpd, str, con, dex, _int, men, wit, face, hairStyle, hairColor, sex, heading, x, y, z, movement_multiplier, attack_speed_multiplier, colRad, colHeight, exp, sp, karma, pvpkills, pkkills, clanid, maxload, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, base_class, onlinetime, isin7sdungeon, in_jail, jail_timer, newbie, nobless, power_grade, subpledge, last_recom_date, lvl_joined_academy, apprentice, sponsor, varka_ketra_ally,clan_join_expiry_time,clan_create_expiry_time FROM characters WHERE obj_id=?";
++	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, acc, crit, evasion, mAtk, mDef, mSpd, pAtk, pDef, pSpd, runSpd, walkSpd, str, con, dex, _int, men, wit, face, hairStyle, hairColor, sex, heading, x, y, z, movement_multiplier, attack_speed_multiplier, colRad, colHeight, exp, sp, karma, pvpkills, pkkills, clanid, maxload, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, base_class, onlinetime, isin7sdungeon, in_jail, jail_timer, newbie, nobless, power_grade, subpledge, last_recom_date, lvl_joined_academy, apprentice, sponsor, varka_ketra_ally,clan_join_expiry_time,clan_create_expiry_time,pc_point FROM characters WHERE obj_id=?";
+ 
+ 	private static final String RESTORE_CHAR_SUBCLASSES = "SELECT class_id,exp,sp,level,class_index FROM character_subclasses WHERE char_obj_id=? ORDER BY class_index ASC";
+ 
+@@ -394,7 +395,7 @@
+ 
+ 	private long _jailTimer = 0;
+ 
+-	private ScheduledFuture _jailTask;
++	private ScheduledFuture<?> _jailTask;
+ 
+ 	private boolean _isIn7sDungeon = false;
+ 
+@@ -589,7 +590,7 @@
+ 
+ 	private boolean _chatBanned = false; // Chat Banned
+ 
+-	private ScheduledFuture _chatUnbanTask = null;
++	private ScheduledFuture<?> _chatUnbanTask = null;
+ 
+ 	private boolean _messageRefusal = false; // message refusal mode
+ 
+@@ -617,6 +618,9 @@
+ 	// protects a char from agro mobs when getting up from fake death
+ 	private long _recentFakeDeathEndTime = 0;
+ 
++	/** PC BANG POINT */
++	private int pcBangPoint = 0;
++
+ 	/**
+ 	 * The fists L2Weapon of the L2PcInstance (used when no weapon is equiped)
+ 	 */
+@@ -695,9 +699,9 @@
+ 
+ 	private int _fishz = 0;
+ 
+-	private ScheduledFuture _taskRentPet;
++	private ScheduledFuture<?> _taskRentPet;
+ 
+-	private ScheduledFuture _taskWater;
++	private ScheduledFuture<?> _taskWater;
+ 
+ 	/** Bypass validations */
+ 	private List<String> _validBypass = new FastList<>();
+@@ -5981,6 +5985,8 @@
+ 			statement.setInt(55, isNoble() ? 1 : 0);
+ 			statement.setLong(56, 0);
+ 			statement.setLong(57, System.currentTimeMillis());
++			statement.setInt(63, getPcBangScore());
++			statement.setInt(64, getObjectId());
+ 			statement.executeUpdate();
+ 			statement.close();
+ 		} catch (Exception e)
+@@ -8472,7 +8478,7 @@
+ 		}
+ 	}
+ 
+-	private ScheduledFuture _taskWarnUserTakeBreak;
++	private ScheduledFuture<?> _taskWarnUserTakeBreak;
+ 
+ 	class WarnUserTakeBreak implements Runnable
+ 	{
+@@ -8497,7 +8503,7 @@
+ 		}
+ 	}
+ 
+-	public ScheduledFuture _taskforfish;
++	public ScheduledFuture<?> _taskforfish;
+ 
+ 	class WaterTask implements Runnable
+ 	{
+@@ -8771,12 +8777,12 @@
+ 		return _chatBanned;
+ 	}
+ 
+-	public void setChatUnbanTask(ScheduledFuture task)
++	public void setChatUnbanTask(ScheduledFuture<?> task)
+ 	{
+ 		_chatUnbanTask = task;
+ 	}
+ 
+-	public ScheduledFuture getChatUnbanTask()
++	public ScheduledFuture<?> getChatUnbanTask()
+ 	{
+ 		return _chatUnbanTask;
+ 	}
+@@ -10923,4 +10929,33 @@
+ 	{
+ 		ReuseTimeStamps.remove(s);
+ 	}
++
++	//PcBang
++	public int getPcBangScore()
++	{
++	 return pcBangPoint;
++	}
++
++	public void reducePcBangScore(int to)
++	{
++	 pcBangPoint -= to;
++	 updatePcBangWnd(to, false, false);
++	}
++
++	public void addPcBangScore(int to)
++	{
++	 pcBangPoint += to;
++	}
++
++	public void updatePcBangWnd(int score, boolean add, boolean duble)
++	{
++	 ExPCCafePointInfo wnd = new ExPCCafePointInfo(this, score, add, 24, duble);
++	 sendPacket(wnd);
++	}
++
++	public void showPcBangWindow()
++	{
++	 ExPCCafePointInfo wnd = new ExPCCafePointInfo(this, 0, false, 24, false);
++	 sendPacket(wnd);
++	}
+ }
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/ExPCCafePointInfo.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/ExPCCafePointInfo.java
+index e85bfbd..fa9578c 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/ExPCCafePointInfo.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/ExPCCafePointInfo.java
+@@ -17,6 +17,8 @@
+  */
+ package net.sf.l2j.gameserver.serverpackets;
+ 
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++
+ /**
+  * Format: ch ddcdc
+  *
+@@ -26,15 +28,37 @@
+ {
+ 	private static final String _S__FE_31_EXPCCAFEPOINTINFO = "[S] FE:31 ExPCCafePointInfo";
+ 
+-	private int _unk1, _unk2, _unk3, _unk4, _unk5 = 0;
++	private L2PcInstance _character;
++	private int m_AddPoint;
++	private int m_PeriodType;
++	private int RemainTime;
++	private int PointType;
+ 
+-	public ExPCCafePointInfo(int val1, int val2, int val3, int val4, int val5)
++	public ExPCCafePointInfo(L2PcInstance user, int modify, boolean add, int hour, boolean _double)
+ 	{
+-		_unk1 = val1;
+-		_unk2 = val2;
+-		_unk3 = val3;
+-		_unk4 = val4;
+-		_unk5 = val5;
++		_character = user;
++		m_AddPoint = modify;
++
++		if(add)
++		{
++		m_PeriodType = 1;
++		PointType = 1;
++		}
++		else
++		{
++		if(add && _double)
++		{
++		m_PeriodType = 1;
++		PointType = 0;
++		}
++		else
++		{
++		m_PeriodType = 2;
++		PointType = 2;
++		}
++		}
++
++		RemainTime = hour;
+ 	}
+ 
+ 	/**
+@@ -53,11 +77,11 @@
+ 	{
+ 		writeC(0xFE);
+ 		writeH(0x31);
+-		writeD(_unk1);
+-		writeD(_unk2);
+-		writeC(_unk3);
+-		writeD(_unk4);
+-		writeC(_unk5);
++		writeD(_character.getPcBangScore());
++		writeD(m_AddPoint);
++		writeC(m_PeriodType);
++		writeD(RemainTime);
++		writeC(PointType);
+ 	}
+ 
+ 	/**
+diff --git a/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/SystemMessage.java b/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/SystemMessage.java
+index ade45bf..a785364 100644
+--- a/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/SystemMessage.java
++++ b/L2J4TeamC3/java/net/sf/l2j/gameserver/serverpackets/SystemMessage.java
+@@ -57,6 +57,11 @@
+ 
+ 	public static final int CANT_ATK_PEACEZONE = 84;
+ 
++	// Custom
++	public static final int S1 = 3000;
++	public static final int DOUBLE_POINTS_YOU_GOT_$51_GLASSES_PC = 3001;
++	public static final int YOU_RECEVIED_$51_GLASSES_PC = 3002;
++
+ 	// magic related
+ 	public static final int NOT_ENOUGH_HP = 23;

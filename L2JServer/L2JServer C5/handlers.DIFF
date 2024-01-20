@@ -1,0 +1,1235 @@
+### Eclipse Workspace Patch 1.0
+#P L2J4TeamC3
+diff --git java/net/sf/l2j/gameserver/GameServer.java
+index 5d1f146..d91dd1d 100644
+--- java/net/sf/l2j/gameserver/GameServer.java
++++ java/net/sf/l2j/gameserver/GameServer.java
+@@ -42,205 +42,81 @@
+ import net.sf.l2j.gameserver.datatables.HelperBuffTable;
+ import net.sf.l2j.gameserver.datatables.HennaTable;
+ import net.sf.l2j.gameserver.datatables.HennaTreeTable;
+ import net.sf.l2j.gameserver.datatables.ItemTable;
+ import net.sf.l2j.gameserver.datatables.LevelUpData;
+ import net.sf.l2j.gameserver.datatables.MapRegionTable;
+ import net.sf.l2j.gameserver.datatables.NobleSkillTable;
+ import net.sf.l2j.gameserver.datatables.NpcTable;
+ import net.sf.l2j.gameserver.datatables.SkillSpellbookTable;
+ import net.sf.l2j.gameserver.datatables.SkillTable;
+ import net.sf.l2j.gameserver.datatables.SkillTreeTable;
+ import net.sf.l2j.gameserver.datatables.SpawnTable;
+ import net.sf.l2j.gameserver.datatables.StaticObjects;
+ import net.sf.l2j.gameserver.datatables.SummonItemsData;
+ import net.sf.l2j.gameserver.datatables.TeleportLocationTable;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.ItemHandler;
+ import net.sf.l2j.gameserver.handler.SkillHandler;
+ import net.sf.l2j.gameserver.handler.UserCommandHandler;
+ import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAdmin;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAnnouncements;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBBS;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBan;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBanChat;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCache;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminChangeAccessLevel;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCreateItem;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCursedWeapons;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDelete;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDoorControl;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditChar;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditNpc;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEffects;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEnchant;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEventEngine;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminExpSp;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminFightCalculator;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGeoEditor;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGeodata;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGm;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGmChat;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHeal;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHelpPage;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminInvul;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKick;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKill;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminLevel;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminLogin;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMammon;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMenu;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMobGroup;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMonsterRace;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPForge;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPathNode;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPetition;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPledge;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPolymorph;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminQuest;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRepairChar;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRes;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRideWyvern;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminShop;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminShutdown;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSiege;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSkill;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSpawn;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTarget;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTeleport;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTest;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminUnblockIp;
+-import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminZone;
+-import net.sf.l2j.gameserver.handler.itemhandlers.BeastSoulShot;
+-import net.sf.l2j.gameserver.handler.itemhandlers.BeastSpiritShot;
+-import net.sf.l2j.gameserver.handler.itemhandlers.BlessedSpiritShot;
+-import net.sf.l2j.gameserver.handler.itemhandlers.CharChangePotions;
+-import net.sf.l2j.gameserver.handler.itemhandlers.ChestKey;
+-import net.sf.l2j.gameserver.handler.itemhandlers.CrystalCarol;
+-import net.sf.l2j.gameserver.handler.itemhandlers.EnchantScrolls;
+-import net.sf.l2j.gameserver.handler.itemhandlers.EnergyStone;
+-import net.sf.l2j.gameserver.handler.itemhandlers.ExtractableItems;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Firework;
+-import net.sf.l2j.gameserver.handler.itemhandlers.FishShots;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Guide;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Harvester;
+-import net.sf.l2j.gameserver.handler.itemhandlers.MercTicket;
+-import net.sf.l2j.gameserver.handler.itemhandlers.MysteryPotion;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Potions;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Recipes;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Remedy;
+-import net.sf.l2j.gameserver.handler.itemhandlers.RollingDice;
+-import net.sf.l2j.gameserver.handler.itemhandlers.ScrollOfEscape;
+-import net.sf.l2j.gameserver.handler.itemhandlers.ScrollOfResurrection;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Scrolls;
+-import net.sf.l2j.gameserver.handler.itemhandlers.Seed;
+-import net.sf.l2j.gameserver.handler.itemhandlers.SevenSignsRecord;
+-import net.sf.l2j.gameserver.handler.itemhandlers.SoulCrystals;
+-import net.sf.l2j.gameserver.handler.itemhandlers.SoulShots;
+-import net.sf.l2j.gameserver.handler.itemhandlers.SpiritShot;
+-import net.sf.l2j.gameserver.handler.itemhandlers.SummonItems;
+-import net.sf.l2j.gameserver.handler.itemhandlers.WorldMap;
+-import net.sf.l2j.gameserver.handler.skillhandlers.BalanceLife;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Charge;
+-import net.sf.l2j.gameserver.handler.skillhandlers.CombatPointHeal;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Continuous;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Craft;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Disablers;
+-import net.sf.l2j.gameserver.handler.skillhandlers.DrainSoul;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Fishing;
+-import net.sf.l2j.gameserver.handler.skillhandlers.FishingSkill;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Heal;
+-import net.sf.l2j.gameserver.handler.skillhandlers.ManaHeal;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Manadam;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Mdam;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Pdam;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Recall;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Resurrect;
+-import net.sf.l2j.gameserver.handler.skillhandlers.SiegeFlag;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Spoil;
+-import net.sf.l2j.gameserver.handler.skillhandlers.StrSiegeAssault;
+-import net.sf.l2j.gameserver.handler.skillhandlers.SummonFriend;
+-import net.sf.l2j.gameserver.handler.skillhandlers.SummonTreasureKey;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Sweep;
+-import net.sf.l2j.gameserver.handler.skillhandlers.TakeCastle;
+-import net.sf.l2j.gameserver.handler.skillhandlers.Unlock;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.ClanPenalty;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.ClanWarsList;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.DisMount;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.Escape;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.Loc;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.Mount;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.PartyInfo;
+-import net.sf.l2j.gameserver.handler.usercommandhandlers.Time;
+-import net.sf.l2j.gameserver.handler.voicedcommandhandlers.stats;
+ import net.sf.l2j.gameserver.idfactory.IdFactory;
+ import net.sf.l2j.gameserver.instancemanager.CursedWeaponsManager;
+ import net.sf.l2j.gameserver.instancemanager.DayNightSpawnManager;
+ import net.sf.l2j.gameserver.instancemanager.ItemsOnGroundManager;
+ import net.sf.l2j.gameserver.instancemanager.Manager;
+ import net.sf.l2j.gameserver.instancemanager.RaidBossSpawnManager;
+ import net.sf.l2j.gameserver.model.AutoChatHandler;
+ import net.sf.l2j.gameserver.model.AutoSpawnHandler;
+ import net.sf.l2j.gameserver.model.L2PetDataTable;
+ import net.sf.l2j.gameserver.model.L2World;
+ import net.sf.l2j.gameserver.model.entity.Hero;
+ import net.sf.l2j.gameserver.script.faenor.FaenorScriptEngine;
+ import net.sf.l2j.gameserver.taskmanager.TaskManager;
+ import net.sf.l2j.gameserver.util.DynamicExtension;
+ import net.sf.l2j.status.Status;
+ 
+ /**
+  * This class ...
+  *
+  * @version $Revision: 1.29.2.15.2.19 $ $Date: 2005/04/05 19:41:23 $
+  */
+ public class GameServer
+ {
+ 	private static final Logger _log = Logger.getLogger(GameServer.class.getName());
+ 
+ 	private final SelectorThread _selectorThread;
+ 
+ 	private final SkillTable _skillTable;
+ 
+ 	private final ItemTable _itemTable;
+ 
+ 	private final NpcTable _npcTable;
+ 
+ 	private final HennaTable _hennaTable;
+ 
+ 	private final IdFactory _idFactory;
+ 
+ 	public static GameServer gameServer;
+ 
+-	private final ItemHandler _itemHandler;
+-
+-	private final SkillHandler _skillHandler;
+-
+-	private final AdminCommandHandler _adminCommandHandler;
+-
+ 	private final Shutdown _shutdownHandler;
+ 
+-	private final UserCommandHandler _userCommandHandler;
+-
+-	private final VoicedCommandHandler _voicedCommandHandler;
+-
+ 	private final DoorTable _doorTable;
+ 
+ 	private final SevenSigns _sevenSignsEngine;
+ 
+ 	private final AutoChatHandler _autoChatHandler;
+ 
+ 	private final AutoSpawnHandler _autoSpawnHandler;
+ 
+ 	private LoginServerThread _loginThread;
+ 
+ 	private final HelperBuffTable _helperBuffTable;
+ 
+ 	public static Status statusServer;
+ 
+ 	public static final Calendar DateTimeServerStarted = Calendar.getInstance();
+ 
+ 	public long getUsedMemoryMB()
+ 	{
+ 		return (Runtime.getRuntime().totalMemory()- Runtime.getRuntime().freeMemory()) / 1048576; // 1024 * 1024 =// 1048576;
+ 	}
+@@ -359,171 +235,45 @@
+ 		_doorTable = DoorTable.getInstance();
+ 		StaticObjects.getInstance();
+ 
+ 		_sevenSignsEngine = SevenSigns.getInstance();
+ 		SevenSignsFestival.getInstance();
+ 		_autoSpawnHandler = AutoSpawnHandler.getInstance();
+ 		_autoChatHandler = AutoChatHandler.getInstance();
+ 
+ 		// Spawn the Orators/Preachers if in the Seal Validation period.
+ 		_sevenSignsEngine.spawnSevenSignsNPC();
+ 
+ 		Olympiad.getInstance();
+ 		Hero.getInstance();
+ 		FaenorScriptEngine.getInstance();
+ 		// Init of a cursed weapon manager
+ 		CursedWeaponsManager.getInstance();
+ 
+ 		_log.config("AutoChatHandler: Loaded " + _autoChatHandler.size() + " handlers in total.");
+ 		_log.config("AutoSpawnHandler: Loaded " + _autoSpawnHandler.size() + " handlers in total.");
+ 
+-		_itemHandler = ItemHandler.getInstance();
+-		_itemHandler.registerItemHandler(new ScrollOfEscape());
+-		_itemHandler.registerItemHandler(new ScrollOfResurrection());
+-		_itemHandler.registerItemHandler(new SoulShots());
+-		_itemHandler.registerItemHandler(new SpiritShot());
+-		_itemHandler.registerItemHandler(new BlessedSpiritShot());
+-		_itemHandler.registerItemHandler(new BeastSoulShot());
+-		_itemHandler.registerItemHandler(new BeastSpiritShot());
+-		_itemHandler.registerItemHandler(new ChestKey());
+-		_itemHandler.registerItemHandler(new WorldMap());
+-		_itemHandler.registerItemHandler(new Potions());
+-		_itemHandler.registerItemHandler(new Recipes());
+-		_itemHandler.registerItemHandler(new RollingDice());
+-		_itemHandler.registerItemHandler(new MysteryPotion());
+-		_itemHandler.registerItemHandler(new EnchantScrolls());
+-		_itemHandler.registerItemHandler(new EnergyStone());
+-		_itemHandler.registerItemHandler(new Guide());
+-		_itemHandler.registerItemHandler(new Remedy());
+-		_itemHandler.registerItemHandler(new Scrolls());
+-		_itemHandler.registerItemHandler(new CrystalCarol());
+-		_itemHandler.registerItemHandler(new SoulCrystals());
+-		_itemHandler.registerItemHandler(new SevenSignsRecord());
+-		_itemHandler.registerItemHandler(new CharChangePotions());
+-		_itemHandler.registerItemHandler(new Firework());
+-		_itemHandler.registerItemHandler(new Seed());
+-		_itemHandler.registerItemHandler(new Harvester());
+-		_itemHandler.registerItemHandler(new MercTicket());
+-		_itemHandler.registerItemHandler(new FishShots());
+-		_itemHandler.registerItemHandler(new ExtractableItems());
+-		_itemHandler.registerItemHandler(new SummonItems());
+-		_log.config("ItemHandler: Loaded " + _itemHandler.size() + " handlers.");
+-
+-		_skillHandler = SkillHandler.getInstance();
+-		_skillHandler.registerSkillHandler(new Pdam());
+-		_skillHandler.registerSkillHandler(new Mdam());
+-		_skillHandler.registerSkillHandler(new Manadam());
+-		_skillHandler.registerSkillHandler(new Heal());
+-		_skillHandler.registerSkillHandler(new CombatPointHeal());
+-		_skillHandler.registerSkillHandler(new ManaHeal());
+-		_skillHandler.registerSkillHandler(new BalanceLife());
+-		_skillHandler.registerSkillHandler(new Charge());
+-		_skillHandler.registerSkillHandler(new Continuous());
+-		_skillHandler.registerSkillHandler(new Resurrect());
+-		_skillHandler.registerSkillHandler(new Spoil());
+-		_skillHandler.registerSkillHandler(new Sweep());
+-		_skillHandler.registerSkillHandler(new StrSiegeAssault());
+-		_skillHandler.registerSkillHandler(new SummonFriend());
+-		_skillHandler.registerSkillHandler(new SummonTreasureKey());
+-		_skillHandler.registerSkillHandler(new Disablers());
+-		_skillHandler.registerSkillHandler(new Recall());
+-		_skillHandler.registerSkillHandler(new SiegeFlag());
+-		_skillHandler.registerSkillHandler(new TakeCastle());
+-		_skillHandler.registerSkillHandler(new Unlock());
+-		_skillHandler.registerSkillHandler(new DrainSoul());
+-		_skillHandler.registerSkillHandler(new Craft());
+-		_skillHandler.registerSkillHandler(new Fishing());
+-		_skillHandler.registerSkillHandler(new FishingSkill());
+-		_log.config("SkillHandler: Loaded " + _skillHandler.size() + " handlers.");
+-
+-		_adminCommandHandler = AdminCommandHandler.getInstance();
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminAdmin());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminInvul());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminDelete());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminKill());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminTarget());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminShop());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminAnnouncements());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminCreateItem());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminHeal());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminHelpPage());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminShutdown());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminSpawn());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminSkill());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminExpSp());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminEventEngine());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminGmChat());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminEditChar());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminGm());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminTeleport());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminRepairChar());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminChangeAccessLevel());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminBan());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminPolymorph());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminBanChat());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminKick());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminMonsterRace());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminEditNpc());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminFightCalculator());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminMenu());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminSiege());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminPathNode());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminPetition());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminPForge());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminBBS());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminEffects());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminDoorControl());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminTest());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminEnchant());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminMobGroup());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminRes());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminMammon());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminUnblockIp());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminPledge());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminRideWyvern());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminLogin());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminCache());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminLevel());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminQuest());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminZone());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminCursedWeapons());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminGeodata());
+-		_adminCommandHandler.registerAdminCommandHandler(new AdminGeoEditor());
+-		// _adminCommandHandler.registerAdminCommandHandler(new AdminRadar());
+-		_log.config("AdminCommandHandler: Loaded " + _adminCommandHandler.size() + " handlers.");
+-
+-		_userCommandHandler = UserCommandHandler.getInstance();
+-		_userCommandHandler.registerUserCommandHandler(new ClanPenalty());
+-		_userCommandHandler.registerUserCommandHandler(new ClanWarsList());
+-		_userCommandHandler.registerUserCommandHandler(new DisMount());
+-		_userCommandHandler.registerUserCommandHandler(new Escape());
+-		_userCommandHandler.registerUserCommandHandler(new Loc());
+-		_userCommandHandler.registerUserCommandHandler(new Mount());
+-		_userCommandHandler.registerUserCommandHandler(new PartyInfo());
+-		_userCommandHandler.registerUserCommandHandler(new Time());
+-
+-		_log.config("UserCommandHandler: Loaded " + _userCommandHandler.size() + " handlers.");
+-
+-		_voicedCommandHandler = VoicedCommandHandler.getInstance();
+-		_voicedCommandHandler.registerVoicedCommandHandler(new stats());
+-
+-		_log.config("VoicedCommandHandler: Loaded "+ _voicedCommandHandler.size() + " handlers.");
++		_log.config("AdminCommandHandler: Loaded " + AdminCommandHandler.getInstance().size() + " handlers.");
++		_log.config("ItemHandler: Loaded " + ItemHandler.getInstance().size() + " handlers.");
++		_log.config("SkillHandler: Loaded " + SkillHandler.getInstance().size() + " handlers.");
++		_log.config("UserCommandHandler: Loaded " + UserCommandHandler.getInstance().size() + " handlers.");
++		_log.config("VoicedCommandHandler: Loaded "+ VoicedCommandHandler.getInstance().size() + " handlers.");
+ 
+ 		TaskManager.getInstance();
+ 
+ 		GmListTable.getInstance();
+ 
+ 		// read pet stats from db
+ 		L2PetDataTable.getInstance().loadPetsData();
+ 
+ 		Universe.getInstance();
+ 
+ 		Manager.loadAll();
+ 
+ 		_shutdownHandler = Shutdown.getInstance();
+ 		Runtime.getRuntime().addShutdownHook(_shutdownHandler);
+ 
+ 		try
+ 		{
+ 			_doorTable.getDoor(24190001).openMe();
+ 			_doorTable.getDoor(24190002).openMe();
+ 			_doorTable.getDoor(24190003).openMe();
+diff --git java/net/sf/l2j/gameserver/clientpackets/RequestPetUseItem.java
+index 110f3a4..59b47f8 100644
+--- java/net/sf/l2j/gameserver/clientpackets/RequestPetUseItem.java
++++ java/net/sf/l2j/gameserver/clientpackets/RequestPetUseItem.java
+@@ -110,42 +110,41 @@
+ 			{
+ 				feed(activeChar, pet, item);
+ 				return;
+ 			} else if (L2PetDataTable.isStrider(pet.getNpcId())
+ 					&& L2PetDataTable.isStriderFood(itemId))
+ 			{
+ 				feed(activeChar, pet, item);
+ 				return;
+ 			} else if (L2PetDataTable.isWyvern(pet.getNpcId())
+ 					&& L2PetDataTable.isWyvernFood(itemId))
+ 			{
+ 				feed(activeChar, pet, item);
+ 				return;
+ 			} else if (L2PetDataTable.isBaby(pet.getNpcId())
+ 					&& L2PetDataTable.isBabyFood(itemId))
+ 			{
+ 				feed(activeChar, pet, item);
+ 			}
+ 		}
+ 
+-		IItemHandler handler = ItemHandler.getInstance()
+-				.getItemHandler(item.getItemId());
++		IItemHandler handler = ItemHandler.getInstance().getItemHandler(item.getItemId());
+ 
+ 		if (handler != null)
+ 		{
+ 			useItem(pet, item, activeChar);
+ 		} else
+ 		{
+ 			SystemMessage sm = new SystemMessage(
+ 					SystemMessage.ITEM_NOT_FOR_PETS);
+ 			activeChar.sendPacket(sm);
+ 		}
+ 
+ 		return;
+ 	}
+ 
+ 	private synchronized void useItem(L2PetInstance pet, L2ItemInstance item,
+ 			L2PcInstance activeChar)
+ 	{
+ 		if (item.isEquipable())
+ 		{
+ 			if (item.isEquipped())
+diff --git java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+index d66c0c7..a1beffa 100644
+--- java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
++++ java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+@@ -3,103 +3,191 @@
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2, or (at your option)
+  * any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  * 02111-1307, USA.
+  *
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ package net.sf.l2j.gameserver.handler;
+ 
+ import java.io.FileInputStream;
+ import java.io.InputStream;
++import java.util.HashMap;
+ import java.util.Map;
+ import java.util.Properties;
+ import java.util.logging.Logger;
+ 
+ import javolution.util.FastMap;
+ import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAdmin;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAnnouncements;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBBS;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBan;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBanChat;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCache;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminChangeAccessLevel;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCreateItem;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCursedWeapons;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDelete;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDisconnect;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDoorControl;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditChar;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditNpc;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEffects;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEnchant;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEventEngine;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminExpSp;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminFightCalculator;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGeoEditor;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGeodata;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGm;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGmChat;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHeal;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHelpPage;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminInvul;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKick;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKill;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminLevel;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminLogin;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMammon;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMenu;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMobGroup;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminMonsterRace;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPForge;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPathNode;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPetition;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPledge;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminPolymorph;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminQuest;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRepairChar;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRes;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminRideWyvern;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminShop;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminShutdown;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSiege;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSkill;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminSpawn;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTarget;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTeleport;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTest;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminUnblockIp;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminZone;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ 
+ /**
+  * This class ...
+  *
+  * @version $Revision: 1.1.4.5 $ $Date: 2005/03/27 15:30:09 $
+  */
+ public class AdminCommandHandler
+ {
+-	private static Logger _log = Logger
+-			.getLogger(AdminCommandHandler.class.getName());
+-
+-	private static AdminCommandHandler _instance;
+-
+-	private Map<String, IAdminCommandHandler> _datatable;
++	public static AdminCommandHandler getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	private final Map<Integer, IAdminCommandHandler> _datatable = new HashMap<>();
+ 
+ 	// Alt privileges setting
+ 	private static Logger _priviLog = Logger.getLogger("AltPrivilegesAdmin");
+ 
+ 	private static FastMap<String, Integer> _privileges;
+ 
+-	public static AdminCommandHandler getInstance()
+-	{
+-		if (_instance == null)
+-		{
+-			_instance = new AdminCommandHandler();
+-		}
+-		return _instance;
+-	}
+-
+ 	private AdminCommandHandler()
+ 	{
+-		_datatable = new FastMap<>();
++		registerAdminCommandHandler(new AdminAdmin());
++		registerAdminCommandHandler(new AdminAnnouncements());
++		registerAdminCommandHandler(new AdminBan());
++		registerAdminCommandHandler(new AdminBanChat());
++		registerAdminCommandHandler(new AdminBBS());
++		registerAdminCommandHandler(new AdminCache());
++		registerAdminCommandHandler(new AdminChangeAccessLevel());
++		registerAdminCommandHandler(new AdminCreateItem());
++		registerAdminCommandHandler(new AdminCursedWeapons());
++		registerAdminCommandHandler(new AdminDelete());
++		registerAdminCommandHandler(new AdminDisconnect());
++		registerAdminCommandHandler(new AdminDoorControl());
++		registerAdminCommandHandler(new AdminEditChar());
++		registerAdminCommandHandler(new AdminEditNpc());
++		registerAdminCommandHandler(new AdminEffects());
++		registerAdminCommandHandler(new AdminEnchant());
++		registerAdminCommandHandler(new AdminEventEngine());
++		registerAdminCommandHandler(new AdminExpSp());
++		registerAdminCommandHandler(new AdminFightCalculator());
++		registerAdminCommandHandler(new AdminGeodata());
++		registerAdminCommandHandler(new AdminGeoEditor());
++		registerAdminCommandHandler(new AdminGm());
++		registerAdminCommandHandler(new AdminGmChat());
++		registerAdminCommandHandler(new AdminHeal());
++		registerAdminCommandHandler(new AdminHelpPage());
++		registerAdminCommandHandler(new AdminInvul());
++		registerAdminCommandHandler(new AdminKick());
++		registerAdminCommandHandler(new AdminKill());
++		registerAdminCommandHandler(new AdminLevel());
++		registerAdminCommandHandler(new AdminLogin());
++		registerAdminCommandHandler(new AdminMammon());
++		registerAdminCommandHandler(new AdminMenu());
++		registerAdminCommandHandler(new AdminMobGroup());
++		registerAdminCommandHandler(new AdminMonsterRace());
++		registerAdminCommandHandler(new AdminPathNode());
++		registerAdminCommandHandler(new AdminPetition());
++		registerAdminCommandHandler(new AdminPForge());
++		registerAdminCommandHandler(new AdminPledge());
++		registerAdminCommandHandler(new AdminPolymorph());
++		registerAdminCommandHandler(new AdminQuest());
++		registerAdminCommandHandler(new AdminRepairChar());
++		registerAdminCommandHandler(new AdminRes());
++		registerAdminCommandHandler(new AdminRideWyvern());
++		registerAdminCommandHandler(new AdminShop());
++		registerAdminCommandHandler(new AdminShutdown());
++		registerAdminCommandHandler(new AdminSiege());
++		registerAdminCommandHandler(new AdminSkill());
++		registerAdminCommandHandler(new AdminSpawn());
++		registerAdminCommandHandler(new AdminTarget());
++		registerAdminCommandHandler(new AdminTeleport());
++		registerAdminCommandHandler(new AdminTest());
++		registerAdminCommandHandler(new AdminUnblockIp());
++		registerAdminCommandHandler(new AdminZone());
+ 	}
+ 
+ 	public void registerAdminCommandHandler(IAdminCommandHandler handler)
+ 	{
+-		String[] ids = handler.getAdminCommandList();
+-		for (String id : ids)
+-		{
+-			if (Config.DEBUG)
+-				_log.fine("Adding handler for command " + id);
+-			_datatable.put(new String(id), handler);
+-		}
++		for (String id : handler.getAdminCommandList())
++			_datatable.put(id.hashCode(), handler);
+ 	}
+ 
+ 	public IAdminCommandHandler getAdminCommandHandler(String adminCommand)
+ 	{
+ 		String command = adminCommand;
++		
+ 		if (adminCommand.indexOf(" ") != -1)
+-		{
+ 			command = adminCommand.substring(0, adminCommand.indexOf(" "));
+-		}
+-		if (Config.DEBUG)
+-			_log.fine("getting handler for command: " + command + " -> "
+-					+ (_datatable.get(new String(command)) != null));
+-		return _datatable.get(command);
++		
++		return _datatable.get(command.hashCode());
+ 	}
+ 
+ 	/**
+ 	 * @return
+ 	 */
+ 	public int size()
+ 	{
+ 		return _datatable.size();
+ 	}
+ 
+ 	public final boolean checkPrivileges(L2PcInstance player,
+ 			String adminCommand)
+ 	{
+ 		// Only a GM can execute a admin command
+ 		if (!player.isGM())
+ 			return false;
+ 
+ 		// Skip special privileges handler?
+ 		if (!Config.ALT_PRIVILEGES_ADMIN || Config.EVERYBODY_HAS_ADMIN_RIGHTS)
+ 			return true;
+@@ -155,21 +243,25 @@
+ 
+ 				requireLevel = Config.ALT_PRIVILEGES_DEFAULT_LEVEL;
+ 			}
+ 
+ 			_privileges.put(command, requireLevel);
+ 		} else
+ 		{
+ 			requireLevel = _privileges.get(command);
+ 		}
+ 
+ 		if (player.getAccessLevel() < requireLevel)
+ 		{
+ 			_priviLog.warning("<GM>" + player.getName()
+ 					+ ": have not access level to execute the command '"
+ 					+ command + "'");
+ 			return false;
+ 		}
+ 
+ 		return true;
+ 	}
++	private static class SingletonHolder
++	{
++		protected static final AdminCommandHandler _instance = new AdminCommandHandler();
++	}
+ }
+diff --git java/net/sf/l2j/gameserver/handler/ItemHandler.java
+index 459a00d..e9ef867 100644
+--- java/net/sf/l2j/gameserver/handler/ItemHandler.java
++++ java/net/sf/l2j/gameserver/handler/ItemHandler.java
+@@ -1,103 +1,166 @@
+ /*
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2, or (at your option)
+  * any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  * 02111-1307, USA.
+  *
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ package net.sf.l2j.gameserver.handler;
+ 
++import java.util.HashMap;
+ import java.util.Map;
+-import java.util.TreeMap;
++import net.sf.l2j.gameserver.handler.itemhandlers.AdvQuestItems;
++import net.sf.l2j.gameserver.handler.itemhandlers.BeastSoulShot;
++import net.sf.l2j.gameserver.handler.itemhandlers.BeastSpiritShot;
++import net.sf.l2j.gameserver.handler.itemhandlers.BlessedSpiritShot;
++import net.sf.l2j.gameserver.handler.itemhandlers.CharChangePotions;
++import net.sf.l2j.gameserver.handler.itemhandlers.ChestKey;
++import net.sf.l2j.gameserver.handler.itemhandlers.ChristmasTree;
++import net.sf.l2j.gameserver.handler.itemhandlers.CompBlessedSpiritShotPacks;
++import net.sf.l2j.gameserver.handler.itemhandlers.CompShotPacks;
++import net.sf.l2j.gameserver.handler.itemhandlers.CompSpiritShotPacks;
++import net.sf.l2j.gameserver.handler.itemhandlers.CrystalCarol;
++import net.sf.l2j.gameserver.handler.itemhandlers.EnchantScrolls;
++import net.sf.l2j.gameserver.handler.itemhandlers.EnergyStone;
++import net.sf.l2j.gameserver.handler.itemhandlers.ExtractableItems;
++import net.sf.l2j.gameserver.handler.itemhandlers.Firework;
++import net.sf.l2j.gameserver.handler.itemhandlers.FishShots;
++import net.sf.l2j.gameserver.handler.itemhandlers.Guide;
++import net.sf.l2j.gameserver.handler.itemhandlers.Harvester;
++import net.sf.l2j.gameserver.handler.itemhandlers.MercTicket;
++import net.sf.l2j.gameserver.handler.itemhandlers.MysteryPotion;
++import net.sf.l2j.gameserver.handler.itemhandlers.PetSummon;
++import net.sf.l2j.gameserver.handler.itemhandlers.Potions;
++import net.sf.l2j.gameserver.handler.itemhandlers.Recipes;
++import net.sf.l2j.gameserver.handler.itemhandlers.Remedy;
++import net.sf.l2j.gameserver.handler.itemhandlers.RollingDice;
++import net.sf.l2j.gameserver.handler.itemhandlers.ScrollOfEscape;
++import net.sf.l2j.gameserver.handler.itemhandlers.ScrollOfResurrection;
++import net.sf.l2j.gameserver.handler.itemhandlers.Scrolls;
++import net.sf.l2j.gameserver.handler.itemhandlers.Seed;
++import net.sf.l2j.gameserver.handler.itemhandlers.SevenSignsRecord;
++import net.sf.l2j.gameserver.handler.itemhandlers.SoulCrystals;
++import net.sf.l2j.gameserver.handler.itemhandlers.SoulShots;
++import net.sf.l2j.gameserver.handler.itemhandlers.SpiritShot;
++import net.sf.l2j.gameserver.handler.itemhandlers.SummonItems;
++import net.sf.l2j.gameserver.handler.itemhandlers.WorldMap;
+ 
+ /**
+  * This class manages handlers of items
+  *
+  * @version $Revision: 1.1.4.3 $ $Date: 2005/03/27 15:30:09 $
+  */
+ public class ItemHandler
+ {
+-	// private static Logger _log =
+-	// Logger.getLogger(ItemHandler.class.getName());
+-
+-	private static ItemHandler _instance;
+-
+-	private Map<Integer, IItemHandler> _datatable;
++	private final Map<Integer, IItemHandler> _datatable = new HashMap<>();
+ 
+ 	/**
+ 	 * Create ItemHandler if doesn't exist and returns ItemHandler
+ 	 *
+ 	 * @return ItemHandler
+ 	 */
+ 	public static ItemHandler getInstance()
+ 	{
+-		if (_instance == null)
+-		{
+-			_instance = new ItemHandler();
+-		}
+-		return _instance;
++		return SingletonHolder._instance;
+ 	}
+ 
+ 	/**
+ 	 * Returns the number of elements contained in datatable
+ 	 *
+ 	 * @return int : Size of the datatable
+ 	 */
+ 	public int size()
+ 	{
+ 		return _datatable.size();
+ 	}
+ 
+ 	/**
+ 	 * Constructor of ItemHandler
+ 	 */
+ 	private ItemHandler()
+ 	{
+-		_datatable = new TreeMap<>();
++		registerItemHandler(new AdvQuestItems());
++		registerItemHandler(new BeastSoulShot());
++		registerItemHandler(new BeastSpiritShot());
++		registerItemHandler(new BlessedSpiritShot());
++		registerItemHandler(new CharChangePotions());
++		registerItemHandler(new ChestKey());
++		registerItemHandler(new ChristmasTree());
++		registerItemHandler(new CompBlessedSpiritShotPacks());
++		registerItemHandler(new CompShotPacks());
++		registerItemHandler(new CompSpiritShotPacks());
++		registerItemHandler(new CrystalCarol());
++		registerItemHandler(new EnchantScrolls());
++		registerItemHandler(new EnergyStone());
++		registerItemHandler(new ExtractableItems());
++		registerItemHandler(new Firework());
++		registerItemHandler(new FishShots());
++		registerItemHandler(new Guide());
++		registerItemHandler(new Harvester());
++		registerItemHandler(new MercTicket());
++		registerItemHandler(new MysteryPotion());
++		registerItemHandler(new PetSummon());
++		registerItemHandler(new Potions());
++		registerItemHandler(new Recipes());
++		registerItemHandler(new Remedy());
++		registerItemHandler(new RollingDice());
++		registerItemHandler(new ScrollOfEscape());
++		registerItemHandler(new ScrollOfResurrection());
++		registerItemHandler(new Scrolls());
++		registerItemHandler(new Seed());
++		registerItemHandler(new SevenSignsRecord());
++		registerItemHandler(new SoulCrystals());
++		registerItemHandler(new SoulShots());
++		registerItemHandler(new SpiritShot());
++		registerItemHandler(new SummonItems());
++		registerItemHandler(new WorldMap());
+ 	}
+-
+ 	/**
+ 	 * Adds handler of item type in <I>datatable</I>.<BR>
+ 	 * <BR>
+ 	 * <B><I>Concept :</I></U><BR>
+ 	 * This handler is put in <I>datatable</I> Map &lt;Integer ; IItemHandler
+ 	 * &gt; for each ID corresponding to an item type (existing in classes of
+ 	 * package itemhandlers) sets as key of the Map.
+ 	 *
+ 	 * @param handler
+ 	 *            (IItemHandler)
+ 	 */
+ 	public void registerItemHandler(IItemHandler handler)
+ 	{
+ 		// Get all ID corresponding to the item type of the handler
+ 		int[] ids = handler.getItemIds();
+ 		// Add handler for each ID found
+ 		for (int id : ids)
+ 		{
+-			_datatable.put(new Integer(id), handler);
++			_datatable.put(Integer.valueOf(id), handler);
+ 		}
+ 	}
+ 
+ 	/**
+ 	 * Returns the handler of the item
+ 	 *
+ 	 * @param itemId
+ 	 *            : int designating the itemID
+ 	 * @return IItemHandler
+ 	 */
+ 	public IItemHandler getItemHandler(int itemId)
+ 	{
+-		return _datatable.get(new Integer(itemId));
++		return _datatable.get(Integer.valueOf(itemId));
++	}
++	private static class SingletonHolder
++	{
++		protected static final ItemHandler _instance = new ItemHandler();
+ 	}
+ }
+diff --git java/net/sf/l2j/gameserver/handler/SkillHandler.java
+index 7d3784f..eb720e6 100644
+--- java/net/sf/l2j/gameserver/handler/SkillHandler.java
++++ java/net/sf/l2j/gameserver/handler/SkillHandler.java
+@@ -1,76 +1,115 @@
+ /*
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2, or (at your option)
+  * any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  * 02111-1307, USA.
+  *
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ package net.sf.l2j.gameserver.handler;
+ 
++import java.util.HashMap;
+ import java.util.Map;
+-import java.util.TreeMap;
+-
+-import net.sf.l2j.gameserver.model.L2Skill;
++import net.sf.l2j.gameserver.handler.skillhandlers.BalanceLife;
++import net.sf.l2j.gameserver.handler.skillhandlers.Charge;
++import net.sf.l2j.gameserver.handler.skillhandlers.CombatPointHeal;
++import net.sf.l2j.gameserver.handler.skillhandlers.Continuous;
++import net.sf.l2j.gameserver.handler.skillhandlers.Craft;
++import net.sf.l2j.gameserver.handler.skillhandlers.Disablers;
++import net.sf.l2j.gameserver.handler.skillhandlers.DrainSoul;
++import net.sf.l2j.gameserver.handler.skillhandlers.Fishing;
++import net.sf.l2j.gameserver.handler.skillhandlers.FishingSkill;
++import net.sf.l2j.gameserver.handler.skillhandlers.Heal;
++import net.sf.l2j.gameserver.handler.skillhandlers.ManaHeal;
++import net.sf.l2j.gameserver.handler.skillhandlers.Manadam;
++import net.sf.l2j.gameserver.handler.skillhandlers.Mdam;
++import net.sf.l2j.gameserver.handler.skillhandlers.Pdam;
++import net.sf.l2j.gameserver.handler.skillhandlers.Recall;
++import net.sf.l2j.gameserver.handler.skillhandlers.Resurrect;
++import net.sf.l2j.gameserver.handler.skillhandlers.SiegeFlag;
++import net.sf.l2j.gameserver.handler.skillhandlers.Spoil;
++import net.sf.l2j.gameserver.handler.skillhandlers.StrSiegeAssault;
++import net.sf.l2j.gameserver.handler.skillhandlers.SummonFriend;
++import net.sf.l2j.gameserver.handler.skillhandlers.SummonTreasureKey;
++import net.sf.l2j.gameserver.handler.skillhandlers.Sweep;
++import net.sf.l2j.gameserver.handler.skillhandlers.TakeCastle;
++import net.sf.l2j.gameserver.handler.skillhandlers.Unlock;
+ import net.sf.l2j.gameserver.model.L2Skill.SkillType;
+ 
+ /**
+  * This class ...
+  *
+  * @version $Revision: 1.1.4.4 $ $Date: 2005/04/03 15:55:06 $
+  */
+ public class SkillHandler
+ {
+-	// private static Logger _log =
+-	// Logger.getLogger(SkillHandler.class.getName());
+ 
+-	private static SkillHandler _instance;
+-
+-	private Map<L2Skill.SkillType, ISkillHandler> _datatable;
++	private final Map<Integer, ISkillHandler> _datatable = new HashMap<>();
+ 
+ 	public static SkillHandler getInstance()
+ 	{
+-		if (_instance == null)
+-		{
+-			_instance = new SkillHandler();
+-		}
+-		return _instance;
++		return SingletonHolder._instance;
+ 	}
+ 
+-	private SkillHandler()
++	protected SkillHandler()
+ 	{
+-		_datatable = new TreeMap<>();
++		registerSkillHandler(new BalanceLife());
++		registerSkillHandler(new Charge());
++		registerSkillHandler(new CombatPointHeal());
++		registerSkillHandler(new Continuous());
++		registerSkillHandler(new Craft());
++		registerSkillHandler(new Disablers());
++		registerSkillHandler(new DrainSoul());
++		registerSkillHandler(new Fishing());
++		registerSkillHandler(new FishingSkill());
++		registerSkillHandler(new Heal());
++		registerSkillHandler(new Manadam());
++		registerSkillHandler(new ManaHeal());
++		registerSkillHandler(new Mdam());
++		registerSkillHandler(new Pdam());
++		registerSkillHandler(new Recall());
++		registerSkillHandler(new Resurrect());
++		registerSkillHandler(new SiegeFlag());
++		registerSkillHandler(new Spoil());
++		registerSkillHandler(new StrSiegeAssault());
++		registerSkillHandler(new SummonFriend());
++		registerSkillHandler(new SummonTreasureKey());
++		registerSkillHandler(new Sweep());
++		registerSkillHandler(new TakeCastle());
++		registerSkillHandler(new Unlock());
+ 	}
+ 
+ 	public void registerSkillHandler(ISkillHandler handler)
+ 	{
+-		SkillType[] types = handler.getSkillIds();
+-		for (SkillType t : types)
+-		{
+-			_datatable.put(t, handler);
+-		}
++		for (SkillType t : handler.getSkillIds())
++			_datatable.put(t.ordinal(), handler);
+ 	}
+-
+ 	public ISkillHandler getSkillHandler(SkillType skillType)
+ 	{
+-		return _datatable.get(skillType);
++		return _datatable.get(skillType.ordinal());
+ 	}
+ 
+ 	/**
+ 	 * @return
+ 	 */
+ 	public int size()
+ 	{
+ 		return _datatable.size();
+ 	}
++	private static class SingletonHolder
++	{
++		protected static final SkillHandler _instance = new SkillHandler();
++	}
+ }
+diff --git java/net/sf/l2j/gameserver/handler/UserCommandHandler.java
+index d2d85a4..2f5581a 100644
+--- java/net/sf/l2j/gameserver/handler/UserCommandHandler.java
++++ java/net/sf/l2j/gameserver/handler/UserCommandHandler.java
+@@ -1,80 +1,80 @@
+ /*
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2, or (at your option)
+  * any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  * 02111-1307, USA.
+  *
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ package net.sf.l2j.gameserver.handler;
+ 
++import java.util.HashMap;
+ import java.util.Map;
+-import java.util.logging.Logger;
+-
+-import javolution.util.FastMap;
+-import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.ClanPenalty;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.ClanWarsList;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.DisMount;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.Escape;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.Loc;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.Mount;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.PartyInfo;
++import net.sf.l2j.gameserver.handler.usercommandhandlers.Time;
+ 
+ /**
+  * This class ...
+  *
+  * @version $Revision: 1.1.2.1.2.5 $ $Date: 2005/03/27 15:30:09 $
+  */
+ public class UserCommandHandler
+ {
+-	private static Logger _log = Logger
+-			.getLogger(UserCommandHandler.class.getName());
+-
+-	private static UserCommandHandler _instance;
+-
+-	private Map<Integer, IUserCommandHandler> _datatable;
++	private final Map<Integer, IUserCommandHandler> _datatable = new HashMap<>();
+ 
+ 	public static UserCommandHandler getInstance()
+ 	{
+-		if (_instance == null)
+-		{
+-			_instance = new UserCommandHandler();
+-		}
+-		return _instance;
++		return SingletonHolder._instance;
+ 	}
+ 
+ 	private UserCommandHandler()
+ 	{
+-		_datatable = new FastMap<>();
++		registerUserCommandHandler(new ClanPenalty());
++		registerUserCommandHandler(new ClanWarsList());
++		registerUserCommandHandler(new DisMount());
++		registerUserCommandHandler(new Escape());
++		registerUserCommandHandler(new Loc());
++		registerUserCommandHandler(new Mount());
++		registerUserCommandHandler(new PartyInfo());
++		registerUserCommandHandler(new Time());
+ 	}
+ 
+ 	public void registerUserCommandHandler(IUserCommandHandler handler)
+ 	{
+-		int[] ids = handler.getUserCommandList();
+-		for (int id : ids)
+-		{
+-			if (Config.DEBUG)
+-				_log.fine("Adding handler for user command " + id);
+-			_datatable.put(new Integer(id), handler);
+-		}
++		for (int id : handler.getUserCommandList())
++			_datatable.put(id, handler);
+ 	}
+ 
+ 	public IUserCommandHandler getUserCommandHandler(int userCommand)
+ 	{
+-		if (Config.DEBUG)
+-			_log.fine("getting handler for user command: " + userCommand);
+-		return _datatable.get(new Integer(userCommand));
++		return _datatable.get(userCommand);
+ 	}
+ 
+ 	/**
+ 	 * @return
+ 	 */
+ 	public int size()
+ 	{
+ 		return _datatable.size();
+ 	}
++	private static class SingletonHolder
++	{
++		protected static final UserCommandHandler _instance = new UserCommandHandler();
++	}
+ }
+diff --git java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index 291fd7f..313c97e 100644
+--- java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -1,85 +1,77 @@
+ /*
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; either version 2, or (at your option)
+  * any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+  * 02111-1307, USA.
+  *
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ package net.sf.l2j.gameserver.handler;
+ 
++import java.util.HashMap;
+ import java.util.Map;
+-import java.util.logging.Logger;
+-
+-import javolution.util.FastMap;
+-import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.castle;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.set;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.stats;
+ 
+ /**
+  * This class ...
+  *
+  * @version $Revision: 1.1.4.5 $ $Date: 2005/03/27 15:30:09 $
+  */
+ public class VoicedCommandHandler
+ {
+-	private static Logger _log = Logger.getLogger(ItemHandler.class.getName());
+-
+-	private static VoicedCommandHandler _instance;
+-
+-	private Map<String, IVoicedCommandHandler> _datatable;
++	private final Map<Integer, IVoicedCommandHandler> _datatable = new HashMap<>();
+ 
+ 	public static VoicedCommandHandler getInstance()
+ 	{
+-		if (_instance == null)
+-		{
+-			_instance = new VoicedCommandHandler();
+-		}
+-		return _instance;
++		return SingletonHolder._instance;
+ 	}
+ 
+-	private VoicedCommandHandler()
++	protected VoicedCommandHandler()
+ 	{
+-		_datatable = new FastMap<>();
++		registerVoicedCommandHandler(new castle());
++		registerVoicedCommandHandler(new set());
++		registerVoicedCommandHandler(new stats());
+ 	}
+ 
+ 	public void registerVoicedCommandHandler(IVoicedCommandHandler handler)
+ 	{
+ 		String[] ids = handler.getVoicedCommandList();
+-		for (String id : ids)
+-		{
+-			if (Config.DEBUG)
+-				_log.fine("Adding handler for command " + id);
+-			_datatable.put(new String(id), handler);
+-		}
++		
++		for (int i = 0; i < ids.length; i++)
++			_datatable.put(ids[i].hashCode(), handler);
+ 	}
+ 
+ 	public IVoicedCommandHandler getVoicedCommandHandler(String voicedCommand)
+ 	{
+ 		String command = voicedCommand;
+ 		if (voicedCommand.indexOf(" ") != -1)
+-		{
+ 			command = voicedCommand.substring(0, voicedCommand.indexOf(" "));
+-		}
+-		if (Config.DEBUG)
+-			_log.fine("getting handler for command: " + command + " -> "
+-					+ (_datatable.get(new String(command)) != null));
+-		return _datatable.get(command);
++		
++		return _datatable.get(command.hashCode());
+ 	}
+ 
+ 	/**
+ 	 * @return
+ 	 */
+ 	public int size()
+ 	{
+ 		return _datatable.size();
+ 	}
++	private static class SingletonHolder
++	{
++		protected static final VoicedCommandHandler _instance = new VoicedCommandHandler();
++	}
+ }
