@@ -1,3 +1,0 @@
-xdat.windows["InventoryWnd"].children.each{window->
-  print("$window  \n")
-}  
