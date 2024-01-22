@@ -1,0 +1,321 @@
+### Eclipse Workspace Patch 1.0
+#P RUSaCis-3.5
+diff --git config/en/rus_acis.properties
+index f09715d..55ad000 100644
+--- config/en/rus_acis.properties
++++ config/en/rus_acis.properties
+@@ -26,36 +26,46 @@
+ 4702,7200;1352,7200;1353,7200;1354,7200;1259,7200;1355,7200;1356,7200;\
+ 1363,7200;1357,7200;1323,7200;1268,7200;311,7200;309,7200;307,7200;1388,7200;\
+ 1389,7200;1397,7200;1087,7200;1413,7200;1304,7200;1257,7200;1362,7200;1392,7200;\
+ 1393,7200;1391,7200;1189,7200;1182,7200;270,7200;308,7200;306,7200;1191,7200;\
+ 1416,7200;1390,7200;1391,7200
+ 
+ # Shout chat (ON - city, OFF - off, GM - only for GMs, GLOBAL - for the whole world)
+ GlobalChat = ON
+ 
+ # Trade chat (ON - city, OFF - turns off, GM - only for GMs, GLOBAL - for the whole world)
+ TradeChat = ON
+ 
+ # From which lvl players can use chat, global chat, trade chat or PM.
+ AllChatLevel = 1
+ TellChatLevel = 1
+ ShoutChatLevel = 1
+ TradeChatLevel = 1
+ 
++#====================================================
++#         P.ATK/M.ATK SPEED LIMITE
++#====================================================
++# All Classes
++MaxPAtkSpeed = 1500
++MaxMAtkSpeed = 2100  
++  
++# All Archers Atk speed Only
++MaxPAtkSpeedArchers = 1300
+
+ # Enable the .menu command (contains functionality, stopping experience, etc.).
+ # For autoloot to work correctly, you need to set AutoLoot to True in server.properties.
+ EnableMenu = False
+ 
+ # Enable .online command
+ EnabledOnlineCommand = False
+ 
+ # Enable PTS attack (makes 1 hit to the character, it will always hit JAVA).
+ AttackPTS = True
+ 
+ # When you add subclass your skills from main class and subclass will stuck
+ SubClassSkills = False
+ 
+ # Allow player to add/change subclass at all village master
+ SubclassEverywhere = False
+ 
+ # Enable shift + click on the mob for the player.
+ ShowNpcInfo = False
+diff --git config/rus_acis.properties
+index e7aee2c..3572171 100644
+--- config/rus_acis.properties
++++ config/rus_acis.properties
+@@ -26,36 +26,46 @@
+ 4702,7200;1352,7200;1353,7200;1354,7200;1259,7200;1355,7200;1356,7200;\
+ 1363,7200;1357,7200;1323,7200;1268,7200;311,7200;309,7200;307,7200;1388,7200;\
+ 1389,7200;1397,7200;1087,7200;1413,7200;1304,7200;1257,7200;1362,7200;1392,7200;\
+ 1393,7200;1391,7200;1189,7200;1182,7200;270,7200;308,7200;306,7200;1191,7200;\
+ 1416,7200;1390,7200;1391,7200
+ 
+ # Шаут чат (ON - город, OFF - выключает, GM - только для ГМов, GLOBAL - на весь мир)
+ GlobalChat = ON
+ 
+ # Трейд чат (ON - город, OFF - выключает, GM - только для ГМов, GLOBAL - на весь мир)
+ TradeChat = ON
+ 
+ # С какого лвл игроки могут использовать чат, глобальный чат, торговый чат или ПМ.
+ AllChatLevel = 1
+ TellChatLevel = 1
+ ShoutChatLevel = 1
+ TradeChatLevel = 1
+ 
++#====================================================
++#         P.ATK/M.ATK SPEED LIMITE
++#====================================================
++# All Classes
++MaxPAtkSpeed = 1500
++MaxMAtkSpeed = 2100  
++  
++# All Archers Atk speed Only
++MaxPAtkSpeedArchers = 1300
+
+ # Включить команду .menu (содержит в себе функционал, остановки опыта и тп).
+ # Чтобы автолут работал корректно, нужно в server.properties - AutoLoot перевести в True.
+ EnableMenu = False
+ 
+ # Включить команду .online
+ EnabledOnlineCommand = False
+ 
+ # Включить атаку по PTS (делает 1 удар по персонажу, по JAVA бить будет всегда).
+ AttackPTS = True
+ 
+ # Когда вы добавляете подкласс, ваши навыки из основного класса и подкласса стакаются.
+ SubClassSkills = False
+ 
+ # Разрешить игроку добавлять/изменять подкласс у всех village master.
+ SubclassEverywhere = False
+ 
+ # Включить для игрока шифт + клик по мобу.
+ ShowNpcInfo = False
+diff --git java/net/sf/l2j/Config.java
+index aef57b0..17c7385 100644
+--- java/net/sf/l2j/Config.java
++++ java/net/sf/l2j/Config.java
+@@ -849,36 +849,40 @@
+ 	public static int SELECTOR_SLEEP_TIME = 20; // default 20
+ 	public static int MAX_SEND_PER_PASS = 80; // default 80
+ 	public static int MAX_READ_PER_PASS = 80; // default 80
+ 	public static int HELPER_BUFFER_COUNT = 20; // default 20
+ 	
+ 	// --------------------------------------------------
+ 	// RUS-ACIS
+ 	// --------------------------------------------------
+ 	
+ 	/** Infinity SS and Arrows */
+ 	public static boolean INFINITY_SS;
+ 	public static boolean INFINITY_ARROWS;
+ 	
+ 	/** Olympiad Period */
+ 	public static boolean OLY_USE_CUSTOM_PERIOD_SETTINGS;
+ 	public static OlympiadPeriod OLY_PERIOD;
+ 	public static int OLY_PERIOD_MULTIPLIER;
+ 	
++	public static int MAX_PATK_SPEED;
++	public static int MAX_MATK_SPEED;
++	public static int MAX_PATK_SPEED_ARCHERS;
+
+ 	public static boolean ENABLE_MODIFY_SKILL_DURATION;
+ 	public static HashMap<Integer, Integer> SKILL_DURATION_LIST;
+ 	
+ 	public static String GLOBAL_CHAT;
+ 	public static String TRADE_CHAT;
+ 	public static int CHAT_ALL_LEVEL;
+ 	public static int CHAT_TELL_LEVEL;
+ 	public static int CHAT_SHOUT_LEVEL;
+ 	public static int CHAT_TRADE_LEVEL;
+ 	
+ 	public static boolean ENABLE_MENU;
+ 	public static boolean ENABLE_ONLINE_COMMAND;
+ 	
+ 	public static boolean BOTS_PREVENTION;
+ 	public static int KILLS_COUNTER;
+ 	public static int KILLS_COUNTER_RANDOMIZATION;
+ 	public static int VALIDATION_TIME;
+ 	public static int PUNISHMENT;
+@@ -2551,36 +2555,41 @@
+ 		PLAYER_RATE_DROP_EQUIP = rates.getProperty("PlayerRateDropEquip", 25);
+ 		PLAYER_RATE_DROP_EQUIP_WEAPON = rates.getProperty("PlayerRateDropEquipWeapon", 5);
+ 		PET_XP_RATE = rates.getProperty("PetXpRate", 1.);
+ 		PET_FOOD_RATE = rates.getProperty("PetFoodRate", 1);
+ 		SINEATER_XP_RATE = rates.getProperty("SinEaterXpRate", 1.);
+ 		KARMA_DROP_LIMIT = rates.getProperty("KarmaDropLimit", 10);
+ 		KARMA_RATE_DROP = rates.getProperty("KarmaRateDrop", 70);
+ 		KARMA_RATE_DROP_ITEM = rates.getProperty("KarmaRateDropItem", 50);
+ 		KARMA_RATE_DROP_EQUIP = rates.getProperty("KarmaRateDropEquip", 40);
+ 		KARMA_RATE_DROP_EQUIP_WEAPON = rates.getProperty("KarmaRateDropEquipWeapon", 10);
+ 	}
+ 	
+ 	private static final void loadRusAcis()
+ 	{
+ 		final ExProperties rusacis = initProperties(RUS_ACIS_FILE);
+ 		INFINITY_SS = rusacis.getProperty("InfinitySS", false);
+ 		INFINITY_ARROWS = rusacis.getProperty("InfinityArrows", false);
+ 		
++		MAX_MATK_SPEED = Integer.parseInt(rusacis.getProperty("MaxMAtkSpeed", "1999"));
++		MAX_PATK_SPEED = Integer.parseInt(rusacis.getProperty("MaxPAtkSpeed", "1500"));
++		
++		MAX_PATK_SPEED_ARCHERS = Integer.parseInt(rusacis.getProperty("MaxPAtkSpeedArchers", "1500"));
+
+ 		OLY_USE_CUSTOM_PERIOD_SETTINGS = rusacis.getProperty("OlyUseCustomPeriodSettings", false);
+ 		OLY_PERIOD = OlympiadPeriod.valueOf(rusacis.getProperty("OlyPeriod", "MONTH"));
+ 		OLY_PERIOD_MULTIPLIER = rusacis.getProperty("OlyPeriodMultiplier", 1);
+ 		
+ 		ENABLE_MODIFY_SKILL_DURATION = rusacis.getProperty("EnableModifySkillDuration", false);
+ 		if (ENABLE_MODIFY_SKILL_DURATION)
+ 		{
+ 			SKILL_DURATION_LIST = new HashMap<>();
+ 			String[] propertySplit = rusacis.getProperty("SkillDurationList", "").split(";");
+ 			
+ 			for (String skill : propertySplit)
+ 			{
+ 				String[] skillSplit = skill.split(",");
+ 				if (skillSplit.length != 2)
+ 					LOGGER.warn("[SkillDurationList]: invalid config property -> SkillDurationList \"" + skill + "\"");
+ 				else
+ 				{
+ 					try
+diff --git java/net/sf/l2j/gameserver/model/actor/status/PlayerStatus.java
+index 07bda24..3898373 100644
+--- java/net/sf/l2j/gameserver/model/actor/status/PlayerStatus.java
++++ java/net/sf/l2j/gameserver/model/actor/status/PlayerStatus.java
+@@ -1,33 +1,34 @@
+ package net.sf.l2j.gameserver.model.actor.status;
+ 
+ import java.util.Map;
+ 
+ import net.sf.l2j.commons.random.Rnd;
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.data.manager.CastleManager;
+ import net.sf.l2j.gameserver.data.manager.ClanHallManager;
+ import net.sf.l2j.gameserver.data.manager.DuelManager;
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.data.xml.PlayerLevelData;
+ import net.sf.l2j.gameserver.enums.SiegeSide;
+ import net.sf.l2j.gameserver.enums.StatusType;
+ import net.sf.l2j.gameserver.enums.ZoneId;
++import net.sf.l2j.gameserver.enums.actors.ClassId;
+ import net.sf.l2j.gameserver.enums.actors.ClassRace;
+ import net.sf.l2j.gameserver.enums.actors.OperateType;
+ import net.sf.l2j.gameserver.enums.actors.WeightPenalty;
+ import net.sf.l2j.gameserver.enums.skills.EffectType;
+ import net.sf.l2j.gameserver.enums.skills.Stats;
+ import net.sf.l2j.gameserver.model.PlayerLevel;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Playable;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.model.actor.Summon;
+ import net.sf.l2j.gameserver.model.actor.container.npc.RewardInfo;
+ import net.sf.l2j.gameserver.model.actor.instance.Pet;
+ import net.sf.l2j.gameserver.model.actor.instance.Servitor;
+ import net.sf.l2j.gameserver.model.clanhall.ClanHall;
+ import net.sf.l2j.gameserver.model.clanhall.ClanHallFunction;
+ import net.sf.l2j.gameserver.model.entity.Duel.DuelState;
+ import net.sf.l2j.gameserver.model.entity.Siege;
+@@ -1022,72 +1023,87 @@
+ 		return super.getMAtk(target, skill);
+ 	}
+ 	
+ 	@Override
+ 	public int getMAtkSpd()
+ 	{
+ 		double base = 333;
+ 		
+ 		if (_actor.isMounted())
+ 		{
+ 			if (_actor.checkFoodState(_actor.getPetTemplate().getHungryLimit()))
+ 				base /= 2;
+ 		}
+ 		
+ 		final int penalty = _actor.getArmorGradePenalty();
+ 		if (penalty > 0)
+ 			base *= Math.pow(0.84, penalty);
+ 		
+-		return (int) calcStat(Stats.MAGIC_ATTACK_SPEED, base, null, null);
++		double val = calcStat(Stats.MAGIC_ATTACK_SPEED, base, null, null);
++		
++		if (val > Config.MAX_MATK_SPEED)
++		{
++			val = Config.MAX_MATK_SPEED;
++		}
++		return (int) val;
+ 	}
+ 	
+ 	@Override
+ 	public int getPAtk(Creature target)
+ 	{
+ 		if (_actor.isMounted())
+ 		{
+ 			double base = _actor.getPetDataEntry().getMountPAtk();
+ 			
+ 			if (getLevel() < _actor.getMountLevel())
+ 				base /= 2;
+ 			
+ 			return (int) calcStat(Stats.POWER_ATTACK, base, null, null);
+ 		}
+ 		
+ 		return super.getPAtk(target);
+ 	}
+ 	
+ 	@Override
+ 	public int getPAtkSpd()
+ 	{
+ 		if (_actor.isFlying())
+ 			return (_actor.checkFoodState(_actor.getPetTemplate().getHungryLimit())) ? 150 : 300;
+ 		
+ 		if (_actor.isRiding())
+ 		{
+ 			int base = _actor.getPetDataEntry().getMountAtkSpd();
+ 			
+ 			if (_actor.checkFoodState(_actor.getPetTemplate().getHungryLimit()))
+ 				base /= 2;
+ 			
+ 			return (int) calcStat(Stats.POWER_ATTACK_SPEED, base, null, null);
+ 		}
+-		
+-		return super.getPAtkSpd();
++		int val = super.getPAtkSpd();
++		if (val > Config.MAX_PATK_SPEED)
++		{
++			val = Config.MAX_PATK_SPEED;
++		}
++		else if (_actor.getClassId().equals(ClassId.PHANTOM_RANGER) || _actor.getClassId().equals(ClassId.GHOST_SENTINEL) || _actor.getClassId().equals(ClassId.SILVER_RANGER) || _actor.getClassId().equals(ClassId.MOONLIGHT_SENTINEL) || _actor.getClassId().equals(ClassId.HAWKEYE) || _actor.getClassId().equals(ClassId.SAGGITARIUS))
++		{
++			if (val > Config.MAX_PATK_SPEED_ARCHERS)
++				return Config.MAX_PATK_SPEED_ARCHERS;
++		}
++		return val;
+ 	}
+ 	
+ 	@Override
+ 	public int getEvasionRate(Creature target)
+ 	{
+ 		int val = super.getEvasionRate(target);
+ 		
+ 		final int penalty = _actor.getArmorGradePenalty();
+ 		if (penalty > 0)
+ 			val -= (2 * penalty);
+ 		
+ 		return val;
+ 	}
+ 	
+ 	@Override
+ 	public int getAccuracy()
+ 	{
+ 		int val = super.getAccuracy();

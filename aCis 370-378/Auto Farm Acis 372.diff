@@ -1,0 +1,1398 @@
+diff --git a/config/CustomMods/AutoFarm.properties b/config/CustomMods/AutoFarm.properties
+new file mode 100644
+index 0000000..aab9d76
+--- /dev/null
++++ b/config/Custom/AutoFarm.properties
+@@ -0,0 +1,6 @@
++# =================================================================
++#                      Auto Farm
++# =================================================================
++AutoFarmRadius = 800
++# 0 = barra 1, 1 = barra = 2 ... 9 = barra 10
++AutoFarmBar = 0
+\ No newline at end of file
+diff --git a/java/Dev/AutoFarm/AutofarmCommand.java b/java/Dev/AutoFarm/AutofarmCommand.java
+new file mode 100644
+index 0000000..c14df73
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmCommand.java
+@@ -0,0 +1,46 @@
++package Dev.AutoFarm;
++
++
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++
++
++public class AutofarmCommand implements IVoicedCommandHandler
++{
++
++	@Override
++	public boolean useVoicedCommand(String command, Player activeChar, String params)
++	{
++		if (activeChar.getInstance().getId() != 0)
++		{
++			activeChar.sendMessage("You can't use this command inside a Instance!");
++			return false;
++		}
++		if (!activeChar.isVip())
++		{
++			activeChar.sendMessage("Auto farm is only for Vip Players!");
++			return false;
++		}
++	
++		switch (command)
++		{
++		case "farm":
++			AutofarmManager.INSTANCE.toggleFarm(activeChar);
++			break;
++		case "farmon":
++			AutofarmManager.INSTANCE.startFarm(activeChar);
++			break;
++		case "farmoff":
++			AutofarmManager.INSTANCE.stopFarm(activeChar);
++			break;
++		}
++		return false;
++	}
++
++	@Override
++	public String[] getVoicedCommandList()
++	{
++		return new String[]
++		{ "farm", "farmon", "farmoff" };
++	}
++}
+diff --git a/java/Dev/AutoFarm/AutofarmConstants.java b/java/Dev/AutoFarm/AutofarmConstants.java
+new file mode 100644
+index 0000000..eb3c2b9
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmConstants.java
+@@ -0,0 +1,23 @@
++package Dev.AutoFarm;
++
++import java.util.Arrays;
++import java.util.List;
++
++import net.sf.l2j.Config;
++
++public class AutofarmConstants
++{
++	public static Integer shortcutsPageIndex = Config.AUTO_FARM_BAR;
++	public static Integer targetingRadius = Config.AUTO_FARM_RADIUS;
++	public static Integer lowLifePercentageThreshold = 30;
++	public static Integer useMpPotsPercentageThreshold = 30;
++	public static Integer useHpPotsPercentageThreshold = 30;
++	public static Integer mpPotItemId = 728;
++	public static Integer hpPotItemId = 1539;
++	public static Integer hpPotSkillId = 2037;
++
++	public static List<Integer> attackSlots = Arrays.asList(0, 1, 2, 3);
++	public static List<Integer> chanceSlots = Arrays.asList(4, 5);
++	public static List<Integer> selfSlots = Arrays.asList(6, 7, 8, 9);
++	public static List<Integer> lowLifeSlots = Arrays.asList(10, 11);
++}
+diff --git a/java/Dev/AutoFarm/AutofarmManager.java b/java/Dev/AutoFarm/AutofarmManager.java
+new file mode 100644
+index 0000000..9decb1a
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmManager.java
+@@ -0,0 +1,84 @@
++package Dev.AutoFarm;
++
++
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ScheduledFuture;
++
++import net.sf.l2j.gameserver.ThreadPoolManager;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.VoicedMenu;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++
++public enum AutofarmManager
++{
++	INSTANCE;
++	
++	private final Long iterationSpeedMs = 450L;
++	
++	private final ConcurrentHashMap<Integer, AutofarmPlayerRoutine> activeFarmers = new ConcurrentHashMap<>();
++	private final ScheduledFuture<?> onUpdateTask = ThreadPoolManager.getInstance().scheduleGeneralAtFixedRate(onUpdate(), 1000, iterationSpeedMs);
++	
++	private Runnable onUpdate()
++	{
++		return () -> activeFarmers.forEach((integer, autofarmPlayerRoutine) -> autofarmPlayerRoutine.executeRoutine());
++	}
++	
++	public void startFarm(Player player)
++	{
++		if (isAutofarming(player))
++		{
++			player.sendMessage("You are already autofarming");
++			return;
++		}
++		
++		activeFarmers.put(player.getObjectId(), new AutofarmPlayerRoutine(player));
++		player.sendMessage("Autofarming activated");
++	}
++	
++	public void stopFarm(Player player)
++	{
++		if (!isAutofarming(player))
++		{
++			player.sendMessage("You are not autofarming");
++			return;
++		}
++		
++		activeFarmers.remove(player.getObjectId());
++		player.sendMessage("Autofarming deactivated");
++	}
++	
++	public void toggleFarm(Player player)
++	{
++		if (isAutofarming(player))
++		{
++			stopFarm(player);
++			VoicedMenu.sendVipWindow(player);
++			return;
++		}
++		
++		startFarm(player);
++		VoicedMenu.sendVipWindow(player);
++	}
++	
++	public Boolean isAutofarming(Player player)
++	{
++		return activeFarmers.containsKey(player.getObjectId());
++	}
++	
++	public void onPlayerLogout(Player player)
++	{
++		stopFarm(player);
++	}
++	
++	public void onDeath(Player player)
++	{
++		if (isAutofarming(player))
++		{
++			activeFarmers.remove(player.getObjectId());
++		}
++	}
++
++	public ScheduledFuture<?> getOnUpdateTask()
++	{
++		return onUpdateTask;
++	}
++}
+\ No newline at end of file
+diff --git a/java/Dev/AutoFarm/AutofarmPlayerRoutine.java b/java/Dev/AutoFarm/AutofarmPlayerRoutine.java
+new file mode 100644
+index 0000000..1bea3cf
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmPlayerRoutine.java
+@@ -0,0 +1,578 @@
++package Dev.AutoFarm;
++
++
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.List;
++import java.util.function.Function;
++import java.util.stream.Collectors;
++
++import net.sf.l2j.commons.math.MathUtil;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.ThreadPoolManager;
++import net.sf.l2j.gameserver.data.SkillTable;
++import net.sf.l2j.gameserver.geoengine.GeoEngine;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.handler.ItemHandler;
++import net.sf.l2j.gameserver.model.L2ShortCut;
++import net.sf.l2j.gameserver.model.L2Skill;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.WorldRegion;
++import net.sf.l2j.gameserver.model.actor.Creature;
++import net.sf.l2j.gameserver.model.actor.Summon;
++import net.sf.l2j.gameserver.model.actor.ai.CtrlEvent;
++import net.sf.l2j.gameserver.model.actor.ai.CtrlIntention;
++import net.sf.l2j.gameserver.model.actor.ai.NextAction;
++import net.sf.l2j.gameserver.model.actor.instance.Monster;
++import net.sf.l2j.gameserver.model.actor.instance.Pet;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++import net.sf.l2j.gameserver.model.holder.IntIntHolder;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.model.item.kind.Item;
++import net.sf.l2j.gameserver.model.item.type.ActionType;
++import net.sf.l2j.gameserver.model.item.type.EtcItemType;
++import net.sf.l2j.gameserver.model.item.type.WeaponType;
++import net.sf.l2j.gameserver.model.itemcontainer.Inventory;
++import net.sf.l2j.gameserver.network.SystemMessageId;
++import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++import net.sf.l2j.gameserver.network.serverpackets.ItemList;
++import net.sf.l2j.gameserver.network.serverpackets.PetItemList;
++import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++import net.sf.l2j.gameserver.scripting.Quest;
++import net.sf.l2j.gameserver.scripting.QuestState;
++import net.sf.l2j.gameserver.templates.skills.L2SkillType;
++
++public class AutofarmPlayerRoutine
++{
++	private final Player player;
++	private Creature committedTarget = null;
++
++	public AutofarmPlayerRoutine(Player player)
++	{
++		this.player = player;
++	}
++
++	public void executeRoutine()
++	{
++		checkSpoil();
++		targetEligibleCreature();
++		checkManaPots();
++		checkHealthPots();
++		attack();
++		checkSpoil();
++	}
++
++	private void attack()
++	{
++		boolean shortcutsContainAttack = shotcutsContainAttack();
++		if (shortcutsContainAttack)
++		{
++			physicalAttack();
++		}
++
++		useAppropriateSpell();
++
++		if (shortcutsContainAttack)
++		{
++			physicalAttack();
++		}
++	}
++
++	private void useAppropriateSpell()
++	{
++
++		L2Skill chanceSkill = nextAvailableSkill(getChanceSpells(), AutofarmSpellType.Chance);
++
++		if (chanceSkill != null)
++		{
++			useMagicSkill(chanceSkill, false);
++			return;
++		}
++
++		L2Skill lowLifeSkill = nextAvailableSkill(getLowLifeSpells(), AutofarmSpellType.LowLife);
++
++		if (lowLifeSkill != null)
++		{
++			useMagicSkill(lowLifeSkill, false);
++			return;
++		}
++
++		L2Skill selfSkills = nextAvailableSkill(getSelfSpells(), AutofarmSpellType.Self);
++
++		if (selfSkills != null)
++		{
++			useMagicSkill(selfSkills, true);
++			return;
++		}
++
++		L2Skill attackSkill = nextAvailableSkill(getAttackSpells(), AutofarmSpellType.Attack);
++
++		if (attackSkill != null)
++		{
++			useMagicSkill(attackSkill, false);
++			return;
++		}
++	}
++
++	public L2Skill nextAvailableSkill(List<Integer> skillIds, AutofarmSpellType spellType)
++	{
++		for (Integer skillId : skillIds)
++		{
++			L2Skill skill = player.getSkill(skillId);
++
++			if (skill == null)
++				continue;
++
++			if (!player.checkDoCastConditions(skill))
++				continue;
++
++			if (spellType == AutofarmSpellType.Chance && getMonsterTarget() != null)
++			{
++				if (isSpoil(skillId))
++				{
++					if (monsterIsAlreadySpoiled())
++					{
++						continue;
++					}
++					else
++					{
++						return skill;
++					}
++				}
++
++				if (getMonsterTarget().getFirstEffect(skillId) == null)
++				{
++					return skill;
++				}
++				else
++				{
++					continue;
++				}
++			}
++
++			if (spellType == AutofarmSpellType.LowLife && getMonsterTarget() != null && getHpPercentage() > AutofarmConstants.lowLifePercentageThreshold)
++			{
++				break;
++			}
++
++			if (spellType == AutofarmSpellType.Self)
++			{
++				if (skill.isToggle() && player.getFirstEffect(skillId) == null)
++					return skill;
++
++				if (player.getFirstEffect(skillId) == null)
++				{
++					return skill;
++				}
++
++				continue;
++			}
++
++			return skill;
++		}
++
++		return null;
++	}
++
++	private void checkHealthPots()
++	{
++		if (getHpPercentage() <= AutofarmConstants.useHpPotsPercentageThreshold)
++		{
++			if (player.getFirstEffect(AutofarmConstants.hpPotSkillId) != null)
++			{
++				return;
++			}
++
++			ItemInstance hpPots = player.getInventory().getItemByItemId(AutofarmConstants.hpPotItemId);
++			if (hpPots != null)
++			{
++				useItem(hpPots);
++			}
++		}
++	}
++
++	private void checkManaPots()
++	{
++
++		if (getMpPercentage() <= AutofarmConstants.useMpPotsPercentageThreshold)
++		{
++			ItemInstance mpPots = player.getInventory().getItemByItemId(AutofarmConstants.mpPotItemId);
++			if (mpPots != null)
++			{
++				useItem(mpPots);
++			}
++		}
++	}
++
++	private void checkSpoil()
++	{
++		if (canBeSweepedByMe() && getMonsterTarget().isDead())
++		{
++			L2Skill sweeper = player.getSkill(42);
++			if (sweeper == null)
++				return;
++
++			useMagicSkill(sweeper, false);
++		}
++	}
++
++	private Double getHpPercentage()
++	{
++		return player.getCurrentHp() * 100.0f / player.getMaxHp();
++	}
++
++	private Double getMpPercentage()
++	{
++		return player.getCurrentMp() * 100.0f / player.getMaxMp();
++	}
++
++	private boolean canBeSweepedByMe()
++	{
++		return getMonsterTarget() != null && getMonsterTarget().isDead() && getMonsterTarget().getSpoilerId() == player.getObjectId();
++	}
++
++	private boolean monsterIsAlreadySpoiled()
++	{
++		return getMonsterTarget() != null && getMonsterTarget().getSpoilerId() != 0;
++	}
++
++	private static boolean isSpoil(Integer skillId)
++	{
++		return skillId == 254 || skillId == 302;
++	}
++
++	private List<Integer> getAttackSpells()
++	{
++		return getSpellsInSlots(AutofarmConstants.attackSlots);
++	}
++
++	
++	private List<Integer> getSpellsInSlots(List<Integer> attackSlots)
++	{
++		return Arrays.stream(player.getAllShortCuts()).filter(shortcut -> shortcut.getPage() == AutofarmConstants.shortcutsPageIndex && shortcut.getType() == L2ShortCut.TYPE_SKILL && attackSlots.contains(shortcut.getSlot())).map(L2ShortCut::getId).collect(Collectors.toList());
++	}
++
++	private List<Integer> getChanceSpells()
++	{
++		return getSpellsInSlots(AutofarmConstants.chanceSlots);
++	}
++
++	private List<Integer> getSelfSpells()
++	{
++		return getSpellsInSlots(AutofarmConstants.selfSlots);
++	}
++
++	private List<Integer> getLowLifeSpells()
++	{
++		return getSpellsInSlots(AutofarmConstants.lowLifeSlots);
++	}
++
++	private boolean shotcutsContainAttack()
++	{
++		return Arrays.stream(player.getAllShortCuts()).anyMatch(shortcut ->
++		/* shortcut.getPage() == 0 && */shortcut.getType() == L2ShortCut.TYPE_ACTION && shortcut.getId() == 2);
++	}
++
++	private void castSpellWithAppropriateTarget(L2Skill skill, Boolean forceOnSelf)
++	{
++		if (forceOnSelf)
++		{
++			WorldObject oldTarget = player.getTarget();
++			player.setTarget(player);
++			player.useMagic(skill, false, false);
++			player.setTarget(oldTarget);
++			return;
++		}
++
++		player.useMagic(skill, false, false);
++	}
++
++	private void physicalAttack()
++	{
++
++		if (!(player.getTarget() instanceof Monster))
++		{
++			return;
++		}
++
++		Creature target = (Monster) player.getTarget();
++
++		if (target.isAutoAttackable(player))
++		{
++			if (GeoEngine.getInstance().canSeeTarget(player, target))
++			{
++				player.getAI().setIntention(CtrlIntention.ATTACK, target);
++				player.onActionRequest();
++			}
++		}
++		else
++		{
++			player.sendPacket(ActionFailed.STATIC_PACKET);
++
++			if (GeoEngine.getInstance().canSeeTarget(player, target))
++				player.getAI().setIntention(CtrlIntention.FOLLOW, target);
++		}
++	}
++
++	public void targetEligibleCreature()
++	{
++		if (committedTarget != null)
++		{
++			if (!committedTarget.isDead() && GeoEngine.getInstance().canSeeTarget(player, committedTarget)/* && !player.isMoving() */)
++			{
++				return;
++			}
++			committedTarget = null;
++			player.setTarget(null);
++		}
++
++		List<Monster> targets = getKnownMonstersInRadius(player, Config.AUTO_FARM_RADIUS, creature -> GeoEngine.getInstance().canMoveToTarget(player.getX(), player.getY(), player.getZ(), creature.getX(), creature.getY(), creature.getZ()) && !creature.isDead());
++
++		if (targets.isEmpty())
++		{
++			return;
++		}
++
++		Creature closestTarget = targets.stream().min((o1, o2) -> (int) MathUtil.calculateDistance(o1, o2, false)).get();
++		// CreatuL2Character  = targets.get(Rnd.get(targets.size()));
++		committedTarget = closestTarget;
++		player.setTarget(closestTarget);
++	}
++
++	@SuppressWarnings("static-method")
++	public final List<Monster> getKnownMonstersInRadius(Player player, int radius, Function<Monster, Boolean> condition)
++	{
++		final WorldRegion region = player.getRegion();
++		if (region == null)
++			return Collections.emptyList();
++
++		final List<Monster> result = new ArrayList<>();
++
++		for (WorldRegion reg : region.getSurroundingRegions())
++		{
++			for (WorldObject obj : reg.getObjects())
++			{
++				if (!(obj instanceof Monster) || !MathUtil.checkIfInRange(radius, player, obj, true) || !condition.apply((Monster) obj))
++					continue;
++
++				result.add((Monster) obj);
++			}
++		}
++
++		return result;
++	}
++
++	public Monster getMonsterTarget()
++	{
++		if (!(player.getTarget() instanceof Monster))
++		{
++			return null;
++		}
++
++		return (Monster) player.getTarget();
++	}
++
++	private void useMagicSkill(L2Skill skill, Boolean forceOnSelf)
++	{
++		if (skill.getSkillType() == L2SkillType.RECALL && !Config.KARMA_PLAYER_CAN_TELEPORT && player.getKarma() > 0)
++		{
++			player.sendPacket(ActionFailed.STATIC_PACKET);
++			return;
++		}
++
++		if (skill.isToggle() && player.isMounted())
++		{
++			player.sendPacket(ActionFailed.STATIC_PACKET);
++			return;
++		}
++
++		if (player.isOutOfControl())
++		{
++			player.sendPacket(ActionFailed.STATIC_PACKET);
++			return;
++		}
++
++		if (player.isAttackingNow())
++			player.getAI().setNextAction(new NextAction(CtrlEvent.EVT_READY_TO_ACT, CtrlIntention.CAST, () -> castSpellWithAppropriateTarget(skill, forceOnSelf)));
++		else
++		{
++			castSpellWithAppropriateTarget(skill, forceOnSelf);
++		}
++	}
++
++	public void useItem(ItemInstance item)
++	{
++		if (player.isInStoreMode())
++		{
++			player.sendPacket(SystemMessageId.ITEMS_UNAVAILABLE_FOR_STORE_MANUFACTURE);
++			return;
++		}
++
++		if (player.getActiveTradeList() != null)
++		{
++			player.sendPacket(SystemMessageId.CANNOT_PICKUP_OR_USE_ITEM_WHILE_TRADING);
++			return;
++		}
++
++		if (item == null)
++			return;
++
++		if (item.getItem().getType2() == Item.TYPE2_QUEST)
++		{
++			player.sendPacket(SystemMessageId.CANNOT_USE_QUEST_ITEMS);
++			return;
++		}
++
++		if (player.isAlikeDead() || player.isStunned() || player.isSleeping() || player.isParalyzed() || player.isAfraid())
++			return;
++
++		if (!Config.KARMA_PLAYER_CAN_TELEPORT && player.getKarma() > 0)
++		{
++			final IntIntHolder[] sHolders = item.getItem().getSkills();
++			if (sHolders != null)
++			{
++				for (IntIntHolder sHolder : sHolders)
++				{
++					final L2Skill skill = sHolder.getSkill();
++					if (skill != null && (skill.getSkillType() == L2SkillType.TELEPORT || skill.getSkillType() == L2SkillType.RECALL))
++						return;
++				}
++			}
++		}
++
++		if (player.isFishing() && item.getItem().getDefaultAction() != ActionType.fishingshot)
++		{
++			player.sendPacket(SystemMessageId.CANNOT_DO_WHILE_FISHING_3);
++			return;
++		}
++
++		if (item.isPetItem())
++		{
++			if (!player.hasPet())
++			{
++				player.sendPacket(SystemMessageId.CANNOT_EQUIP_PET_ITEM);
++				return;
++			}
++
++			final Summon pet = (player.getPet());
++
++			/*if (!pet.canWear(item.getItem()))
++			{
++				player.sendPacket(SystemMessageId.PET_CANNOT_USE_ITEM);
++				return;
++			}*/
++
++			if (pet.isDead())
++			{
++				player.sendPacket(SystemMessageId.CANNOT_GIVE_ITEMS_TO_DEAD_PET);
++				return;
++			}
++
++			if (!pet.getInventory().validateCapacity(item))
++			{
++				player.sendPacket(SystemMessageId.YOUR_PET_CANNOT_CARRY_ANY_MORE_ITEMS);
++				return;
++			}
++
++			if (!pet.getInventory().validateWeight(item, 1))
++			{
++				player.sendPacket(SystemMessageId.UNABLE_TO_PLACE_ITEM_YOUR_PET_IS_TOO_ENCUMBERED);
++				return;
++			}
++
++			player.transferItem("Transfer", item.getObjectId(), 1, pet.getInventory(), pet);
++
++			if (item.isEquipped())
++			{
++				pet.getInventory().unEquipItemInSlot(item.getLocationSlot());
++				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.PET_TOOK_OFF_S1).addItemName(item));
++			}
++			else
++			{
++				pet.getInventory().equipPetItem(item);
++				player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.PET_PUT_ON_S1).addItemName(item));
++			}
++
++			player.sendPacket(new PetItemList((Pet) pet));
++			pet.updateAndBroadcastStatus(1);
++			return;
++		}
++
++		if (!item.isEquipped())
++		{
++			if (!item.getItem().checkCondition(player, player, true))
++				return;
++		}
++
++		if (item.isEquipable())
++		{
++			if (player.isCastingNow() || player.isCastingSimultaneouslyNow())
++			{
++				player.sendPacket(SystemMessageId.CANNOT_USE_ITEM_WHILE_USING_MAGIC);
++				return;
++			}
++
++			switch (item.getItem().getBodyPart())
++			{
++			case Item.SLOT_LR_HAND:
++			case Item.SLOT_L_HAND:
++			case Item.SLOT_R_HAND:
++			{
++				if (player.isMounted())
++				{
++					player.sendPacket(SystemMessageId.CANNOT_EQUIP_ITEM_DUE_TO_BAD_CONDITION);
++					return;
++				}
++
++				if (player.isCursedWeaponEquipped())
++					return;
++
++				break;
++			}
++			}
++
++			if (player.isCursedWeaponEquipped() && item.getItemId() == 6408)
++				return;
++
++			if (player.isAttackingNow())
++				ThreadPoolManager.getInstance().scheduleGeneral(() -> {
++					final ItemInstance itemToTest = player.getInventory().getItemByObjectId(item.getObjectId());
++					if (itemToTest == null)
++						return;
++
++					player.useEquippableItem(itemToTest, false);
++				}, player.getAttackEndTime() - System.currentTimeMillis());
++			else
++				player.useEquippableItem(item, true);
++		}
++		else
++		{
++			if (player.isCastingNow() && !(item.isPotion() || item.isElixir()))
++				return;
++
++			if (player.getAttackType() == WeaponType.FISHINGROD && item.getItem().getItemType() == EtcItemType.LURE)
++			{
++				player.getInventory().setPaperdollItem(Inventory.PAPERDOLL_LHAND, item);
++				player.broadcastUserInfo();
++
++				player.sendPacket(new ItemList(player, false));
++				return;
++			}
++
++			final IItemHandler handler = ItemHandler.getInstance().getItemHandler(item.getEtcItem());
++			if (handler != null)
++				handler.useItem(player, item, false);
++
++			for (Quest quest : item.getQuestEvents())
++			{
++				QuestState state = player.getQuestState(quest.getName());
++				if (state == null || !state.isStarted())
++					continue;
++
++				quest.notifyItemUse(item, player, player.getTarget());
++			}
++		}
++	}
++}
+diff --git a/java/Dev/AutoFarm/AutofarmSpell.java b/java/Dev/AutoFarm/AutofarmSpell.java
+new file mode 100644
+index 0000000..e4e86a7
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmSpell.java
+@@ -0,0 +1,24 @@
++package Dev.AutoFarm;
++
++public class AutofarmSpell
++{
++	private final Integer _skillId;
++	private final AutofarmSpellType _spellType;
++	
++	public AutofarmSpell(Integer skillId, AutofarmSpellType spellType)
++	{
++		
++		_skillId = skillId;
++		_spellType = spellType;
++	}
++	
++	public Integer getSkillId()
++	{
++		return _skillId;
++	}
++	
++	public AutofarmSpellType getSpellType()
++	{
++		return _spellType;
++	}
++}
+\ No newline at end of file
+diff --git a/java/Dev/AutoFarm/AutofarmSpellType.java b/java/Dev/AutoFarm/AutofarmSpellType.java
+new file mode 100644
+index 0000000..81a4d8b
+--- /dev/null
++++ b/java/Dev/AutoFarm/AutofarmSpellType.java
+@@ -0,0 +1,10 @@
++package Dev.AutoFarm;
++
++
++public enum AutofarmSpellType
++{
++	Attack,
++	Chance,
++	Self,
++	LowLife
++}
+\ No newline at end of file
+diff --git a/java/Dev/Instance/Instance.java b/java/Dev/Instance/Instance.java
+new file mode 100644
+index 0000000..612cb6e
+--- /dev/null
++++ b/java/Dev/Instance/Instance.java
+@@ -0,0 +1,45 @@
++package Dev.Instance;
++
++import java.util.ArrayList;
++import java.util.List;
++
++import net.sf.l2j.gameserver.model.actor.instance.Door;
++
++public class Instance
++{
++	private int id;
++	private List<Door> doors;
++	
++	public Instance(int id)
++	{
++		this.id = id;
++		doors = new ArrayList<>();
++	}
++	
++	public void openDoors()
++	{
++		for (Door door : doors)
++			door.openMe();
++	}
++	
++	public void closeDoors()
++	{
++		for (Door door : doors)
++			door.closeMe();
++	}
++	
++	public void addDoor(Door door)
++	{
++		doors.add(door);
++	}
++	
++	public List<Door> getDoors()
++	{
++		return doors;
++	}
++	
++	public int getId()
++	{
++		return id;
++	}
++}
+diff --git a/java/Dev/Instance/InstanceIdFactory.java b/java/Dev/Instance/InstanceIdFactory.java
+new file mode 100644
+index 0000000..14f4e23
+--- /dev/null
++++ b/java/Dev/Instance/InstanceIdFactory.java
+@@ -0,0 +1,13 @@
++package Dev.Instance;
++
++import java.util.concurrent.atomic.AtomicInteger;
++
++public final class InstanceIdFactory
++{
++	private static AtomicInteger nextAvailable = new AtomicInteger(1);
++	
++	public synchronized static int getNextAvailable()
++	{
++		return nextAvailable.getAndIncrement();
++	}
++}
+diff --git a/java/Dev/Instance/InstanceManager.java b/java/Dev/Instance/InstanceManager.java
+new file mode 100644
+index 0000000..42d4f25
+--- /dev/null
++++ b/java/Dev/Instance/InstanceManager.java
+@@ -0,0 +1,59 @@
++package Dev.Instance;
++
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++import net.sf.l2j.gameserver.model.actor.instance.Door;
++
++
++public class InstanceManager
++{
++	private Map<Integer, Instance> instances;
++	
++	protected InstanceManager()
++	{
++		instances = new ConcurrentHashMap<>();
++		instances.put(0, new Instance(0));
++	}
++	
++	public void addDoor(int id, Door door)
++	{
++		if (!instances.containsKey(id) || id == 0)
++			return;
++		
++		instances.get(id).addDoor(door);
++	}
++	
++	public void deleteInstance(int id)
++	{
++		if (id == 0)
++		{
++			System.out.println("Attempt to delete instance with id 0.");
++			return;
++		}
++		
++		// delete doors
++	}
++	
++	public synchronized Instance createInstance()
++	{
++		Instance instance = new Instance(InstanceIdFactory.getNextAvailable());
++		instances.put(instance.getId(), instance);
++		return instance;
++	}
++	
++	public Instance getInstance(int id)
++	{
++		return instances.get(id);
++	}
++	
++	public static InstanceManager getInstance()
++	{
++		return SingletonHolder.instance;
++	}
++	
++	private static final class SingletonHolder
++	{
++		protected static final InstanceManager instance = new InstanceManager();
++	}
++}
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 742fe1a..07efedc 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -50,6 +50,7 @@
+ 	public static final String ENCHANTCONFIG = "./config/Custom/Enchant.properties";
+ 	public static final String SKIN_FILE = "./config/Custom/Skin.properties";
+ 	public static final String DONATE_FILE = "./config/Custom/Donate.properties";
++	public static final String AUTO_FARM = "./config/Custom/AutoFarm.ini";
+ 	public static final String COMMANDS_FILE = "./config/Custom/Commands.properties";
+ 	public static final String LASTHITBOSS = "./config/Custom/Events/LastHitBossEvent.properties";
+ 	public static final String CHAMPION_EVENT = "./config/Custom/Events/ChampionEvent.properties";
+@@ -781,6 +782,11 @@
+ 	public static int SKIN_GLOVES_RMAGICIAN;
+ 	public static int SKIN_LEGS_RMAGICIAN;
+ 	
++	
++	/** Auto Farm Variaveis */
++	public static Integer AUTO_FARM_BAR;
++	public static int AUTO_FARM_RADIUS;
++	
+ 	/** Donate Settings */
+ 	public static boolean ALLOW_VIP_NCOLOR;
+ 	public static int VIP_NCOLOR;
+@@ -1794,6 +1800,15 @@
+ 		
+ 	}
+ 	
++	/**
++	 * Loads AutoFarm Settings.<br>
++	 */
++	private static final void loadAutoFarm()
++	{
++		final ExProperties farm = initProperties(AUTO_FARM);
++		AUTO_FARM_RADIUS = farm.getProperty("AutoFarmRadius", 600);
++		AUTO_FARM_BAR = farm.getProperty("AutoFarmBar", 0);
++	}
+ 	
+ 	/**
+ 	 * Loads Donate Settings.<br>
+@@ -3222,6 +3237,9 @@
+ 		// Donate Settings
+ 		loadDonate();
+ 		
++		// Auto Farm Settings
++		loadAutoFarm();
++		
+ 		// Commands Settings
+ 		loadCommands();
+ 		
+diff --git a/java/net/sf/l2j/gameserver/GameServer.java b/java/net/sf/l2j/gameserver/GameServer.java
+index 64d9bc4..21815ed 100644
+--- a/java/net/sf/l2j/gameserver/GameServer.java
++++ b/java/net/sf/l2j/gameserver/GameServer.java
+@@ -120,6 +120,7 @@
+ import Dev.Events.PartyFarm.InitialPartyFarm;
+ import Dev.Events.PartyFarm.PartyFarm;
+ import Dev.Events.PartyFarm.PartyZoneReward;
++import Dev.Instance.InstanceManager;
+ import Dev.SpecialMods.RaidBossInfoManager;
+ 
+ public class GameServer
+@@ -249,6 +250,9 @@
+ 		SkillTable.getInstance();
+ 		SkillTreeData.getInstance();
+ 		
++		StringUtil.printSection("Instance Manager");
++		InstanceManager.getInstance();
++		
+ 		StringUtil.printSection("Items");
+ 		ItemTable.getInstance();
+ 		SummonItemData.getInstance();
+diff --git a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+index 27d69c1..6076be5 100644
+--- a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+@@ -26,6 +26,7 @@
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminGmChat;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHeal;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminHelpPage;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminInstance;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminInvul;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKick;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminKnownlist;
+@@ -63,6 +64,7 @@
+ 	
+ 	protected AdminCommandHandler()
+ 	{
++		registerAdminCommandHandler(new AdminInstance());
+ 		registerAdminCommandHandler(new AdminCTFEngine());
+ 		registerAdminCommandHandler(new AdminTvTEngine());
+ 		registerAdminCommandHandler(new AdminCrazyRates());
+diff --git a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index 642b176..75a928c 100644
+--- a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -16,6 +16,8 @@
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.VoicedRanking;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.VoicedVipFree;
+ 
++import Dev.AutoFarm.AutofarmCommand;
++
+ public class VoicedCommandHandler
+ {
+     private final Map<Integer, IVoicedCommandHandler> _datatable = new HashMap<>();
+@@ -27,6 +29,7 @@
+     
+     protected VoicedCommandHandler()
+     {
++    	registerHandler(new AutofarmCommand());
+     	registerHandler(new EventCMD());
+         // coloque aqui os comandos
+     	if(Config.ENABLE_VOICED_DONATE)
+diff --git a/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminInstance.java b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminInstance.java
+new file mode 100644
+index 0000000..8c9fe50
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminInstance.java
+@@ -0,0 +1,72 @@
++package net.sf.l2j.gameserver.handler.admincommandhandlers;
++
++import java.util.StringTokenizer;
++
++import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.model.World;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++
++import Dev.Instance.InstanceManager;
++
++public class AdminInstance implements IAdminCommandHandler {
++
++	@Override
++	public boolean useAdminCommand(String command, Player activeChar) {
++		if (command.startsWith("admin_resetmyinstance"))
++		{
++			activeChar.setInstance(InstanceManager.getInstance().getInstance(0), false);
++			activeChar.sendMessage("Your instance is now default");
++		}
++		else if (command.startsWith("admin_instanceid"))
++		{
++			StringTokenizer st = new StringTokenizer(command, " ");
++			st.nextToken(); // skip command
++			
++			if(!st.hasMoreTokens())
++			{
++				activeChar.sendMessage("Write the name.");
++				return false;
++			}
++			
++			String target_name = st.nextToken();
++			Player player = World.getInstance().getPlayer(target_name);
++			if(player == null)
++			{
++				activeChar.sendMessage("Player is offline");
++				return false;
++			}
++	
++			activeChar.sendMessage(""+target_name+ " instance id: " + player.getInstance().getId());
++		}
++		else if (command.startsWith("admin_getinstance"))
++		{
++			StringTokenizer st = new StringTokenizer(command, " ");
++			st.nextToken(); // skip command
++			
++			if(!st.hasMoreTokens())
++			{
++				activeChar.sendMessage("Write the name.");
++				return false;
++			}
++			
++			String target_name = st.nextToken();
++			Player player = World.getInstance().getPlayer(target_name);
++			if(player == null)
++			{
++				activeChar.sendMessage("Player is offline");
++				return false;
++			}
++			
++			activeChar.setInstance(player.getInstance(), false);
++			activeChar.sendMessage("You are with the same instance of player "+target_name);
++		}
++		return false;
++	}
++
++	@Override
++	public String[] getAdminCommandList() {
++		
++		return new String [] {"admin_resetmyinstance","admin_getinstance","admin_instanceid"};
++	}
++
++}
+diff --git a/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/VoicedMenu.java b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
+index b853fcc..964f0e7 100644
+--- a/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
++++ b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
+@@ -30,6 +30,8 @@
+ import net.sf.l2j.gameserver.network.serverpackets.ExShowScreenMessage;
+ import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
+ 
++import Dev.AutoFarm.AutofarmManager;
++
+ public class VoicedMenu implements IVoicedCommandHandler
+ {
+ 	private static final String[] VOICED_COMMANDS = 
+@@ -70,6 +72,14 @@
+ 		else if (command.equals("info_pt"))
+ 			showInfoPtHtml(activeChar);   
+ 		
++		else if (command.equals("vip"))
++		{
++			if (activeChar.isVip())
++				sendVipWindow(activeChar);
++			else if(!activeChar.isVip())
++				activeChar.sendMessage("You are not VIP member.");
++		}
++		
+ 		else if (command.equals("info_sp"))
+ 			showInfoSpHtml(activeChar);   
+ 		else if (command.equals("setxpnot"))
+@@ -1433,7 +1443,16 @@
+ 		html.replace("%pet_food_rate%", String.valueOf(Config.PET_FOOD_RATE));
+ 		activeChar.sendPacket(html);
+ 	}
+-	
++	public static void sendVipWindow(Player activeChar)
++	{	String autofarmOn= "<button width=38 height=38 back=\"L2UI_NewTex.AutomaticPlay.CombatBTNOff_Over\" fore=\"L2UI_NewTex.AutomaticPlay.CombatBTNON_Normal\" action=\"bypass voiced_farm\" value=\"\">";
++		String autofarmOff= "<button width=38 height=38 back=\"L2UI_NewTex.AutomaticPlay.CombatBTNON_Over\" fore=\"L2UI_NewTex.AutomaticPlay.CombatBTNOff_Normal\" action=\"bypass voiced_farm\" value=\"\">";
++			
++		NpcHtmlMessage html = new NpcHtmlMessage(0);
++		html.setFile("data/html/mods/menu/AutoFarm.htm"); 
++		html.replace("%AutoFarmActived%", AutofarmManager.INSTANCE.isAutofarming(activeChar)  ? "<img src=\"panel.online\" width=\"16\" height=\"16\">" : "<img src=\"panel.offline\" width=\"16\" height=\"16\">");
++		html.replace("%autoFarmButton%", AutofarmManager.INSTANCE.isAutofarming(activeChar) ? autofarmOn : autofarmOff);
++		activeChar.sendPacket(html);
++	}
+ 	private static void showInfoSpHtml(Player activeChar)
+ 	{
+ 		NpcHtmlMessage html = new NpcHtmlMessage(0);
+diff --git a/java/net/sf/l2j/gameserver/model/WorldObject.java b/java/net/sf/l2j/gameserver/model/WorldObject.java
+index 70ba6c6..4a698d3 100644
+--- a/java/net/sf/l2j/gameserver/model/WorldObject.java
++++ b/java/net/sf/l2j/gameserver/model/WorldObject.java
+@@ -19,6 +19,9 @@
+ import net.sf.l2j.gameserver.model.zone.ZoneId;
+ import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
+ 
++import Dev.Instance.Instance;
++import Dev.Instance.InstanceManager;
++
+ /**
+  * Mother class of all interactive objects in the world (PC, NPC, Item...)
+  */
+@@ -442,7 +445,24 @@
+ 		
+ 		return result;
+ 	}
++	/** instance system */
++	private Instance _instance = InstanceManager.getInstance().getInstance(0);
+ 	
++	public void setInstance(Instance instance, boolean silent)
++	{
++		_instance = instance;
++		
++		if(!silent)
++		{
++			decayMe();
++			spawnMe();
++		}
++	}
++	
++	public Instance getInstance()
++	{
++		return _instance;
++	}
+ 	/**
+ 	 * Return the known list of given object type within specified radius.
+ 	 * @param <A> : Object type must be instance of {@link WorldObject}.
+ 				
+ 				result.add((A) obj);
+diff --git a/java/net/sf/l2j/gameserver/model/actor/Attackable.java b/java/net/sf/l2j/gameserver/model/actor/Attackable.java
+index 368fe2d..8f9e154 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/Attackable.java
++++ b/java/net/sf/l2j/gameserver/model/actor/Attackable.java
+@@ -1274,6 +1274,7 @@
+ 		{
+ 			// Init the dropped ItemInstance and add it in the world as a visible object at the position where mob was last
+ 			item = ItemTable.getInstance().createItem("Loot", holder.getId(), holder.getValue(), mainDamageDealer, this);
++			item.setInstance(getInstance(), false);
+ 			item.dropMe(this, getX() + Rnd.get(-70, 70), getY() + Rnd.get(-70, 70), Math.max(getZ(), mainDamageDealer.getZ()) + 20);
+ 			
+ 			// If stackable, end loop as entire count is included in 1 instance of item
+diff --git a/java/net/sf/l2j/gameserver/model/actor/Summon.java b/java/net/sf/l2j/gameserver/model/actor/Summon.java
+index 9c37a1e..5aa110b 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/Summon.java
++++ b/java/net/sf/l2j/gameserver/model/actor/Summon.java
+@@ -55,7 +55,7 @@
+ 	public Summon(int objectId, NpcTemplate template, Player owner)
+ 	{
+ 		super(objectId, template);
+-		
++		setInstance(owner.getInstance(), true);
+ 		for (L2Skill skill : template.getSkills(SkillType.PASSIVE))
+ 			addStatFuncs(skill.getStatFuncs(this));
+ 		
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/Player.java b/java/net/sf/l2j/gameserver/model/actor/instance/Player.java
+index ebd8bb6..a83a7ea 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/Player.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/Player.java
+@@ -2633,7 +2633,7 @@
+ 			
+ 			return false;
+ 		}	
++		item.setInstance(getInstance(), true); // True because Drop me will spawn it
+ 		item.dropMe(this, getX() + Rnd.get(-25, 25), getY() + Rnd.get(-25, 25), getZ() + 20);
+ 		
+ 		// Send inventory update packet
+@@ -2865,7 +2865,7 @@
+ 	}
+ 	
+ 	@Override
+-	protected boolean checkDoCastConditions(L2Skill skill)
++	public boolean checkDoCastConditions(L2Skill skill)
+ 	{
+ 		if (!super.checkDoCastConditions(skill))
+ 			return false;
+diff --git a/java/net/sf/l2j/gameserver/skills/l2skills/L2SkillSummon.java b/java/net/sf/l2j/gameserver/skills/l2skills/L2SkillSummon.java
+index d06f799..3a090c1 100644
+--- a/java/net/sf/l2j/gameserver/skills/l2skills/L2SkillSummon.java
++++ b/java/net/sf/l2j/gameserver/skills/l2skills/L2SkillSummon.java
+@@ -213,6 +213,7 @@
+ 		summon.setCurrentHp(summon.getMaxHp());
+ 		summon.setCurrentMp(summon.getMaxMp());
+ 		summon.setHeading(activeChar.getHeading());
++		summon.setInstance(activeChar.getInstance(), true);
+ 		summon.setRunning();
+ 		activeChar.setPet(summon);
+ 		
+
+
+HTML Auto Farm
+
+<html imgsrc="Ressurge.bkg"><title>L2jserver - VIP</title><body><center>
+<center>
+<br>
+<table width=250>
+<tr>
+
+<td width=20><font color="00FF00">                    ACESSO VIP EXCLUSIVO</font></td>
+
+</tr>
+</table>
+</center>
+<br>
+<img src="L2UI.SquareBlank" width=300 height=1>
+<table width=305 bgcolor="000000">
+<tr>
+<td><center><font color="LEVEL"> Buscamos entregar o melhor Lineage II Player Solo</font></center></td></tr><br1>
+</table>
+<br>
+<center><table align=center>
+	<tr>
+									 
+		                             <td><button value="SKINS ACTIVED" action="bypass voiced_skins" width=120 height=21 back="lineagenppc.y120" fore="lineagenppc.y120" over="lineagenppc.y120"></td>
+									 
+	</tr>
+</table></center>
+<center><table align=center>
+	<tr>
+									 
+		                             <td><button value="CONSUMABLES VIP" action="bypass voiced_multisell consumables-vip-custom" width=120 height=21 back="lineagenppc.g120" fore="lineagenppc.g120" over="lineagenppc.g120"></td>
+									 
+	</tr>
+</table></center><br>
+<table width=130>
+<tr>
+<td width=20><img src="l2UI_Valhalla_3.24Hz_DF_ChannelControlBtn_Next" width=18 height=18></td>
+<td width=20><font color="FF0000">  Auto Farm  </font></td>
+<td width=20><img src="l2UI_Valhalla_3.24Hz_DF_ChannelControlBtn_Pre" width=18 height=18></td>
+</tr>
+</table>
+<br><br><br><br><br><br>
+<table cellspacing=-39 cellpadding=0>
+	<tr> <!-- Botão Back  -->
+		<td align=center>
+			<img src="L2UI_NewTex.AutomaticPlay.AutoPlaySlotON_BG_Over" width=97 height=95>
+		</td>
+	</tr>
+</table>
+<table cellspacing=-38 cellpadding=2>
+	<tr> <!-- Botão Back  -->
+		<td align=center>
+			<button width=61 height=62 back="L2UI_NewTex.AutomaticPlay.AutoPlaySlotIconTarget" fore="L2UI_NewTex.AutomaticPlay.AutoPlaySlotIconTargetON" action="bypass voiced_farm" value="">
+		</td>
+	</tr>
+</table>
+<table cellspacing=-42 cellpadding=0>
+	<tr> <!-- Botão Back  -->
+		<td align=center>
+			<button width=85 height=70 back="L2UI_NewTex.AutomaticPlay.AutoPlayONAni_001" fore="L2UI_NewTex.AutomaticPlay.AutoPlayONAni_001" action="" value="">
+		</td>
+	</tr>
+</table>
+<table cellspacing=-36 cellpadding=-23>
+	<tr> <!-- Botão Back  -->
+		<td align=center>
+			<img src="L2UI_NewTex.AutomaticPlay.AutoCircleFrame" width=120 height=128>
+		</td>
+	</tr>
+</table>
+<br>
+<br>
+<br>
+<img src="L2UI.SquareBlank" width=300 height=2>
+<table width=21 cellspacing=0 cellpadding=-25>
+	<tr> <!-- Botão Back  -->
+		<td align=right>
+			<font color="LEVEL">%AutoFarmActived%</font>
+		</td>
+	</tr>
+</table>
+
+
+
+<br><br>
+
+
+
+
+
+
+<br><br><br><br>
+<tr>
+		                             <td><button value="Voltar" action="bypass voiced_menu" width=75 height=22 back="L2UI_CH3.Btn1_normalDisable" fore="L2UI_CH3.Btn1_normal" over="L2UI_CH3.Btn1_normal_over"></td>
+	</tr>
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

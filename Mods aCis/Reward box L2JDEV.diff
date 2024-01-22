@@ -1,0 +1,357 @@
+=============================================
+Index: Config.java
+=============================================
+	
+	/** Geodata */
+	public static String GEODATA_PATH;
+	public static GeoType GEODATA_TYPE;
+	
++	public static boolean ENABLE_LUCKBOX;
++	public static int LUCKBOXITEMUSEID;
++	public static List<RewardHolder> LUCKBOXLIST01 = new ArrayList<>();
++	public static List<RewardHolder> LUCKBOXLIST02 = new ArrayList<>();
++	public static List<RewardHolder> LUCKBOXLIST03 = new ArrayList<>();
++	public static List<RewardHolder> LUCKBOXLIST04 = new ArrayList<>();
++	public static List<RewardHolder> LUCKBOXLIST05 = new ArrayList<>();
+
+	public static final String GEOENGINE_FILE = "./config/geoengine.properties";
++	public static final String ItemHandler_FILE = "./config/Dev/ItemHandler.properties";
+	
++	/**
++	 * Loads All ItemsHandler settings.
++	 */
++	private static final void loadItemsHandler()
++	{
++		final ExProperties ItemsHandler = initProperties(ItemHandler_FILE);
++		
++		ENABLE_LUCKBOX = ItemsHandler.getProperty("EnableLuckBox", true);
++		LUCKBOXITEMUSEID = Integer.parseInt(ItemsHandler.getProperty("LuckBoxItemUseId", "3"));
++		LUCKBOXLIST01 = parseReward(ItemsHandler, "LuckboxRewardList01");
++		LUCKBOXLIST02 = parseReward(ItemsHandler, "LuckboxRewardList02");
++		LUCKBOXLIST03 = parseReward(ItemsHandler, "LuckboxRewardList03");
++		LUCKBOXLIST04 = parseReward(ItemsHandler, "LuckboxRewardList04");
++		LUCKBOXLIST05 = parseReward(ItemsHandler, "LuckboxRewardList05");
++		
++	}
+
+
+		// geoengine settings
+		loadGeoengine();
+		
++		loadItemsHandler;
+
++	private static List<RewardHolder> parseReward(ExProperties propertie, String configName)
++	{
++		List<RewardHolder> auxReturn = new ArrayList<>();
++		
++		String aux = propertie.getProperty(configName).trim();
++		for (String randomReward : aux.split(";"))
++		{
++			final String[] infos = randomReward.split(",");
++			if (infos.length > 2)
++				auxReturn.add(new RewardHolder(Integer.valueOf(infos[0]), Integer.valueOf(infos[1]), Integer.valueOf(infos[2])));
++			else
++				auxReturn.add(new RewardHolder(Integer.valueOf(infos[0]), Integer.valueOf(infos[1])));
++		}
++		return auxReturn;
++	}
+
+}
+
+
+=============================================
+Index: RewardHolder.java
+=============================================
++package net.sf.l2j.gameserver.model.holder;
++
++public class RewardHolder
++{
++	private int _id;
++	private int _count;
++	private int _chance;
++	
++	/**
++	 * @param rewardId
++	 * @param rewardCount
++	 */
++	public RewardHolder(int rewardId, int rewardCount)
++	{
++		_id = rewardId;
++		_count = rewardCount;
++		_chance = 100;
++	}
++	
++	/**
++	 * @param rewardId
++	 * @param rewardCount
++	 * @param rewardChance
++	 */
++	public RewardHolder(int rewardId, int rewardCount, int rewardChance)
++	{
++		_id = rewardId;
++		_count = rewardCount;
++		_chance = rewardChance;
++	}
++	
++	public int getRewardId()
++	{
++		return _id;
++	}
++	
++	public int getRewardCount()
++	{
++		return _count;
++	}
++	
++	public int getRewardChance()
++	{
++		return _chance;
++	}
++	
++	public void setId(int id)
++	{
++		_id = id;
++	}
++	
++	public void setCount(int count)
++	{
++		_count = count;
++	}
++	
++	public void setChance(int chance)
++	{
++		_chance = chance;
++	}
++}
+=============================================
+Index: LuckBox.java
+=============================================
++package ItemsHandler;
++
++import net.sf.l2j.commons.random.Rnd;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.holder.RewardHolder;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.SystemMessageId;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++
++/**
++ * @author BAN L2JDEV
++ *
++ */
++public class LuckBox implements IItemHandler
++{
++	private static final int[] ITEM_IDS = new int[]
++		{
++			Config.LUCKBOXITEMUSEID
++		};
++	
++	
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		if (!(playable instanceof Player))
++			return;
++		Player activeChar = (Player) playable;
++		if (Config.ENABLE_LUCKBOX)
++		{
++			switch (Rnd.get(8))
++			{
++				case 0:
++				{
++					for (RewardHolder reward : Config.LUCKBOXLIST01)
++					{
++						if (Rnd.get(100) <= reward.getRewardChance())
++						{
++							
++							activeChar.getInventory().addItem("Cube Reward", reward.getRewardId(), reward.getRewardCount(), activeChar, null);
++							
++							if (reward.getRewardCount() > 1)
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(reward.getRewardId()).addItemNumber(reward.getRewardCount()));
++							else
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(reward.getRewardId()));
++							
++						}
++					}
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 1:
++				{
++					for (RewardHolder reward : Config.LUCKBOXLIST02)
++					{
++						if (Rnd.get(100) <= reward.getRewardChance())
++						{
++							
++							activeChar.getInventory().addItem("Cube Reward", reward.getRewardId(), reward.getRewardCount(), activeChar, null);
++							
++							if (reward.getRewardCount() > 1)
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(reward.getRewardId()).addItemNumber(reward.getRewardCount()));
++							else
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(reward.getRewardId()));
++							
++						}
++					}
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 2:
++				{
++					for (RewardHolder reward : Config.LUCKBOXLIST03)
++					{
++						if (Rnd.get(100) <= reward.getRewardChance())
++						{
++							
++							activeChar.getInventory().addItem("Cube Reward", reward.getRewardId(), reward.getRewardCount(), activeChar, null);
++							
++							if (reward.getRewardCount() > 1)
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(reward.getRewardId()).addItemNumber(reward.getRewardCount()));
++							else
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(reward.getRewardId()));
++							
++						}
++					}
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 3:
++				{
++					for (RewardHolder reward : Config.LUCKBOXLIST04)
++					{
++						if (Rnd.get(100) <= reward.getRewardChance())
++						{
++							
++							activeChar.getInventory().addItem("Cube Reward", reward.getRewardId(), reward.getRewardCount(), activeChar, null);
++							
++							if (reward.getRewardCount() > 1)
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(reward.getRewardId()).addItemNumber(reward.getRewardCount()));
++							else
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(reward.getRewardId()));
++							
++						}
++					}
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 4:
++				{
++					for (RewardHolder reward : Config.LUCKBOXLIST05)
++					{
++						if (Rnd.get(100) <= reward.getRewardChance())
++						{
++							
++							activeChar.getInventory().addItem("Cube Reward", reward.getRewardId(), reward.getRewardCount(), activeChar, null);
++							
++							if (reward.getRewardCount() > 1)
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(reward.getRewardId()).addItemNumber(reward.getRewardCount()));
++							else
++								activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(reward.getRewardId()));
++							
++						}
++					}
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 5:
++				{
++					activeChar.sendMessage("Ohh noo! Your lucky box is empty.");   
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 6:
++				{
++					activeChar.sendMessage("Ohh noo! Your lucky box is empty.");   
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++				case 7:
++				{
++					activeChar.sendMessage("Ohh noo! Your lucky box is empty.");   
++					playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++					MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++					activeChar.broadcastPacket(MSU);
++					break;
++				}
++			}
++		}
++	}
++	public int[] getItemIds()
++	{
++		return ITEM_IDS;
++	}
++}
+=============================================
+Index: ItemHandler.java
+=============================================
+		registerHandler(new BeastSoulShots());
+		registerHandler(new BeastSpices());
+		registerHandler(new BeastSpiritShots());
+		registerHandler(new BlessedSpiritShots());
++		if (Config.ENABLE_LUCKBOX)
++		registerHandler(new LuckBox());
+
+=============================================
+Index: config/Dev/ItemHandler.properties
+=============================================
++#=============================================================
++#           ItemHandler Settings L2JDEV
++#=============================================================
++# luck box reward enable
++EnableLuckBox = true
++LuckBoxItemUseId = 9310
++# Format: itemId,count,chance(%);itemId,count,(chance(%)(optional));....
++LuckboxRewardList01 = 57,4000000,100;9313,5,5;6393,2000,100;9310,10,100;8762,15,50;8752,15,60;6622,10,60;
++LuckboxRewardList02 = 0,0,0;
++LuckboxRewardList03 = 0,0,0;
++LuckboxRewardList04 = 0,0,0;
++LuckboxRewardList05 = 0,0,0;
+=============================================
+Index: data/items/Items Hander.xml
+=============================================
++<?xml version="1.0" encoding="UTF-8"?>
++<list>
++		<item id="9310" type="EtcItem" name="Luck Box Reward Items">
++		<set name="is_tradable" val="false" />
++		<set name="is_dropable" val="false" />
++		<set name="is_sellable" val="false" />
++		<set name="is_depositable" val="false" />
++		<set name="material" val="PAPER" />
++		<set name="weight" val="120" />
++		<set name="price" val="500000" />
++		<set name="is_oly_restricted" val="true" />
++		<set name="is_stackable" val="true" />
++		<set name="handler" val="LuckBox" />
++	</item>
++<list>
+
+=============================================
+Index: system/itemname-e.dat
+=============================================
+9310	Magic Box Reward Item 	Exclusive 	Reward All Items From Mitrill	-1					0	0	0	
+=============================================
+Index: system/etcitemgrp.dat
+=============================================
+2	9310	0	5	4	1	0	DropItems.coin_m00			DropItemsTex.coin_t00	DropItemsTex.coin_t01		Icons.quest_coin					0	0	3	0	0	1		1		ItemSound2.itemdrop_etc_money_2		3	0	0
+=============================================
+Index: system/Icons.u Copy
+=============================================
+https://mega.nz/file/JQBCBLxY#th4KsroT4x8kaIy8pyoqVPlrA_kcPG3-d1_sXBKWjJQ

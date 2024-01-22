@@ -1,0 +1,156 @@
+### Eclipse Workspace Patch 1.0
+#P L2jMega_gameserver2
+diff --git java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java
+index 4b25019..ae2240e 100644
+--- java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java
++++ java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java
+@@ -10,11 +10,13 @@
+ 	private int _enchant;
+ 	private int _count;
+ 	private int _price;
++	private int _augmentationId;
+ 	
+ 	public TradeItem(ItemInstance item, int count, int price)
+ 	{
+ 		_objectId = item.getObjectId();
+ 		_item = item.getItem();
++		_augmentationId = item.isAugmented() ? item.getAugmentation().getAugmentationId() : 0;
+ 		_enchant = item.getEnchantLevel();
+ 		_count = count;
+ 		_price = price;
+@@ -38,6 +40,12 @@
+ 		_price = price;
+ 	}
+ 	
++	public int getAugmentationId() 
++	{	        
++	return _augmentationId;
++	}
++	
++	
+ 	public void setObjectId(int objectId)
+ 	{
+ 		_objectId = objectId;
+diff --git java/net/sf/l2j/gameserver/network/serverpackets/TradeItemUpdate.java java/net/sf/l2j/gameserver/network/serverpackets/TradeItemUpdate.java
+index c2af70d..c22d514 100644
+--- java/net/sf/l2j/gameserver/network/serverpackets/TradeItemUpdate.java
++++ java/net/sf/l2j/gameserver/network/serverpackets/TradeItemUpdate.java
+@@ -51,11 +51,22 @@
+ 			writeD(item.getItem().getItemId());
+ 			writeD(availableCount);
+ 			writeH(item.getItem().getType2());
+-			writeH(0x00);
++	           int _augorg = 0;
++	           int _aug = 0;
++	           int _aug2 = 0;
++	           int _aug3 = 0;
++	           if (item.getAugmentationId() > 0) 
++	           {
++	               _augorg = item.getAugmentationId();    
++	               _aug = _augorg>>16;
++	               _aug2 = _aug;
++	               _aug3 = _augorg-(_aug<<16);
++	           }                
++	               writeH(_aug2);
+ 			writeD(item.getItem().getBodyPart());
+ 			writeH(item.getEnchant());
+ 			writeH(0x00);
+-			writeH(0x00);
++			writeH(_aug3);
+ 		}
+ 	}
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/network/serverpackets/TradeOtherAdd.java java/net/sf/l2j/gameserver/network/serverpackets/TradeOtherAdd.java
+index eb4d155..023fb3d 100644
+--- java/net/sf/l2j/gameserver/network/serverpackets/TradeOtherAdd.java
++++ java/net/sf/l2j/gameserver/network/serverpackets/TradeOtherAdd.java
+@@ -26,11 +26,22 @@
+ 		writeD(_item.getItem().getItemId());
+ 		writeD(_item.getCount());
+ 		writeH(_item.getItem().getType2()); // item type2
+-		writeH(0x00); // ?
++	       int _augorg = 0;
++	       int _aug = 0;
++	       int _aug2 = 0;
++	       int _aug3 = 0;
++	       if (_item.getAugmentationId() > 0) 
++	       {
++	           _augorg = _item.getAugmentationId();    
++	           _aug = _augorg>>16;
++	           _aug2 = _aug;
++	           _aug3 = _augorg-(_aug<<16);
++	       }                
++	           writeH(_aug2);
+ 		
+ 		writeD(_item.getItem().getBodyPart()); // rev 415 slot 0006-lr.ear 0008-neck 0030-lr.finger 0040-head 0080-?? 0100-l.hand 0200-gloves 0400-chest 0800-pants 1000-feet 2000-?? 4000-r.hand 8000-r.hand
+ 		writeH(_item.getEnchant()); // enchant level
+-		writeH(0x00); // ?
++		writeH(_aug3);
+ 		writeH(0x00);
+ 	}
+ }
+diff --git java/net/sf/l2j/gameserver/network/serverpackets/TradeOwnAdd.java java/net/sf/l2j/gameserver/network/serverpackets/TradeOwnAdd.java
+index 19e583e..425c842 100644
+--- java/net/sf/l2j/gameserver/network/serverpackets/TradeOwnAdd.java
++++ java/net/sf/l2j/gameserver/network/serverpackets/TradeOwnAdd.java
+@@ -26,11 +26,22 @@
+ 		writeD(_item.getItem().getItemId());
+ 		writeD(_item.getCount());
+ 		writeH(_item.getItem().getType2()); // item type2
+-		writeH(0x00); // ?
++        int _augorg = 0;
++        int _aug = 0;
++        int _aug2 = 0;
++        int _aug3 = 0;
++        if (_item.getAugmentationId() > 0) {
++            _augorg = _item.getAugmentationId();    
++            _aug = _augorg>>16;
++            _aug2 = _aug;
++            _aug3 = _augorg-(_aug<<16);
++        }
++        
++            writeH(_aug2);
+ 		
+ 		writeD(_item.getItem().getBodyPart()); // slot
+ 		writeH(_item.getEnchant()); // enchant level
+ 		writeH(0x00); // ?
+-		writeH(0x00);
++		writeH(_aug3);
+ 	}
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/network/serverpackets/TradeStart.java java/net/sf/l2j/gameserver/network/serverpackets/TradeStart.java
+index 20969d8..1b84a34 100644
+--- java/net/sf/l2j/gameserver/network/serverpackets/TradeStart.java
++++ java/net/sf/l2j/gameserver/network/serverpackets/TradeStart.java
+@@ -40,11 +40,27 @@
+ 			writeD(temp.getItemId());
+ 			writeD(temp.getCount());
+ 			writeH(item.getType2());
++	           int _augorg = 0;
++	           int _aug = 0;
++	           int _aug2 = 0;
++	           int _aug3 = 0;
++	           if (temp.isAugmented()) {
++	               _augorg = temp.getAugmentation().getAugmentationId();    
++	               _aug = _augorg>>16;
++	               _aug2 = _aug;
++	               _aug3 = _augorg-(_aug<<16);
++	           }
++	           if (temp.isAugmented())
++	               writeH(_aug2);
++	           if (temp.isAugmented() == false)
+ 			writeH(temp.getCustomType1());
+ 			writeD(item.getBodyPart());
+ 			writeH(temp.getEnchantLevel());
+ 			writeH(temp.getCustomType2());
+-			writeH(0x00);
++	           if (temp.isAugmented())
++	               writeH(_aug3);
++	               if (temp.isAugmented() == false)
++	            	   writeH(0x00);
+ 		}
+ 	}
+ }
+\ No newline at end of file

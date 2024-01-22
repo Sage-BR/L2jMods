@@ -1,0 +1,758 @@
+Index: l2jban.aiobuffer;AdminSetAio.java
+===================================================================
+--- l2jban.aiobuffer;AdminSetAio.java	(revision 84)
++++ l2jban.aiobuffer;AdminSetAio.java	(working copy)
+
++/*
++ * This program is free software: you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later
++ * version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++ * details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package l2jban.aiobuffer;
++
++import java.util.StringTokenizer;
++import java.util.concurrent.TimeUnit;
++
++import net.sf.l2j.commons.concurrent.ThreadPool;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.model.L2Skill;
++import net.sf.l2j.gameserver.model.World;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.network.clientpackets.Say2;
++import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
++import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++import l2jban.aiobuffer.AioTaskManager;
++
++/**
++ * @author jBan
++ */
++public class AdminSetAio implements IAdminCommandHandler
++{
++	private static String[] _adminCommands = new String[]
++	{
++		"admin_setaio",
++		"admin_removeaio"
++	};
++	
++	@Override
++	public boolean useAdminCommand(String command, Player activeChar)
++	{
++		StringTokenizer st = new StringTokenizer(command);
++		st.nextToken();
++		String player = "";
++		int time = 1;
++		Player target = null;
++		if (st.hasMoreTokens())
++		{
++			player = st.nextToken();
++			target = World.getInstance().getPlayer(player);
++			if (st.hasMoreTokens())
++			{
++				try
++				{
++					time = Integer.parseInt(st.nextToken());
++				}
++				catch (NumberFormatException nfe)
++				{
++					activeChar.sendMessage("Invalid number format used: " + nfe);
++					return false;
++				}
++			}
++		}
++		else if (activeChar.getTarget() != null && activeChar.getTarget() instanceof Player)
++			target = (Player) activeChar.getTarget();
++		
++		if (command.startsWith("admin_setaio"))
++		{
++			if (target == null && player.equals(""))
++			{
++				activeChar.sendMessage("Usage: //setaio <char_name> [duration_days]");
++				return false;
++			}
++			if (target != null)
++			{
++				AdminSetAio.doAio(target, activeChar, time);
++				activeChar.sendMessage(target.getName() + " Comando /aio Liberado! ");
++				activeChar.sendMessage(target.getName() + " got AIO status for " + time + " day(s).");
++			}
++		}
++		else if (command.startsWith("admin_removeaio"))
++		{
++			if (target == null && player.equals(""))
++			{
++				activeChar.sendMessage("Usage: //removeaio <char_name>");
++				return false;
++			}
++			if (target != null)
++			{
++				if (target.isAio())
++				{
++					AdminSetAio.removeAio(target, activeChar);
++					activeChar.sendMessage("Removed the AIO status from " + target.getName() + ".");
++				}
++				activeChar.sendMessage(target.getName() + " haven't AIO status.");
++			}
++		}
++		return true;
++	}
++	
++	public static void doAio(Player target, Player player, int time)
++	{
++		target.getStat().addExp(target.getStat().getExpForLevel(81));
++		target.broadcastPacket(new SocialAction(target, 3));
++		target.setAio(true);
++		
++		AioTaskManager.getInstance().add(target);
++		long remainingTime = target.getMemos().getLong("aioEndTime", 0);
++		if (remainingTime > 0)
++		{
++			target.getMemos().set("aioEndTime", remainingTime + TimeUnit.DAYS.toMillis(time));
++			target.sendPacket(new CreatureSay(0, Say2.HERO_VOICE, "AIO Manager", "Dear " + player.getName() + ", your AIO status has been extended by " + time + " day(s)."));
++		}
++		else
++		{
++			target.getMemos().set("aioEndTime", System.currentTimeMillis() + TimeUnit.DAYS.toMillis(time));
++			target.sendPacket(new CreatureSay(0, Say2.HERO_VOICE, "AIO Manager", "Dear " + player.getName() + ", you got AIO Status for " + time + " day(s)."));
++			
++			for (L2Skill skill : target.getSkills().values())
++				target.removeSkill(skill.getId(), true);
++			
++			if (Config.AIO_ITEM_ID != 0)
++			{
++				target.addItem("Add", Config.AIO_ITEM_ID, 1, target, true);
++				target.getInventory().equipItemAndRecord(target.getInventory().getItemByItemId(Config.AIO_ITEM_ID));
++			}
++			target.addAioSkills();
++			target.broadcastUserInfo();
++		}
++	}
++	
++	public static void removeAio(Player target, Player player)
++	{
++		AioTaskManager.getInstance().remove(target);
++		target.getMemos().set("aioEndTime", 0);
++		target.setAio(false);
++		for (L2Skill skill : target.getSkills().values())
++			target.removeSkill(skill.getId(), true);
++		
++		if (Config.AIO_ITEM_ID != 0)
++			target.destroyItemByItemId("Destroy", Config.AIO_ITEM_ID, 1, target, true);
++		
++		target.sendPacket(new CreatureSay(0, Say2.HERO_VOICE, "AIO Manager", "Dear " + player.getName() + ", Your AIO period is over. You will be disconected in 3 seconds."));
++		target.broadcastPacket(new SocialAction(target, 13));
++		target.sendSkillList();
++		target.broadcastUserInfo();
++		ThreadPool.schedule(() -> target.logout(false), 3000);
++	}
++	
++	@Override
++	public String[] getAdminCommandList()
++	{
++		return _adminCommands;
++	}
++}
+
+Index: l2jban.aiobuffer;AioItem.java
+===================================================================
+--- l2jban.aiobuffer;AioItem.java	(revision 84)
++++ l2jban.aiobuffer;AioItem.java	(working copy)
+
++	/*
++	 * This program is free software: you can redistribute it and/or modify it under
++	 * the terms of the GNU General Public License as published by the Free Software
++	 * Foundation, either version 3 of the License, or (at your option) any later
++	 * version.
++	 * 
++	 * This program is distributed in the hope that it will be useful, but WITHOUT
++	 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++	 * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++	 * details.
++	 * 
++	 * You should have received a copy of the GNU General Public License along with
++	 * this program. If not, see <http://www.gnu.org/licenses/>.
++	 */
++	package l2jban.aiobuffer;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.handler.IItemHandler;
++	import net.sf.l2j.gameserver.model.actor.Playable;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	
++	
++	/**
++	 * @author Reborn12
++	 */
++	public class AioItem implements IItemHandler
++	{
++		private static final int[] ITEM_IDS = new int[]
++		{
++			Config.AIO_COIN_ID
++		};
++		
++		@Override
++		public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++		{
++			
++			if (Config.ENABLE_AIO_COIN)
++			{
++				if (!(playable instanceof Player))
++					return;
++				
++				Player player = (Player) playable;
++				if (player.isAio())
++					player.sendMessage("Comando /aio Liberado!");
++			
++				else if (player.isInOlympiadMode() || OlympiadManager.getInstance().isRegisteredInComp(player))
++					player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				else if (player.destroyItemByItemId("aio", Config.AIO_COIN_ID, 1, null, true))
++					AdminSetAio.doAio(player, player, Config.AIO_COIN_DAYS);
++				AioMenu.mainHtml(player, 0);
++			}
++		}
++		
++		public int[] getItemIds()
++		{
++			return ITEM_IDS;
++		}
++	}
++	
+
+Index: l2jban.aiobuffer;AioMenu.java
+===================================================================
+--- l2jban.aiobuffer;AioMenu.java	(revision 84)
++++ l2jban.aiobuffer;AioMenu.java	(working copy)
+
++	/*
++	* This program is free software: you can redistribute it and/or modify it under
++	* the terms of the GNU General Public License as published by the Free Software
++	* Foundation, either version 3 of the License, or (at your option) any later
++	* version.
++	*
++	* This program is distributed in the hope that it will be useful, but WITHOUT
++	* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++	* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++	* details.
++	*
++	* You should have received a copy of the GNU General Public License along with
++	* this program. If not, see <http://www.gnu.org/licenses/>.
++	*/
++	package l2jban.aiobuffer;
++	
++	import java.text.SimpleDateFormat;
++	import java.util.StringTokenizer;
++	import java.util.concurrent.TimeUnit;
++	
++	import net.sf.l2j.gameserver.data.xml.TeleportLocationData;
++	import net.sf.l2j.gameserver.handler.IUserCommandHandler;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.location.TeleportLocation;
++	import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++	import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++	
++	public class AioMenu implements IUserCommandHandler
++	{
++		private static final int[] COMMAND_IDS =
++		{
++			2005
++		};
++		
++		@Override
++	
++		public boolean useUserCommand(int command, Player activeChar)
++		{
++			mainHtml(activeChar, 0);
++			return true;
++		}
++	
++		
++		public static void mainHtml(Player activeChar, int time)
++		{
++			NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++			StringBuilder html = new StringBuilder("");
++			html.append("<html><head><title>AIO Menu</title></head><body><center>");
++			html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++			html.append("<table width=305 height=20 bgcolor=000000>");
++			html.append("<tr>");
++			html.append("<td align=center>Personal AIO Options</td>");
++			html.append("</tr>");
++			html.append("</table>");
++			html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++			if (activeChar.isAio())
++			{
++				html.append("<br><br>");
++				html.append("<button value=\"Towns\" action=\"bypass -h aiopanel panelteleport\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++				html.append("Allow you to move to another Town.");
++				html.append("<br>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=305 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Color Name Options</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<br><br>");
++				html.append("<a action=\"bypass -h aiopanel color Green\" <font color=\"009900\">Green</font></a>");
++				html.append("<a action=\"bypass -h aiopanel color Blue\" <font color=\"3333ff\">Blue</font></a>");
++				html.append("<a action=\"bypass -h aiopanel color Purple\" <font color=\"800080\">Purple</font></a>");
++				html.append("<a action=\"bypass -h aiopanel color Yellow\" <font color=\"ffff00\">Yellow</font></a>");
++				html.append("<a action=\"bypass -h aiopanel color Gold\" <font color=\"cca300\">Gold</font></a>");
++				html.append("<br><br><br>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=310 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Your AIO Status Period:</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				long delay = activeChar.getMemos().getLong("aioEndTime", 0);
++				html.append("AIO Status ends at " + new SimpleDateFormat("dd-MM-yyyy HH:mm").format(delay) + "");
++			}
++			else
++			{
++				html.append("<br>");
++				html.append("Your character Isn't AIO.");
++			}
++			html.append("</center>");
++			html.append("</body></html>");
++			nhm.setHtml(html.toString());
++			activeChar.sendPacket(nhm);
++			return;
++		}
++		
++		public static void Time(Player player, int time)
++		{
++			player.getMemos().set("aioEndTime", System.currentTimeMillis() + TimeUnit.DAYS.toMillis(time));
++		}
++	
++		public static void bypass(Player activeChar, String command, StringTokenizer st)
++		{
++			if (command.equals("panelteleport"))
++			{
++				NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++				StringBuilder html = new StringBuilder("");
++				html.append("<html><head><title>AIO Teleport Menu</title></head><body><center>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=315 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Choose your destination</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				if (activeChar.isAio())
++				{
++					html.append("<br><br>");
++					html.append("<button value=\"Giran\" action=\"bypass -h aiopanel teleportTo 1040\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Goddard\" action=\"bypass -h aiopanel teleportTo 1039\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Rune\" action=\"bypass -h aiopanel teleportTo 1041\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Aden\" action=\"bypass -h aiopanel teleportTo 1037\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Dion\" action=\"bypass -h aiopanel teleportTo 6\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Gludio\" action=\"bypass -h aiopanel teleportTo 1099\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Gludin\" action=\"bypass -h aiopanel teleportTo 5\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Heine\" action=\"bypass -h aiopanel teleportTo 1036\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Oren\" action=\"bypass -h aiopanel teleportTo 1038\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Schuttgart\" action=\"bypass -h aiopanel teleportTo 1035\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<br><br>");
++				}
++				else
++				{
++					html.append("<br>");
++					html.append("Your character Isn't AIO.");
++				}
++				html.append("</center>");
++				html.append("</body></html>");
++				nhm.setHtml(html.toString());
++				activeChar.sendPacket(nhm);
++			}
++			else if (command.equals("teleportTo"))
++			{
++				final TeleportLocation list = TeleportLocationData.getInstance().getTeleportLocation(Integer.parseInt(st.nextToken()));
++				if (list != null)
++				{
++					if (activeChar.reduceAdena("Teleport", list.getPrice(), activeChar, true))
++						activeChar.teleportTo(list, 0);
++				}
++				else
++					activeChar.sendMessage("No teleport destination. Contact with server Admin");
++				
++				activeChar.sendPacket(ActionFailed.STATIC_PACKET);
++			}
++			else if (command.equals("color"))
++				
++			{
++				NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++				StringBuilder html = new StringBuilder("");
++				String type = st.nextToken();
++				
++				switch (type)
++				{
++					case "Green":
++	
++						activeChar.getAppearance().setNameColor(0x009900);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Blue":
++	
++						activeChar.getAppearance().setNameColor(0xff7f00);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Purple":
++				
++						activeChar.getAppearance().setNameColor(0x800080);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Yellow":
++					
++						activeChar.getAppearance().setNameColor(0x00ffff);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Gold":
++					
++						activeChar.getAppearance().setNameColor(0x0099ff);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++				}
++			}
++		}
++			
++		
++		@Override
++		public int[] getUserCommandList()
++		{
++			return COMMAND_IDS;
++		}
++	}
++	
+
+Index: l2jban.aiobuffer;AioTaskManager.java
+===================================================================
+--- l2jban.aiobuffer;AioTaskManager.java	(revision 84)
++++ l2jban.aiobuffer;AioTaskManager.java	(working copy)
+
+
++	/*
++	 * This program is free software: you can redistribute it and/or modify it under
++	 * the terms of the GNU General Public License as published by the Free Software
++	 * Foundation, either version 3 of the License, or (at your option) any later
++	 * version.
++	 * 
++	 * This program is distributed in the hope that it will be useful, but WITHOUT
++	 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++	 * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++	 * details.
++	 * 
++	 * You should have received a copy of the GNU General Public License along with
++	 * this program. If not, see <http://www.gnu.org/licenses/>.
++	 */
++	package l2jban.aiobuffer;
++	
++	import java.util.Map;
++	import java.util.concurrent.ConcurrentHashMap;
++	
++	import net.sf.l2j.commons.concurrent.ThreadPool;
++	
++	import l2jban.aiobuffer.AdminSetAio;
++	import net.sf.l2j.gameserver.model.actor.Creature;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	
++	/**
++	 * @author jBan
++	 *
++	 */
++	public final class AioTaskManager implements Runnable
++	{
++		private final Map<Player, Long> _players = new ConcurrentHashMap<>();
++		
++		protected AioTaskManager()
++		{
++			// Run task each 10 second.
++			ThreadPool.scheduleAtFixedRate(this, 1000, 1000);
++		}
++		
++		public final void add(Player player)
++		{
++			_players.put(player, System.currentTimeMillis());
++		}
++		
++		public final void remove(Creature player)
++		{
++			_players.remove(player);
++		}
++		
++		@Override
++		public final void run()
++		{
++			if (_players.isEmpty())
++				return;
++			
++			for (Map.Entry<Player, Long> entry : _players.entrySet())
++			{
++				final Player player = entry.getKey();
++				
++				if (player.getMemos().getLong("aioEndTime") < System.currentTimeMillis())
++				{
++					AdminSetAio.removeAio(player, player);
++					remove(player);
++				}
++			}
++		}
++		
++		public static final AioTaskManager getInstance()
++		{
++			return SingletonHolder._instance;
++		}
++		
++		private static class SingletonHolder
++		{
++			protected static final AioTaskManager _instance = new AioTaskManager();
++		}
++	}
++	
+
+Index: net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java
+===================================================================
+--- net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java	(revision 84)
++++ net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java	(working copy)
+
+
+-		player.sendSkillList();
++		player.sendSkillList();
+		
++		if (player.getMemos().getLong("aioEndTime", 0) > 0)
++			onEnterAio(player);
+			
+			
+-	AnnouncementData.getInstance().showAnnouncements(player, false);
++	AnnouncementData.getInstance().showAnnouncements(player, false);
+
++		if (Config.ANNOUNCE_AIO)
++			if (player.isAio())
++				World.announceToOnlinePlayers("Aiox " + player.getName() + " has been logged in.");
+
+
++	private static void onEnterAio(Player player)
++	{
++		long now = Calendar.getInstance().getTimeInMillis();
++		long endDay = player.getMemos().getLong("aioEndTime");
++		
++		if (now > endDay)
++			AdminSetAio.removeAio(player, player);
++		else
++		{
++			player.setAio(true);
++			player.addAioSkills();
++			player.broadcastUserInfo();
++			AioMenu.mainHtml(player, 0);
++			sendReEnterMessageAio(player);
++		}
++	}
+	
++	private static void sendReEnterMessageAio(Player player)
++	{
++		long delay = player.getMemos().getLong("aioEndTime", 0);
++		
++		player.sendMessage("Aio Buffer Ends In: " + new SimpleDateFormat("dd-MM-yyyy HH:mm").format(delay) + "");
++	}
+
+Index: net.sf.l2j.gameserver.model.actor;Player.java
+===================================================================
+--- net.sf.l2j.gameserver.model.actor;Player.java	(revision 84)
++++ net.sf.l2j.gameserver.model.actor;Player.java	(working copy)
+
+
++	private boolean _isAio;
++	
++	public boolean isAio()
++	{
++		return _isAio;
++	}
++	
++	public boolean setAio(boolean b)
++	{
++		return _isAio = b;
++	}
++	
++	public void addAioSkills()
++	{
++		for (int skillid : Config.AIO_SKILLS.keySet())
++		{
++			final L2Skill skill = SkillTable.getInstance().getInfo(skillid, Config.AIO_SKILLS.get(skillid));
++			
++			if (skill != null)
++				addSkill(skill, true);
++		}
++		sendSkillList();
++	}
+
+Index: gameserver/coinfig/player.propertis
+===================================================================
+--- gameserver/coinfig/player.propertis	(revision 84)
++++ gameserver/coinfig/player.propertis	(working copy)
+@@ -1281,6 +1281,10 @@
+
+
++	# ================================================
++	# 					Aio Settings
++	# ================================================
++	#Enable/Disable AIO Item.
++	EnableAioCoin = True
++	#Aio Coin ID
++	# You should go to < Data/xml/items (your item ID) >,
++	# Add in the end of the item's line ( <set name="handler" val="AioItem"/> ).
++	AioCoinId = 9300
++	#Aio Item Set Days.
++	SetAioDays = 90
++
++	#Annoucer Aio Loguin
++	AnnounceAioLogin = False
++
++	# ID of the item that will be given to AIO
++	# Default: Keshanberk*Keshanberk
++	# 0 to disable
++	RewardAioItemId = 5706
++
++	
++	# List of Aio Skills
++	# Format : skillid,skilllvl;skillid2,skilllvl2;
++	AioSkills = 1085,3;1304,3;1087,3;1354,1;1062,2;1243,6;1045,6;1048,6;1429,1;163,1;\
++	1311,6;213,8;1007,3;1309,3;1552,3;1006,3;1308,3;1253,3;1284,3;1392,3;1393,3;214,1;\
++	1009,3;1310,4;1363,1;1362,1;1397,3;1292,6;1078,6;307,1;276,1;309,1;274,1;275,1;164,3;\
++	272,1;277,1;273,1;311,1;366,1;365,1;310,1;271,1;1242,3;1353,3;1391,3;1002,3;7029,1;\
++	1352,1;229,7;228,3;1077,3;1218,33;1059,3;1219,33;1388,3;1389,3;1240,3;1413,1;\
++	1086,2;1036,2;1035,4;1068,3;1356,1;1355,1;1357,1;1307,3;1410,1;1409,1;1353,1;\
++	1044,3;1182,3;1191,3;1189,3;1259,4;1306,6;234,23;1040,3;364,1;264,1;306,1;\
++	269,1;270,1;265,1;363,1;349,1;308,1;305,1;304,1;267,1;266,1;268,1;1390,3;1303,2;\
++	1204,2;1268,4;395,1;396,1;1375,1;1376,1;1374,1;4551,10;4552,10;4553,10;4553,10
++	
++	
+
+Index: data\xml\items/AioItem.xml
+===================================================================
+--- data\xml\items/AioItem.xml	(revision 84)
++++ data\xml\items/AioItem.xml	(working copy)
+@@ -1281,6 +1281,10 @@
+
++<?xml version="1.0" encoding="UTF-8"?>
++<list>
++
++	<item id="9300" type="EtcItem" name="AIO Buffer">	
++	<set name="material" val="PAPER" />
++	<set name="price" val="10000" />
++	<set name="is_stackable" val="true" />
++	<set name="handler" val="AioItem"/>
++	</item>
++</list>
+
+Index: net.sf.l2j.gameserver.handler;AdminCommandHandler.java
+===================================================================
+--- net.sf.l2j.gameserver.handler;AdminCommandHandler.java	(revision 84)
++++ net.sf.l2j.gameserver.handler;AdminCommandHandler.java	(working copy)
+@@ -1281,6 +1281,10 @@
+
++	import l2jban.aiobuffer.AdminSetAio;
+
+-	registerHandler(new AdminCreateItem());
++	registerHandler(new AdminCreateItem());
++	registerHandler(new AdminSetAio());
+
+Index: net.sf.l2j.gameserver.handler;ItemHandler.java
+===================================================================
+--- net.sf.l2j.gameserver.handler;ItemHandler.java	(revision 84)
++++ net.sf.l2j.gameserver.handler;ItemHandler.java	(working copy)
+@@ -1281,6 +1281,10 @@
+
++	import l2jban.aiobuffer.AioItem;
+
+-	registerHandler(new Book());
++	registerHandler(new Book());
++	registerHandler(new AioItem());
+
+Index: java/net/sf/l2j/Config.java
+===================================================================
+--- java/net/sf/l2j/Config.java	(revision 84)
++++ java/net/sf/l2j/Config.java	(working copy)
+@@ -1281,6 +1281,10 @@
+
++	/** L2jBan AIO Settings */
++	public static Map<Integer, Integer> AIO_SKILLS;
++	public static int AIO_ITEM_ID;
++	public static boolean ENABLE_AIO_COIN;
++	public static int AIO_COIN_ID;
++	public static int AIO_COIN_DAYS;	
++	public static boolean ANNOUNCE_AIO;
+
+
++	ANNOUNCE_AIO = players.getProperty("AnnounceAioLogin", true);
++	ENABLE_AIO_COIN = players.getProperty("EnableAioCoin", false);
++	AIO_COIN_ID = players.getProperty("AioCoinId", 10);
++	AIO_COIN_DAYS = players.getProperty("SetAioDays", 10);
++	AIO_ITEM_ID = players.getProperty("RewardAioItemId", 10);
++	AIO_SKILLS = new HashMap<>();
++	for (String skillInfo : players.getProperty("AioSkills").split(";"))
++	{
++		String[] info = skillInfo.split(",");
++		AIO_SKILLS.put(Integer.parseInt(info[0]), Integer.parseInt(info[1]));
++	}
+
+Index: net.sf.l2j.gameserver.model.actor.instance;Gatekeeper.java
+===================================================================
+--- net.sf.l2j.gameserver.model.actor.instance;Gatekeeper.java	(revision 84)
++++ net.sf.l2j.gameserver.model.actor.instance;Gatekeeper.java	(working copy)
+@@ -1281,6 +1281,10 @@
+
+	@Override
+	public void showChatWindow(Player player, int val)
+	{
++		// Generic Aio check. Send back the HTM if found and cancel current action.
++		if (player.isAio()  && showPkDenyChatWindow(player, "teleporter"))
++			return;
+		
+		showChatWindow(player, getHtmlPath(getNpcId(), val));
+	}
+	
+	
+Index: net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java
+===================================================================
+--- net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java	(revision 84)
++++ net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java	(working copy)
+@@ -1281,6 +1281,10 @@
+
++	import l2jban.aiobuffer.AioMenu;
+
+
++	if (_command.startsWith("aiopanel"))
++	{
++		String value = _command.substring(8);
++		StringTokenizer st = new StringTokenizer(value);
++		String command = st.nextToken();
++		
++		AioMenu.bypass(player, command, st);
++	}

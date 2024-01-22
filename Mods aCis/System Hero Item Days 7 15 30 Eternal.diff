@@ -1,0 +1,915 @@
+Index: net.sf.l2j;Config.java
+===================================================================
+--- net.sf.l2j;Config.java (revision 84)
++++ net.sf.l2j;Config.java (working copy)
+
++	public static final String ITEMS_HANDER_FILE = "./config/aCis/ItemsHander.properties";
+
++	/** COMBATE Hero Settings */
++	public static boolean ENABLE_HERO_COIN;
++	
++	
++	public static int HERO_COIN_ID_7DAYS;
++	public static int HERO_COIN_7DAYS;
++	
++	public static int HERO_COIN_ID_15DAYS;
++	public static int HERO_COIN_15DAYS;
++	
++	public static int HERO_COIN_ID_30DAYS;
++	public static int HERO_COIN_30DAYS;
++	
++	public static int HERO_COIN_ID_ETERNAL;
++	public static int HERO_COIN_ETERNAL;
++	
++	public static int HERO_ITEM_ID;
+
+
++	private static final void loadItemHander()
++	{
++		final ExProperties ItemHander = initProperties(ITEMS_HANDER_FILE);
++	
++		
++		ENABLE_HERO_COIN = ItemHander.getProperty("EnableHeroCoin", false);
++		
++		HERO_COIN_ID_7DAYS = ItemHander.getProperty("Hero7DaysId", 10);
++		HERO_COIN_7DAYS = ItemHander.getProperty("SetHero7Days", 10);
++		
++		HERO_COIN_ID_15DAYS = ItemHander.getProperty("Hero15DaysId", 10);
++		HERO_COIN_15DAYS = ItemHander.getProperty("SetHero15Days", 10);
++		
++		HERO_COIN_ID_30DAYS = ItemHander.getProperty("Hero30DaysId", 10);
++		HERO_COIN_30DAYS = ItemHander.getProperty("SetHero30Days", 10);
++		
++		HERO_COIN_ID_ETERNAL = ItemHander.getProperty("HeroEternalId", 10);
++		HERO_COIN_ETERNAL = ItemHander.getProperty("SetHeroEternal", 10);
++		
++		
++		HERO_ITEM_ID = ItemHander.getProperty("RewardHeroItemId", 10);
++	
++	
++	}
+
+-	// players settings
+-	loadPlayers();
+
+
++	// players settings
++	loadPlayers();
+
++	loadItemHander();
+
+Index: Dev/HeroItem/HeroTaskManager.java
+===================================================================
+--- Dev/HeroItem/HeroTaskManager.java (revision 84)
++++ Dev/HeroItem/HeroTaskManager.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import java.util.Map;
++	import java.util.concurrent.ConcurrentHashMap;
++	
++	import net.sf.l2j.commons.concurrent.ThreadPool;
++	
++	import net.sf.l2j.gameserver.model.actor.Creature;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public final class HeroTaskManager implements Runnable
++	{
++		private final Map<Player, Long> _players = new ConcurrentHashMap<>();
++		
++		protected HeroTaskManager()
++		{
++			// Run task each 10 second.
++			ThreadPool.scheduleAtFixedRate(this, 1000, 1000);
++		}
++		
++		public final void add(Player player)
++		{
++			_players.put(player, System.currentTimeMillis());
++		}
++		
++		public final void remove(Creature player)
++		{
++			_players.remove(player);
++		}
++		
++		@Override
++		public final void run()
++		{
++			if (_players.isEmpty())
++				return;
++			
++			for (Map.Entry<Player, Long> entry : _players.entrySet())
++			{
++				final Player player = entry.getKey();
++				
++				if (player.getMemos().getLong("heroEndTime") < System.currentTimeMillis())
++				{
++					AdminSetHero.removeHero(player, player);
++					remove(player);
++				}
++			}
++		}
++		
++		public static final HeroTaskManager getInstance()
++		{
++			return SingletonHolder._instance;
++		}
++		
++		private static class SingletonHolder
++		{
++			protected static final HeroTaskManager _instance = new HeroTaskManager();
++		}
++	}
++
+
+Index: Dev/HeroItem/AdminSetHero.java
+===================================================================
+--- Dev/HeroItem/AdminSetHero.java (revision 84)
++++ Dev/HeroItem/AdminSetHero.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import java.util.StringTokenizer;
++	import java.util.concurrent.TimeUnit;
++	
++	import net.sf.l2j.commons.concurrent.ThreadPool;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.enums.SayType;
++	import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++	import net.sf.l2j.gameserver.model.World;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
++	import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class AdminSetHero implements IAdminCommandHandler
++	{
++		private static String[] _adminCommands = new String[]
++		{
++			"admin_sethero",
++			"admin_nohero"
++		};
++		
++		@Override
++		public boolean useAdminCommand(String command, Player activeChar)
++		{
++			StringTokenizer st = new StringTokenizer(command);
++			st.nextToken();
++			String player = "";
++			int time = 1;
++			Player target = null;
++			if (st.hasMoreTokens())
++			{
++				player = st.nextToken();
++				target = World.getInstance().getPlayer(player);
++				if (st.hasMoreTokens())
++				{
++					try
++					{
++						time = Integer.parseInt(st.nextToken());
++					}
++					catch (NumberFormatException nfe)
++					{
++						activeChar.sendMessage("Invalid number format used: " + nfe);
++						return false;
++					}
++				}
++			}
++			else if (activeChar.getTarget() != null && activeChar.getTarget() instanceof Player)
++				target = (Player) activeChar.getTarget();
++			
++			if (command.startsWith("admin_sethero"))
++			{
++				if (target == null && player.equals(""))
++				{
++					activeChar.sendMessage("Usage: //hero <char_name> [duration_days]");
++					return false;
++				}
++				if (target != null)
++				{
++					AdminSetHero.doHero(target, activeChar, time);
++					activeChar.sendMessage(target.getName() + " Comando /hero Liberado! ");
++					activeChar.sendMessage(target.getName() + " got Hero status for " + time + " day(s).");
++				}
++			}
++			else if (command.startsWith("admin_nohero"))
++			{
++				if (target == null && player.equals(""))
++				{
++					activeChar.sendMessage("Usage: //nohero <char_name>");
++					return false;
++				}
++				if (target != null)
++				{
++					if (target.isHero())
++					{
++						AdminSetHero.removeHero(target, activeChar);
++						activeChar.sendMessage("Removed the Hero status from " + target.getName() + ".");
++					}
++					activeChar.sendMessage(target.getName() + " haven't Hero status.");
++				}
++			}
++			return true;
++		}
++		
++		public static void doHero(Player target, Player player, int time)
++		{
++			target.getStat().addExp(target.getStat().getExpForLevel(81));
++			target.broadcastPacket(new SocialAction(target, 3));
++			target.setHero(true);
++			
++			HeroTaskManager.getInstance().add(target);
++			long remainingTime = target.getMemos().getLong("heroEndTime", 0);
++			if (remainingTime > 0)
++			{
++				target.getMemos().set("heroEndTime", remainingTime + TimeUnit.DAYS.toMillis(time));
++				target.sendPacket(new CreatureSay(0, SayType.HERO_VOICE, "Hero Manager", "Dear " + player.getName() + ", your Hero status has been extended by " + time + " day(s)."));
++			}
++			else
++			{
++				target.getMemos().set("heroEndTime", System.currentTimeMillis() + TimeUnit.DAYS.toMillis(time));
++				target.sendPacket(new CreatureSay(0, SayType.HERO_VOICE, "Hero Manager", "Dear " + player.getName() + ", you got Hero Status for " + time + " day(s)."));
++				
++				if (Config.HERO_ITEM_ID != 0)
++				{
++					target.addItem("Add", Config.HERO_ITEM_ID, 1, target, true);
++					target.getInventory().equipItemAndRecord(target.getInventory().getItemByItemId(Config.HERO_ITEM_ID));
++				}
++				target.setHero(true);
++				target.broadcastUserInfo();
++			}
++		}
++		
++		public static void removeHero(Player target, Player player)
++		{
++			HeroTaskManager.getInstance().remove(target);
++			target.getMemos().set("heroEndTime", 0);
++			target.setHero(false);
++			
++			if (Config.HERO_ITEM_ID != 0)
++				target.destroyItemByItemId("Destroy", Config.HERO_ITEM_ID, 1, target, true);
++			
++			target.sendPacket(new CreatureSay(0, SayType.HERO_VOICE, "Hero Manager", "Dear " + player.getName() + ", Your Hero period is over. You will be disconected in 3 seconds."));
++			target.broadcastPacket(new SocialAction(target, 13));
++			target.sendSkillList();
++			target.broadcastUserInfo();
++			ThreadPool.schedule(() -> target.logout(false), 3000);
++		}
++		
++		@Override
++		public String[] getAdminCommandList()
++		{
++			return _adminCommands;
++		}
++	}
++
+
+Index: Dev/HeroItem/HeroMenu.java
+===================================================================
+--- Dev/HeroItem/HeroMenu.java (revision 84)
++++ Dev/HeroItem/HeroMenu.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import java.text.SimpleDateFormat;
++	import java.util.StringTokenizer;
++	import java.util.concurrent.TimeUnit;
++	
++	import net.sf.l2j.gameserver.data.xml.TeleportLocationData;
++	import net.sf.l2j.gameserver.handler.IUserCommandHandler;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.location.TeleportLocation;
++	import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++	import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class HeroMenu implements IUserCommandHandler
++	{
++		private static final int[] COMMAND_IDS =
++		{
++			305
++		};
++		
++		@Override
++	
++		public void useUserCommand(int command, Player activeChar)
++		{
++			mainHtml(activeChar, 0);
++			return;
++		}
++	
++		
++		public static void mainHtml(Player activeChar, int time)
++		{
++			NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++			StringBuilder html = new StringBuilder("");
++			html.append("<html><head><title>Hero Menu</title></head><body><center>");
++			html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++			html.append("<table width=305 height=20 bgcolor=000000>");
++			html.append("<tr>");
++			html.append("<td align=center>Personal HERO Options</td>");
++			html.append("</tr>");
++			html.append("</table>");
++			html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++			if (activeChar.isHero())
++			{
++				html.append("<br><br>");
++				html.append("");
++				html.append("");
++				html.append("<br>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=305 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Color Name Options</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<br><br>");
++				html.append("<a action=\"bypass -h heropanel color Green\" <font color=\"009900\">Green</font></a>");
++				html.append("<a action=\"bypass -h heropanel color Blue\" <font color=\"3333ff\">Blue</font></a>");
++				html.append("<a action=\"bypass -h heropanel color Purple\" <font color=\"800080\">Purple</font></a>");
++				html.append("<a action=\"bypass -h heropanel color Yellow\" <font color=\"ffff00\">Yellow</font></a>");
++				html.append("<a action=\"bypass -h heropanel color Gold\" <font color=\"cca300\">Gold</font></a>");
++				html.append("<br><br><br>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=310 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Your HERO Status Period:</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				long delay = activeChar.getMemos().getLong("heroEndTime", 0);
++				html.append("HERO Status ends at " + new SimpleDateFormat("dd-MM-yyyy HH:mm").format(delay) + "");
++			}
++			else
++			{
++				html.append("<br>");
++				html.append("Your character Isn't HERO.");
++			}
++			html.append("</center>");
++			html.append("</body></html>");
++			nhm.setHtml(html.toString());
++			activeChar.sendPacket(nhm);
++			return;
++		}
++		
++		public static void Time(Player player, int time)
++		{
++			player.getMemos().set("heroEndTime", System.currentTimeMillis() + TimeUnit.DAYS.toMillis(time));
++		}
++	
++		public static void bypass(Player activeChar, String command, StringTokenizer st)
++		{
++			if (command.equals("panelteleport"))
++			{
++				NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++				StringBuilder html = new StringBuilder("");
++				html.append("<html><head><title>AIO Teleport Menu</title></head><body><center>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				html.append("<table width=315 height=20 bgcolor=000000>");
++				html.append("<tr>");
++				html.append("<td align=center>Choose your destination</td>");
++				html.append("</tr>");
++				html.append("</table>");
++				html.append("<img src=\"SS_l2jNetwork.lineo\" width=300 height=3>");
++				if (activeChar.isHero())
++				{
++					html.append("<br><br>");
++					html.append("<button value=\"Giran\" action=\"bypass -h heropanel teleportTo 1040\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Goddard\" action=\"bypass -h heropanel teleportTo 1039\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Rune\" action=\"bypass -h heropanel teleportTo 1041\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Aden\" action=\"bypass -h heropanel teleportTo 1037\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Dion\" action=\"bypass -h heropanel teleportTo 6\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Gludio\" action=\"bypass -h heropanel teleportTo 1099\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Gludin\" action=\"bypass -h heropanel teleportTo 5\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Heine\" action=\"bypass -h heropanel teleportTo 1036\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Oren\" action=\"bypass -h heropanel teleportTo 1038\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<button value=\"Schuttgart\" action=\"bypass -h heropanel teleportTo 1035\" width=122 height=23 fore=\"SS_l2jBan.bf\" back=\"SS_l2jBan.bf\">");
++					html.append("<br><br>");
++				}
++				else
++				{
++					html.append("<br>");
++					html.append("Your character Isn't HERO.");
++				}
++				html.append("</center>");
++				html.append("</body></html>");
++				nhm.setHtml(html.toString());
++				activeChar.sendPacket(nhm);
++			}
++			else if (command.equals("teleportTo"))
++			{
++				final TeleportLocation list = TeleportLocationData.getInstance().getTeleportLocation(Integer.parseInt(st.nextToken()));
++				if (list != null)
++				{
++					if (activeChar.reduceAdena("Teleport", list.getPrice(), activeChar, true))
++						activeChar.teleportTo(list, 0);
++				}
++				else
++					activeChar.sendMessage("No teleport destination. Contact with server Admin");
++				
++				activeChar.sendPacket(ActionFailed.STATIC_PACKET);
++			}
++			else if (command.equals("color"))
++				
++			{
++				NpcHtmlMessage nhm = new NpcHtmlMessage(5);
++				StringBuilder html = new StringBuilder("");
++				String type = st.nextToken();
++				
++				switch (type)
++				{
++					case "Green":
++	
++						activeChar.getAppearance().setNameColor(0x009900);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Blue":
++	
++						activeChar.getAppearance().setNameColor(0xff7f00);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Purple":
++				
++						activeChar.getAppearance().setNameColor(0x800080);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Yellow":
++					
++						activeChar.getAppearance().setNameColor(0x00ffff);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++					case "Gold":
++					
++						activeChar.getAppearance().setNameColor(0x0099ff);
++						activeChar.broadcastUserInfo();
++						activeChar.sendMessage("Your color name has changed!");
++						nhm.setHtml(html.toString());
++						activeChar.sendPacket(nhm);
++						break;
++				}
++			}
++		}
++			
++		
++		@Override
++		public int[] getUserCommandList()
++		{
++			return COMMAND_IDS;
++		}
++	}
++
+
+Index: Dev/HeroItem/Hero7Days.java
+===================================================================
+--- Dev/HeroItem/Hero7Days.java (revision 84)
++++ Dev/HeroItem/Hero7Days.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.handler.IItemHandler;
++	import net.sf.l2j.gameserver.model.actor.Playable;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class Hero7Days implements IItemHandler
++	{
++		private static final int[] ITEM_IDS = new int[]
++		{
++			Config.HERO_COIN_ID_7DAYS
++		};
++		
++		@Override
++		public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++		{
++			
++			if (Config.ENABLE_HERO_COIN)
++			{
++				if (!(playable instanceof Player))
++					return;
++				
++				Player player = (Player) playable;
++				if (player.isHero())
++					player.sendMessage("Comando /hero Liberado!");
++			
++				else if (player.isInOlympiadMode() || OlympiadManager.getInstance().isRegisteredInComp(player))
++					player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				else if (player.destroyItemByItemId("hero", Config.HERO_COIN_ID_7DAYS, 1, null, true))
++					AdminSetHero.doHero(player, player, Config.HERO_COIN_7DAYS);
++				HeroMenu.mainHtml(player, 0);
++			}
++		}
++		
++		public static void RemoveHeroStatus(Player target)
++		{
++			HeroTaskManager.getInstance().remove(target);
++			target.getMemos().set("heroEndTime", 0);
++			target.setHero(false);
++			target.broadcastPacket(new SocialAction(target, 13));
++			target.broadcastUserInfo();
++		}
++		
++		public int[] getItemIds()
++		{
++			return ITEM_IDS;
++		}
++	}
++
+
+Index: Dev/HeroItem/Hero15Days.java
+===================================================================
+--- Dev/HeroItem/Hero15Days.java (revision 84)
++++ Dev/HeroItem/Hero15Days.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.handler.IItemHandler;
++	import net.sf.l2j.gameserver.model.actor.Playable;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class Hero15Days implements IItemHandler
++	{
++		private static final int[] ITEM_IDS = new int[]
++		{
++			Config.HERO_COIN_ID_15DAYS
++		};
++		
++		@Override
++		public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++		{
++			
++			if (Config.ENABLE_HERO_COIN)
++			{
++				if (!(playable instanceof Player))
++					return;
++				
++				Player player = (Player) playable;
++				if (player.isHero())
++					player.sendMessage("Comando /hero Liberado!");
++			
++				else if (player.isInOlympiadMode() || OlympiadManager.getInstance().isRegisteredInComp(player))
++					player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				else if (player.destroyItemByItemId("hero", Config.HERO_COIN_ID_15DAYS, 1, null, true))
++					AdminSetHero.doHero(player, player, Config.HERO_COIN_15DAYS);
++				HeroMenu.mainHtml(player, 0);
++			}
++		}
++		
++		public static void RemoveHeroStatus(Player target)
++		{
++			HeroTaskManager.getInstance().remove(target);
++			target.getMemos().set("heroEndTime", 0);
++			target.setHero(false);
++			target.broadcastPacket(new SocialAction(target, 13));
++			target.broadcastUserInfo();
++		}
++		
++		public int[] getItemIds()
++		{
++			return ITEM_IDS;
++		}
++	}
++
+
+Index: Dev/HeroItem/Hero30Days.java
+===================================================================
+--- Dev/HeroItem/Hero30Days.java (revision 84)
++++ Dev/HeroItem/Hero30Days.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.handler.IItemHandler;
++	import net.sf.l2j.gameserver.model.actor.Playable;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class Hero30Days implements IItemHandler
++	{
++		private static final int[] ITEM_IDS = new int[]
++		{
++			Config.HERO_COIN_ID_30DAYS
++		};
++		
++		@Override
++		public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++		{
++			
++			if (Config.ENABLE_HERO_COIN)
++			{
++				if (!(playable instanceof Player))
++					return;
++				
++				Player player = (Player) playable;
++				if (player.isHero())
++					player.sendMessage("Comando /hero Liberado!");
++			
++				else if (player.isInOlympiadMode() || OlympiadManager.getInstance().isRegisteredInComp(player))
++					player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				else if (player.destroyItemByItemId("hero", Config.HERO_COIN_ID_30DAYS, 1, null, true))
++					AdminSetHero.doHero(player, player, Config.HERO_COIN_30DAYS);
++				HeroMenu.mainHtml(player, 0);
++			}
++		}
++		
++		public static void RemoveHeroStatus(Player target)
++		{
++			HeroTaskManager.getInstance().remove(target);
++			target.getMemos().set("heroEndTime", 0);
++			target.setHero(false);
++			target.broadcastPacket(new SocialAction(target, 13));
++			target.broadcastUserInfo();
++		}
++		
++		public int[] getItemIds()
++		{
++			return ITEM_IDS;
++		}
++	}
+
+Index: Dev/HeroItem/HeroEternal.java
+===================================================================
+--- Dev/HeroItem/HeroEternal.java (revision 84)
++++ Dev/HeroItem/HeroEternal.java (working copy)
+
++	package Dev.HeroItem;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.handler.IItemHandler;
++	import net.sf.l2j.gameserver.model.actor.Playable;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	import net.sf.l2j.gameserver.network.serverpackets.SocialAction;
++	
++	/**
++	 * @author COMBATE
++	 *
++	 */
++	public class HeroEternal implements IItemHandler
++	{
++		private static final int[] ITEM_IDS = new int[]
++		{
++			Config.HERO_COIN_ID_ETERNAL
++		};
++		
++		@Override
++		public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++		{
++			
++			if (Config.ENABLE_HERO_COIN)
++			{
++				if (!(playable instanceof Player))
++					return;
++				
++				Player player = (Player) playable;
++				if (player.isHero())
++					player.sendMessage("Comando /hero Liberado!");
++			
++				else if (player.isInOlympiadMode() || OlympiadManager.getInstance().isRegisteredInComp(player))
++					player.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				else if (player.destroyItemByItemId("hero", Config.HERO_COIN_ID_ETERNAL, 1, null, true))
++					AdminSetHero.doHero(player, player, Config.HERO_COIN_ETERNAL);
++				HeroMenu.mainHtml(player, 0);
++			}
++		}
++		
++		public static void RemoveHeroStatus(Player target)
++		{
++			HeroTaskManager.getInstance().remove(target);
++			target.getMemos().set("heroEndTime", 0);
++			target.setHero(false);
++			target.broadcastPacket(new SocialAction(target, 13));
++			target.broadcastUserInfo();
++		}
++		
++		public int[] getItemIds()
++		{
++			return ITEM_IDS;
++		}
++	}
++
+
+Index: net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java
+===================================================================
+--- net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java (revision 84)
++++ net.sf.l2j.gameserver.network.clientpackets;RequestBypassToServer.java (working copy)
+
+
++	if (_command.startsWith("heropanel"))
++	{
++		String value = _command.substring(8);
++		StringTokenizer st = new StringTokenizer(value);
++		String command = st.nextToken();
++		
++		HeroMenu.bypass(player, command, st);
++	}
+
+Index: net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java
+===================================================================
+--- net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java (revision 84)
++++ net.sf.l2j.gameserver.network.clientpackets;EnterWorld.java (working copy)
+
++	import Dev.HeroItem.Hero7Days;
++	import Dev.HeroItem.HeroMenu;
+
+
+if (player.getMemos().getLong("vipTime", 0) > 0)
+
+
++	if (player.getMemos().getLong("heroEndTime", 0) > 0)
++		onEnterHero(player);
+
+	
++	private static void onEnterHero(Player activeChar)
++	{
++		long now = Calendar.getInstance().getTimeInMillis();
++		long endDay = activeChar.getMemos().getLong("heroEndTime");
++		
++		if (now > endDay)
++			Hero7Days.RemoveHeroStatus(activeChar);
++		else
++		{
++			
++			activeChar.setHero(true);
++			activeChar.broadcastUserInfo();
++			HeroMenu.mainHtml(activeChar, 0);
++			sendReEnterMessageHero(activeChar);
++			
++		}
++	}
+	
++	private static void sendReEnterMessageHero(Player player)
++	{
++		long delay = player.getMemos().getLong("heroEndTime", 0);
++		
++		player.sendMessage("Hero Ends In: " + new SimpleDateFormat("dd-MM-yyyy HH:mm").format(delay) + "");
++	
++	}
+	
+
+Index: net.sf.l2j.gameserver.model.actor;Player.java
+===================================================================
+--- net.sf.l2j.gameserver.model.actor;Player.java (revision 84)
++++ net.sf.l2j.gameserver.model.actor;Player.java (working copy)
+
+Index: Apenas Comfirme se existe! se não adicione
+
++	private boolean _isHero;
++	
++	
++	public boolean isHero()
++	{
++		return _isHero;
++	}
++	
++	
++	public void setHero(boolean hero)
++	{
++		if (hero && _baseClass == _activeClass)
++		{
++			for (L2Skill skill : SkillTable.getHeroSkills())
++				addSkill(skill, false);
++		}
++		else
++		{
++			for (L2Skill skill : SkillTable.getHeroSkills())
++				removeSkill(skill.getId(), false);
++			
++			HeroTaskManager.getInstance().remove(this);
++			getMemos().set("heroEndTime", 0);
++		}
++		_isHero = hero;
++		
++		broadcastUserInfo();
++		sendSkillList();
++	}
+
+Index: Referencia pra adicionar
+public void onPlayerEnter()
+
+
++	if (isHero())
++		HeroTaskManager.getInstance().add(this);
+
+Index: Referencia
+// Stop all timers associated to that Player.
+
+-	PvpFlagTaskManager.getInstance().remove(this);
++	PvpFlagTaskManager.getInstance().remove(this);
++	HeroTaskManager.getInstance().remove(this);
+
+Index: Referencia
+
+	private void regiveTemporarySkills()
+	{
+	
++		// Add Hero skills if hero.
++	if (isHero())
++		setHero(true);
+
+
+Index: Referencia pra adicionar
+PreparedStatement ps = con.prepareStatement(RESTORE_CHARACTER))
+
+
+-	// Set the position of the Player.
+-	player.getPosition().set(rs.getInt("x"), rs.getInt("y"), rs.getInt("z"), rs.getInt("heading"));
+
++	// Set the position of the Player.
++	player.getPosition().set(rs.getInt("x"), rs.getInt("y"), rs.getInt("z"), rs.getInt("heading"));
+					
++	// Set Hero status if it applies
++	if (HeroManager.getInstance().isActiveHero(objectId))
++		player.setHero(true);
+
+
+Index: net.sf.l2j.gameserver.handler;AdminCommandHandler.java
+===================================================================
+--- net.sf.l2j.gameserver.handler;AdminCommandHandler.java (revision 84)
++++ net.sf.l2j.gameserver.handler;AdminCommandHandler.java (working copy)
+
++	import Dev.HeroItem.AdminSetHero;
+
+
+-	registerHandler(new AdminTeleport());
++	registerHandler(new AdminTeleport());
+
++	registerHandler(new AdminSetHero());
+
+Index: net.sf.l2j.gameserver.handler;ItemHandler.java
+===================================================================
+--- net.sf.l2j.gameserver.network.clientpackets;ItemHandler.java (revision 84)
++++ net.sf.l2j.gameserver.network.clientpackets;ItemHandler.java (working copy)
+
++	import Dev.HeroItem.Hero15Days;
++	import Dev.HeroItem.Hero30Days;
++	import Dev.HeroItem.Hero7Days;
++	import Dev.HeroItem.HeroEternal;
+
++	registerHandler(new Hero7Days());
++	registerHandler(new Hero15Days());
++	registerHandler(new Hero30Days());
++	registerHandler(new HeroEternal());
+
+Index: data/xml/adminCommands.xml
+===================================================================
+--- data/xml/adminCommands.xml (revision 84)
++++ data/xml/adminCommands.xml (working copy)
+
+-	<!-- OLYMPIADS -->
+-	<aCar name="admin_addolypoints" accessLevel="7"/>
+-	<aCar name="admin_removeolypoints" accessLevel="7"/>
+-	<aCar name="admin_endoly" accessLevel="7"/>
++	<aCar name="admin_sethero" accessLevel="7"/>
++	<aCar name="admin_nohero" accessLevel="7"/>
+-	<aCar name="admin_setnoble" accessLevel="7"/>

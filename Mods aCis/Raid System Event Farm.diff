@@ -1,0 +1,512 @@
+Index: java/net/sf/l2j/gameserver/dev/systemFarm/SystemFarmManager.java
+===================================================================
+--- java/net/sf/l2j/gameserver/dev/systemFarm/SystemFarmManager.java	(BAN - L2JDEV www.l2jdev.com.br)
++++ java/net/sf/l2j/gameserver/dev/systemFarm/SystemFarmManager.java	
+
+
++	package net.sf.l2j.gameserver.dev.systemFarm;
++	
++	import java.io.File;
++	import java.io.IOException;
++	import java.text.SimpleDateFormat;
++	import java.util.ArrayList;
++	import java.util.Calendar;
++	
++	import net.sf.l2j.commons.concurrent.ThreadPool;
++	import net.sf.l2j.commons.config.ExProperties;
++	import net.sf.l2j.commons.logging.CLogger;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.data.xml.NpcData;
++	import net.sf.l2j.gameserver.model.World;
++	import net.sf.l2j.gameserver.model.actor.Npc;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.spawn.Spawn;
++	import net.sf.l2j.gameserver.network.SystemMessageId;
++	import net.sf.l2j.gameserver.network.serverpackets.ItemList;
++	import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++	
++	/**
++	 * @author BAN - L2JDEV
++	 */
++	public class SystemFarmManager
++	{
++		private static final CLogger LOGGER = new CLogger(SystemFarmManager.class.getName());
++		private Calendar NextEvent;
++		
++		public static boolean SYSTEMFARM_EVENT_ENABLE;
++		public static String[] SYSTEMFARM_EVENT_BY_TIME_OF_DAY;
++		public int SYSTEMFARM_TIME;
++		public int SYSTEMFARM_NPC_ID_TYPE_ONE;
++		public int SYSTEMFARM_NPC_ID_TYPE_TWO;
++		public int itemId;
++		public int count;
++		
++		public static int[] SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES = new int[3];
++		
++		public static int[] SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES = new int[3];
++		
++		public static final String SYSTEM_FARM_FILE = "config/SystemFarmManager.properties";
++		
++		public ArrayList<Spawn> MonsterEvent = new ArrayList<>();
++		
++		public boolean _starting;
++		public boolean _aborted;
++		
++		public SystemFarmManager()
++		{
++			try
++			{
++				ExProperties l2jdev = load(SYSTEM_FARM_FILE);
++				SYSTEMFARM_EVENT_ENABLE = l2jdev.getProperty("SystemFarmEventEnable", false);
++				
++				SYSTEMFARM_EVENT_BY_TIME_OF_DAY = l2jdev.getProperty("EventTimeOfDay", "20:00").split(",");
++				SYSTEMFARM_TIME = l2jdev.getProperty("EventTime", 60);
++				
++				itemId = l2jdev.getProperty("itemId", 57);
++				count = l2jdev.getProperty("count", 100);
++				
++				SYSTEMFARM_NPC_ID_TYPE_ONE = l2jdev.getProperty("RaidSpawnNpcIdTypeOne", 300);
++				SYSTEMFARM_NPC_ID_TYPE_ONE = l2jdev.getProperty("RaidSpawnNpcIdTypeOne", 300);
++				
++				String[] propertySplit = l2jdev.getProperty("RaidNpcCoordinatesOne", "0,0,0").split(",");
++				if (propertySplit.length < 3)
++				{
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[0] = 83456;
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[1] = 148611;
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[2] = -3408;
++				}
++				else
++				{
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[0] = Integer.parseInt(propertySplit[0]);
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[1] = Integer.parseInt(propertySplit[1]);
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[2] = Integer.parseInt(propertySplit[2]);
++					
++				}
++				
++				String[] tlk = l2jdev.getProperty("RaidNpcCoordinatesTwo", "0,0,0").split(",");
++				if (tlk.length < 3)
++				{
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[0] = 83456;
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[1] = 148611;
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[2] = -3408;
++				}
++				else
++				{
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[0] = Integer.parseInt(tlk[0]);
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[1] = Integer.parseInt(tlk[1]);
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[2] = Integer.parseInt(tlk[2]);
++					
++				}
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++			
++		}
++		
++		public void StartingCheck()
++		{
++			_starting = true;
++			_aborted = false;
++			
++			World.announceToOnlinePlayers("Announce: " + "System Farm Event Duration: " + SYSTEMFARM_TIME + " Hour(s)!", true);
++			waiter(SYSTEMFARM_TIME * 60 * 1000);
++			if (!_aborted)
++				finishEvent();
++			
++			int[] coorone = SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES;
++			spawnNPC(coorone[0], coorone[1], coorone[2], SYSTEMFARM_NPC_ID_TYPE_ONE);
++			
++			int[] coorTwo = SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES;
++			spawnNPC(coorTwo[0], coorTwo[1], coorTwo[2], SYSTEMFARM_NPC_ID_TYPE_TWO);
++		}
++		
++		public void finishEvent()
++		{
++			startCalculationOfNextEventTime();
++			
++			_starting = false;
++			_aborted = true;
++			World.announceToOnlinePlayers("Announce:" + " Next System Farm Event: " + getNextTime(), true);
++			
++			cleanNpc();
++			
++		}
++		
++		public void cleanNpc()
++		{
++			if (!MonsterEvent.isEmpty())
++			{
++				for (Spawn npc : MonsterEvent)
++				{
++					npc.getNpc().deleteMe();
++				}
++				MonsterEvent.clear();
++			}
++		}
++		
++		protected void waiter(long interval)
++		{
++			long startWaiterTime = System.currentTimeMillis();
++			int seconds = (int) (interval / 1000L);
++			while (((startWaiterTime) + interval > System.currentTimeMillis()) && !_aborted)
++			{
++				seconds--;
++				switch (seconds)
++				{
++					case 10800:
++						if (_starting)
++							World.announceToOnlinePlayers("Announce: System Farm Event " + seconds / 60 / 60 + " hour(s) till event finish!", true);
++						break;
++					
++					case 7200:
++						if (_starting)
++							World.announceToOnlinePlayers("Announce: System Farm Event " + seconds / 60 / 60 + " hour(s) till event finish!", true);
++						break;
++					
++					case 3600:
++						if (_starting)
++							World.announceToOnlinePlayers("Announce: System Farm Event " + seconds / 60 / 60 + " hour(s) till event finish!", true);
++						break;
++					case 60:
++					case 120:
++					case 180:
++					case 240:
++					case 300:
++					case 600:
++					case 900:
++					case 1800:
++						if (_starting)
++							World.announceToOnlinePlayers("Announce: System Farm Event " + seconds / 60 + " minute(s) till event finish!", true);
++						break;
++					case 1:
++					case 2:
++					case 3:
++					case 10:
++					case 15:
++					case 30:
++						if (_starting)
++							World.announceToOnlinePlayers("Announce: System Farm Event " + seconds + " second(s) till event finish!", true);
++						break;
++				}
++				long startOneSecondWaiterStartTime = System.currentTimeMillis();
++				while (startOneSecondWaiterStartTime + 1000L > System.currentTimeMillis())
++					try
++					{
++						Thread.sleep(1L);
++					}
++					catch (InterruptedException ie)
++					{
++						ie.printStackTrace();
++						LOGGER.info("Error Clock waiter System Farm Event.");
++					}
++			}
++		}
++		
++		public static ExProperties load(String filename)
++		{
++			return load(new File(filename));
++		}
++		
++		public static ExProperties load(File file)
++		{
++			ExProperties result = new ExProperties();
++			
++			try
++			{
++				result.load(file);
++			}
++			catch (IOException e)
++			{
++				LOGGER.error("Error loading config : " + file.getName() + "!", e);
++			}
++			
++			return result;
++		}
++		
++		public String getNextTime()
++		{
++			if (NextEvent.getTime() != null)
++			{
++				SimpleDateFormat formatWithAmPm = new SimpleDateFormat("hh:mm a");
++				return formatWithAmPm.format(NextEvent.getTime());
++			}
++			return "Error";
++		}
++		
++		public void startCalculationOfNextEventTime()
++		{
++			try
++			{
++				Calendar currentTime = Calendar.getInstance();
++				Calendar testStartTime = null;
++				long flush2 = 0L;
++				long timeL = 0L;
++				int count = 0;
++				for (String timeOfDay : SYSTEMFARM_EVENT_BY_TIME_OF_DAY)
++				{
++					testStartTime = Calendar.getInstance();
++					testStartTime.setLenient(true);
++					String[] splitTimeOfDay = timeOfDay.split(":");
++					testStartTime.set(11, Integer.parseInt(splitTimeOfDay[0]));
++					testStartTime.set(12, Integer.parseInt(splitTimeOfDay[1]));
++					testStartTime.set(13, 0);
++					if (testStartTime.getTimeInMillis() < currentTime.getTimeInMillis())
++						testStartTime.add(5, 1);
++					timeL = testStartTime.getTimeInMillis() - currentTime.getTimeInMillis();
++					if (count == 0)
++					{
++						flush2 = timeL;
++						NextEvent = testStartTime;
++					}
++					if (timeL < flush2)
++					{
++						flush2 = timeL;
++						NextEvent = testStartTime;
++					}
++					count++;
++				}
++				LOGGER.info("System Farm Event: Next Event [" + NextEvent.getTime().toString() + "]");
++				ThreadPool.schedule(new StartEventTask(), flush2);
++			}
++			catch (Exception e)
++			{
++				System.out.println("[System Farm Event]: " + e);
++			}
++		}
++		
++		private class StartEventTask implements Runnable
++		{
++			StartEventTask()
++			{
++			}
++			
++			@Override
++			public void run()
++			{
++				StartingCheck();
++			}
++		}
++		
++		public void reload()
++		
++		{
++			try
++			{
++				ExProperties l2jdev = load(SYSTEM_FARM_FILE);
++				SYSTEMFARM_EVENT_ENABLE = l2jdev.getProperty("SystemFarmEventEnable", false);
++				
++				SYSTEMFARM_EVENT_BY_TIME_OF_DAY = l2jdev.getProperty("EventTimeOfDay", "20:00").split(",");
++				SYSTEMFARM_TIME = l2jdev.getProperty("EventTime", 60);
++				
++				SYSTEMFARM_NPC_ID_TYPE_ONE = l2jdev.getProperty("RaidSpawnNpcIdTypeOne", 300);
++				SYSTEMFARM_NPC_ID_TYPE_TWO = l2jdev.getProperty("RaidSpawnNpcIdTypeTwo", 300);
++				
++				itemId = l2jdev.getProperty("itemId", 57);
++				count = l2jdev.getProperty("count", 100);
++				
++				String[] propertySplit = l2jdev.getProperty("RaidNpcCoordinatesOne", "0,0,0").split(",");
++				if (propertySplit.length < 3)
++				{
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[0] = 83456;
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[1] = 148611;
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[2] = -3408;
++				}
++				else
++				{
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[0] = Integer.parseInt(propertySplit[0]);
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[1] = Integer.parseInt(propertySplit[1]);
++					SYSTEM_EVENT_NPCID_TYPE_ONE_COORDINATES[2] = Integer.parseInt(propertySplit[2]);
++					
++				}
++				
++				String[] tlk = l2jdev.getProperty("RaidNpcCoordinatesTwo", "0,0,0").split(",");
++				if (tlk.length < 3)
++				{
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[0] = 83456;
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[1] = 148611;
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[2] = -3408;
++				}
++				else
++				{
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[0] = Integer.parseInt(tlk[0]);
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[1] = Integer.parseInt(tlk[1]);
++					SYSTEM_EVENT_NPCID_TYPE_TWO_COORDINATES[2] = Integer.parseInt(tlk[2]);
++					
++				}
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++		
++		protected Spawn spawnNPC(int xPos, int yPos, int zPos, int npcId)
++		{
++			final NpcTemplate template = NpcData.getInstance().getTemplate(npcId);
++			
++			try
++			{
++				final Spawn spawn = new Spawn(template);
++				spawn.setLoc(xPos, yPos, zPos, 0);
++				spawn.setRespawnDelay(1);
++				spawn.doSpawn(false);
++				MonsterEvent.add(spawn);
++				return spawn;
++			}
++			catch (Exception e)
++			{
++				return null;
++			}
++		}
++		
++		public void onDeath(Player player, Npc monster)
++		{
++			if (_starting)
++			{
++				ItemInstance item = ItemInstance.create(itemId, count, player, monster);
++				
++				if (monster.getNpcId() == SYSTEMFARM_NPC_ID_TYPE_ONE && monster.getNpcId() == SYSTEMFARM_NPC_ID_TYPE_TWO)
++				{
++					if (Config.AUTO_LOOT && player.getInventory().validateCapacity(item))
++					{
++						if (player.isVip())
++						{
++							player.getInventory().addItem("Cube Reward", item.getItemId(), item.getCount() * 2, player, monster);
++							
++							if (item.getCount() > 1)
++								player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(item.getItemId()).addItemNumber(item.getCount() * 2));
++							else
++								player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(item.getItemId()));
++						}
++						else
++						{
++							player.getInventory().addItem("Cube Reward", item.getItemId(), item.getCount(), player, player);
++							
++							if (item.getCount() > 1)
++								player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_S2_S1_S).addItemName(item.getItemId()).addItemNumber(item.getCount()));
++							else
++								player.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.EARNED_ITEM_S1).addItemName(item.getItemId()));
++	
++						}
++						player.sendPacket(new ItemList(player, false));
++					}
++					else
++					{
++						item.dropMe(monster, monster.getX(), monster.getY() + 30, monster.getZ());
++					}
++					
++				}
++			}
++		}
++		
++		public static SystemFarmManager getInstance()
++		{
++			return SingletonHolder.INSTANCE;
++		}
++		
++		private static class SingletonHolder
++		{
++			protected static final SystemFarmManager INSTANCE = new SystemFarmManager();
++		}
++		
++	}
+
+
+Index: java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java
+===================================================================
+--- java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java	(BAN - L2JDEV www.l2jdev.com.br)
++++ java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java	
+
+
++	import net.sf.l2j.gameserver.dev.systemFarm.SystemFarmManager;
+import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
+
+
+	else if (type.startsWith("config"))
+	{
+		Config.loadGameServer();
++		SystemFarmManager.getInstance().reload();
+		activeChar.sendMessage("Configs files have been reloaded.");
+	}
+
+
+Index: java/net/sf/l2j/gameserver/model/actor/Attackable.java
+===================================================================
+--- java/net/sf/l2j/gameserver/model/actor/Attackable.java	(BAN - L2JDEV www.l2jdev.com.br)
++++ java/net/sf/l2j/gameserver/model/actor/Attackable.java	
+
+import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.dev.systemFarm.SystemFarmManager;
+
+@Override
+public boolean doDie(Creature killer)
+{
+	if (!super.doDie(killer))1
+		return false;
+
++	if (this instanceof Monster)
++		{
++			final Monster monster = (Monster) this;
++			
++			SystemFarmManager.getInstance().onDeath((Player) killer, monster);
++		}
+
+_attackedBy.clear();
+}
+
+
+Index: java/net/sf/l2j/gameserver/gameserver.java
+===================================================================
+--- java/net/sf/l2j/gameserver/gameserver.java	(BAN - L2JDEV www.l2jdev.com.br)
++++ java/net/sf/l2j/gameserver/gameserver.java	
+
+	StringUtil.printSection("Olympiads & Heroes");
+	OlympiadGameManager.getInstance();
+	Olympiad.getInstance();
+	HeroManager.getInstance();
+
++	StringUtil.printSection("System Farm Manager");
++	SystemFarmManager.getInstance();
++	if (SystemFarmManager.SYSTEMFARM_EVENT_ENABLE)
++			SystemFarmManager.getInstance().startCalculationOfNextEventTime();
+
+	StringUtil.printSection("Four Sepulchers");
+	
+	
+Index: config/SystemFarmManager.properties
+===================================================================
+--- config/SystemFarmManager.properties	(BAN - L2JDEV www.l2jdev.com.br)
++++ config/SystemFarmManager.properties
+
++	#============================================================#
++	#            New System Farm Manager                         #
++	#        JDev Project - WWWW.L2JDEV.COM.BR                   #
++	#============================================================#
++	
++	# Enable Event Manager
++	SystemFarmEventEnable = True
++	
++	# Setting the System Farm start time
++	# The BattleStatingTime variable defines the System Farm start times.
++	# It is a list of times in the format HH:mm,HH:mm,HH:mm
++	EventTimeOfDay = 06:00,06:10,19:16,19:26
++	
++	# Configuring System Farm Duration Event interval
++	# The BattleInvervalDuration variable defines the duration, in minute, of the running period
++	EventTime = 60
++	
++	# Configuring System Farm Npc RegisterId
++	RaidSpawnNpcIdTypeOne = 102
++	RaidSpawnNpcIdTypeOne = 103
++	
++	# Configuring System Farm Npc Location
++	RaidNpcCoordinatesOne = 83456,148611,-3408
++	RaidNpcCoordinatesTwo = 83456,148611,-3408
++	
++	itemId = 57
++	count = 100

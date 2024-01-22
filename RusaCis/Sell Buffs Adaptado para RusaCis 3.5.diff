@@ -1,0 +1,581 @@
+### Eclipse Workspace Patch 1.0
+#P aCis_gameserver
+diff --git java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index e77f468..131c6d5 100644
+--- java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -1,44 +1,46 @@
+ package net.sf.l2j.gameserver.handler;
+ 
+ import java.util.HashMap;
+ import java.util.Map;
+ 
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.EventCommand;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.Menu;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.OfflinePlayer;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.Online;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.PremiumStatus;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.SellBuff;
+ 
+ public class VoicedCommandHandler
+ {
+ 	private final Map<Integer, IVoicedCommandHandler> _entries = new HashMap<>();
+ 	
+ 	protected VoicedCommandHandler()
+ 	{
+ 		registerHandler(new Online());
+ 		registerHandler(new Menu());
+ 		registerHandler(new OfflinePlayer());
+ 		registerHandler(new PremiumStatus());
+ 		registerHandler(new EventCommand());
++		registerHandler(new SellBuff());
+ 	}
+ 	
+ 	public void registerHandler(IVoicedCommandHandler handler)
+ 	{
+ 		String[] ids = handler.getVoicedCommandList();
+ 		
+ 		for (int i = 0; i < ids.length; i++)
+ 			_entries.put(ids[i].hashCode(), handler);
+ 	}
+ 	
+ 	public IVoicedCommandHandler getHandler(String voicedCommand)
+ 	{
+ 		String command = voicedCommand;
+ 		
+ 		if (voicedCommand.indexOf(" ") != -1)
+ 			command = voicedCommand.substring(0, voicedCommand.indexOf(" "));
+ 		
+ 		return _entries.get(command.hashCode());
+ 	}
+ 	
+ 	public int size()
+ 	{
+diff --git java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/SellBuff.java
+new file mode 100644
+index 0000000..36af6d8
+--- /dev/null
++++ java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/SellBuff.java
+@@ -0,0 +1,74 @@
++package net.sf.l2j.gameserver.handler.voicedcommandhandlers;
++
++import net.sf.l2j.gameserver.enums.ZoneId;
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.entity.events.capturetheflag.CTFEvent;
++import net.sf.l2j.gameserver.model.entity.events.deathmatch.DMEvent;
++import net.sf.l2j.gameserver.model.entity.events.lastman.LMEvent;
++import net.sf.l2j.gameserver.model.entity.events.teamvsteam.TvTEvent;
++import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
++import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++
++/**
++ *
++ * @author  Iratus
++ */
++public class SellBuff implements IVoicedCommandHandler
++{
++	private static final String[] VOICED_COMMANDS = {"sellbuffs"};
++	
++	@Override
++	public boolean useVoicedCommand(String command, Player activeChar, String target)
++	{
++		if(activeChar == null)
++			return false;
++		
++		if(activeChar.isDead() || activeChar.isAlikeDead())
++		{
++			activeChar.sendMessage("You are dead , you can't sell at the moment");
++			return false;
++		}
++		else if(activeChar.isInOlympiadMode() || OlympiadManager.getInstance().isRegistered(activeChar))
++		{
++			activeChar.sendMessage("You are in olympiad , you can't sell at the moment");
++			return false;
++		}
++		final int charId = activeChar.getObjectId();
++		if (CTFEvent.isPlayerParticipant(charId) || DMEvent.isPlayerParticipant(charId) || LMEvent.isPlayerParticipant(charId) || TvTEvent.isPlayerParticipant(charId))
++		{
++			activeChar.sendMessage("You can't join Start Buffs while participating on Event.");
++			return false;
++		}
++		else if(!activeChar.isInsideZone(ZoneId.PEACE))
++		{
++			activeChar.sendMessage("You are not in peacefull zone , you can sell only in peacefull zones");
++			return false;
++		}
++		else if(activeChar.getClassId().getId() != 98)
++		{
++			activeChar.sendMessage("You must be a buffer class to sell buffs");
++			return false;
++		}
++		
++		StringBuilder tb = new StringBuilder(0);
++		tb.append("<html><body>");
++		tb.append("Hello , by completing this form you will be able to sell buffs.");
++		tb.append("<br>Players will be able , targeting you to take your buff services<br>");
++		tb.append("<br>You will be rewarded with adenas for each buff a player takes.");
++		tb.append("<br><center>Now choose the prize:</center><br>");
++		tb.append("<edit var=\"pri\" width=120 height=15>");
++		tb.append("<center><button value=\"Confirm\" action=\"bypass -h actr $pri\" width=204 height=20 back=\"sek.cbui75\" fore=\"sek.cbui75\">");
++		tb.append("</body></html>");
++		NpcHtmlMessage n = new NpcHtmlMessage(0);
++		n.setHtml(tb.toString());
++		activeChar.sendPacket(n);
++		return true;
++	}
++	@Override
++	public String[] getVoicedCommandList()
++	{
++		return VOICED_COMMANDS;
++	}
++	
++}
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/model/actor/Player.java
+index 588d728..9fa12d3 100644
+--- java/net/sf/l2j/gameserver/model/actor/Player.java
++++ java/net/sf/l2j/gameserver/model/actor/Player.java
+@@ -68,44 +68,45 @@
+ import net.sf.l2j.gameserver.enums.SpawnType;
+ import net.sf.l2j.gameserver.enums.StatusType;
+ import net.sf.l2j.gameserver.enums.TeamType;
+ import net.sf.l2j.gameserver.enums.TeleportMode;
+ import net.sf.l2j.gameserver.enums.ZoneId;
+ import net.sf.l2j.gameserver.enums.actors.ClassId;
+ import net.sf.l2j.gameserver.enums.actors.ClassRace;
+ import net.sf.l2j.gameserver.enums.actors.ClassType;
+ import net.sf.l2j.gameserver.enums.actors.MoveType;
+ import net.sf.l2j.gameserver.enums.actors.OperateType;
+ import net.sf.l2j.gameserver.enums.actors.Sex;
+ import net.sf.l2j.gameserver.enums.actors.WeightPenalty;
+ import net.sf.l2j.gameserver.enums.bbs.ForumAccess;
+ import net.sf.l2j.gameserver.enums.bbs.ForumType;
+ import net.sf.l2j.gameserver.enums.items.ActionType;
+ import net.sf.l2j.gameserver.enums.items.EtcItemType;
+ import net.sf.l2j.gameserver.enums.items.ItemLocation;
+ import net.sf.l2j.gameserver.enums.items.ItemState;
+ import net.sf.l2j.gameserver.enums.items.ShotType;
+ import net.sf.l2j.gameserver.enums.items.WeaponType;
+ import net.sf.l2j.gameserver.enums.skills.EffectFlag;
+ import net.sf.l2j.gameserver.enums.skills.EffectType;
++import net.sf.l2j.gameserver.enums.skills.SkillType;
+ import net.sf.l2j.gameserver.enums.skills.Stats;
+ import net.sf.l2j.gameserver.geoengine.GeoEngine;
+ import net.sf.l2j.gameserver.handler.IItemHandler;
+ import net.sf.l2j.gameserver.handler.ItemHandler;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditChar;
+ import net.sf.l2j.gameserver.handler.skillhandlers.SummonFriend;
+ import net.sf.l2j.gameserver.model.AccessLevel;
+ import net.sf.l2j.gameserver.model.PetDataEntry;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.WorldObject;
+ import net.sf.l2j.gameserver.model.actor.ai.type.PlayerAI;
+ import net.sf.l2j.gameserver.model.actor.attack.PlayerAttack;
+ import net.sf.l2j.gameserver.model.actor.cast.PlayerCast;
+ import net.sf.l2j.gameserver.model.actor.container.npc.RewardInfo;
+ import net.sf.l2j.gameserver.model.actor.container.player.Appearance;
+ import net.sf.l2j.gameserver.model.actor.container.player.BlockList;
+ import net.sf.l2j.gameserver.model.actor.container.player.CubicList;
+ import net.sf.l2j.gameserver.model.actor.container.player.FishingStance;
+ import net.sf.l2j.gameserver.model.actor.container.player.HennaList;
+ import net.sf.l2j.gameserver.model.actor.container.player.MacroList;
+ import net.sf.l2j.gameserver.model.actor.container.player.Punishment;
+ import net.sf.l2j.gameserver.model.actor.container.player.QuestList;
+@@ -282,44 +283,46 @@
+ 	public static final int REQUEST_TIMEOUT = 15;
+ 	
+ 	private static final Comparator<GeneralSkillNode> COMPARE_SKILLS_BY_MIN_LVL = Comparator.comparing(GeneralSkillNode::getMinLvl);
+ 	private static final Comparator<GeneralSkillNode> COMPARE_SKILLS_BY_LVL = Comparator.comparing(GeneralSkillNode::getValue);
+ 	
+ 	private long _offlineShopStart;
+ 	
+ 	private GameClient _client;
+ 	private final Map<Integer, String> _chars = new HashMap<>();
+ 	
+ 	private final String _accountName;
+ 	private long _deleteTimer;
+ 	
+ 	private boolean _isOnline;
+ 	private long _onlineTime;
+ 	private long _onlineBeginTime;
+ 	private long _lastAccess;
+ 	private long _uptime;
+ 	
+ 	protected int _baseClass;
+ 	protected int _activeClass;
+ 	protected int _classIndex;
++	private boolean _sellbuff = false;
++	private int _buffprize = 0;
+ 	
+ 	private final Map<Integer, SubClass> _subClasses = new ConcurrentSkipListMap<>();
+ 	private final ReentrantLock _subclassLock = new ReentrantLock();
+ 	
+ 	private final Appearance _appearance;
+ 	
+ 	private long _expBeforeDeath;
+ 	private int _karma;
+ 	private int _pvpKills;
+ 	private int _pkKills;
+ 	private byte _pvpFlag;
+ 	private int _siegeState;
+ 	private WeightPenalty _weightPenalty = WeightPenalty.NONE;
+ 	
+ 	private int _lastCompassZone; // the last compass zone update send to the client
+ 	
+ 	private boolean _isIn7sDungeon;
+ 	
+ 	private final Punishment _punishment = new Punishment(this);
+ 	private final RecipeBook _recipeBook = new RecipeBook(this);
+ 	
+ 	private boolean _isInOlympiadMode;
+@@ -1552,44 +1555,47 @@
+ 		}, 2500);
+ 		
+ 		// Broadcast the packet.
+ 		broadcastPacket(new ChangeWaitType(this, ChangeWaitType.WT_SITTING));
+ 		
+ 		// Tutorial
+ 		final QuestState qs = _questList.getQuestState("Tutorial");
+ 		if (qs != null)
+ 			qs.getQuest().notifyEvent("CE8388608", null, this);
+ 		
+ 		return true;
+ 	}
+ 	
+ 	/**
+ 	 * Stand the {@link Player} up. The player retrieves control after a 2.5s delay.
+ 	 * <ul>
+ 	 * <li>Schedules the STOOD_UP event</li>
+ 	 * <li>Broadcast {@link ChangeWaitType} packet</li>
+ 	 * </ul>
+ 	 */
+ 	public void standUp()
+ 	{
++		if(isSellBuff())
++			 return;
+ 		_isStandingNow = true;
+ 		_isSitting = false;
+ 		
+ 		// Schedule a stand up task to wait for the animation to finish
+ 		ThreadPool.schedule(() ->
+ 		{
+ 			_isStandingNow = false;
+ 			_isStanding = true;
+ 			
+ 			getAI().notifyEvent(AiEventType.STOOD_UP, null, null);
+ 			
+ 		}, 2500);
+ 		
+ 		// Broadcast the packet.
+ 		broadcastPacket(new ChangeWaitType(this, ChangeWaitType.WT_STANDING));
+ 	}
+ 	
+ 	/**
+ 	 * @return The PcWarehouse object of the Player.
+ 	 */
+ 	public PcWarehouse getWarehouse()
+ 	{
+@@ -2657,44 +2663,84 @@
+ 			su.addAttribute(StatusType.MAX_HP, target.getStatus().getMaxHp());
+ 			su.addAttribute(StatusType.CUR_HP, (int) target.getStatus().getHp());
+ 			sendPacket(su);
+ 			
+ 			broadcastPacket(new TargetSelected(getObjectId(), newTarget.getObjectId(), getX(), getY(), getZ()), false);
+ 		}
+ 		
+ 		if (newTarget instanceof Folk)
+ 			setCurrentFolk((Folk) newTarget);
+ 		else if (newTarget == null)
+ 		{
+ 			sendPacket(ActionFailed.STATIC_PACKET);
+ 			
+ 			if (getTarget() != null)
+ 			{
+ 				broadcastPacket(new TargetUnselected(this));
+ 				setCurrentFolk(null);
+ 			}
+ 		}
+ 		
+ 		// Target the new WorldObject
+ 		super.setTarget(newTarget);
++		Player t = null;
++		if(newTarget instanceof Player)
++			t = (Player) newTarget;
++		
++		if(t != null)
++		{
++			if(t.isSellBuff() && t != this)
++			{
++				StringBuilder tb = new StringBuilder();
++				NpcHtmlMessage n = new NpcHtmlMessage(0);
++				
++				tb.append("<html><body>");
++				tb.append("<br><br>");
++				tb.append("<center>Hi, I am "+t.getName()+" and i sell my buffs</center>");
++				tb.append("<br><center>Buffs Prize:"+t.getBuffPrize()+"</center>");
++				
++				Collection<L2Skill> skills = t.getSkills().values();
++				ArrayList<L2Skill> ba = new ArrayList<L2Skill>();
++				
++				for(L2Skill s : skills)
++				{
++					if(s == null)
++						continue;
++					
++					if(s.getSkillType() == SkillType.BUFF && s.isActive())
++						ba.add(s);
++				}
++				
++				for(L2Skill p : ba)
++				{
++					tb.append("<center><button value=\""+p.getName()+"\" action=\"bypass -h buff"+p.getId()+"\" width=204 height=20 back=\"sek.cbui75\" fore=\"sek.cbui75\"></center>");
++				}
++				
++				tb.append("</body></html>");
++				
++				n.setHtml(tb.toString());
++				sendPacket(n);
++			}
++		}
+ 	}
+ 	
+ 	@Override
+ 	public ItemInstance getActiveWeaponInstance()
+ 	{
+ 		return getInventory().getItemFrom(Paperdoll.RHAND);
+ 	}
+ 	
+ 	@Override
+ 	public Weapon getActiveWeaponItem()
+ 	{
+ 		final ItemInstance item = getActiveWeaponInstance();
+ 		return (item == null) ? getTemplate().getFists() : (Weapon) item.getItem();
+ 	}
+ 	
+ 	@Override
+ 	public WeaponType getAttackType()
+ 	{
+ 		return getActiveWeaponItem().getItemType();
+ 	}
+ 	
+ 	@Override
+@@ -7969,36 +8015,54 @@
+ 		}
+ 		
+ 		var = _manufactureStoreList.get();
+ 		if (var != null)
+ 		{
+ 			String[] items = var.split(";");
+ 			for (String item : items)
+ 			{
+ 				if (item.equals(""))
+ 					continue;
+ 				
+ 				String[] values = item.split(",");
+ 				if (values.length < 2)
+ 					continue;
+ 				
+ 				int recId = Integer.parseInt(values[0]);
+ 				int price = Integer.parseInt(values[1]);
+ 				
+ 				_manufactureList.add(new ManufactureItem(recId, price));
+ 			}
+ 		}
+ 	}
++	public boolean isSellBuff()
++	{
++		return _sellbuff;
++	}
++ 	
++	public void setSellBuff(boolean j)
++	{
++		_sellbuff = j;
++	}
++	
++	public int getBuffPrize()
++	{
++		return _buffprize;
++	}
++	
++	public void setBuffPrize(int x)
++	{
++		_buffprize = x;
++	}
+ 	/**
+ 	 * Added to other GMs, test also this {@link Player} instance. If GM, set it.
+ 	 */
+ 	@Override
+ 	public List<Player> getSurroundingGMs()
+ 	{
+ 		final List<Player> gms = super.getSurroundingGMs();
+ 		if (isGM())
+ 			gms.add(this);
+ 		
+ 		return gms;
+ 	}
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+index ccab125..b558d5b 100644
+--- java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
++++ java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+@@ -1,39 +1,40 @@
+ package net.sf.l2j.gameserver.network.clientpackets;
+ 
+ import java.text.DecimalFormat;
+ import java.util.Arrays;
+ import java.util.Comparator;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.StringTokenizer;
+ import java.util.logging.Logger;
+ import java.util.stream.Collectors;
+ 
+ import net.sf.l2j.commons.data.Pagination;
+ import net.sf.l2j.commons.lang.StringUtil;
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.communitybbs.CommunityBoard;
+ import net.sf.l2j.gameserver.data.DropCalc;
++import net.sf.l2j.gameserver.data.SkillTable;
+ import net.sf.l2j.gameserver.data.manager.BotsPreventionManager;
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.manager.SpawnManager;
+ import net.sf.l2j.gameserver.data.xml.AdminData;
+ import net.sf.l2j.gameserver.data.xml.ItemData;
+ import net.sf.l2j.gameserver.enums.DropType;
+ import net.sf.l2j.gameserver.enums.FloodProtector;
+ import net.sf.l2j.gameserver.enums.actors.NpcSkillType;
+ import net.sf.l2j.gameserver.enums.skills.ElementType;
+ import net.sf.l2j.gameserver.enums.skills.SkillType;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
+ import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.WorldObject;
+ import net.sf.l2j.gameserver.model.actor.Attackable;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.model.actor.container.attackable.AggroList;
+ import net.sf.l2j.gameserver.model.actor.container.npc.AggroInfo;
+ import net.sf.l2j.gameserver.model.actor.instance.GrandBoss;
+@@ -168,44 +169,102 @@
+ 		}
+ 		else if (_command.startsWith("Quest "))
+ 		{
+ 			if (!player.validateBypass(_command))
+ 				return;
+ 			
+ 			String[] str = _command.substring(6).trim().split(" ", 2);
+ 			if (str.length == 1)
+ 				player.getQuestList().processQuestEvent(str[0], "");
+ 			else
+ 				player.getQuestList().processQuestEvent(str[0], str[1]);
+ 		}
+ 		else if (_command.startsWith("_match"))
+ 		{
+ 			String params = _command.substring(_command.indexOf("?") + 1);
+ 			StringTokenizer st = new StringTokenizer(params, "&");
+ 			int heroclass = Integer.parseInt(st.nextToken().split("=")[1]);
+ 			int heropage = Integer.parseInt(st.nextToken().split("=")[1]);
+ 			int heroid = HeroManager.getInstance().getHeroByClass(heroclass);
+ 			if (heroid > 0)
+ 				HeroManager.getInstance().showHeroFights(player, heroclass, heroid, heropage);
+ 		}
++		else if(_command.startsWith("buff"))
++		{
++			String x = _command.substring(4);
++			int id = Integer.parseInt(x);
++			Player target = null;
++			
++			if(player.getTarget() instanceof Player)
++				target = (Player) player.getTarget();
++			
++			if(target == null)
++			{
++				return;
++			}
++				
++			if(player.getInventory().getItemByItemId(57).getCount() < ((Player) player.getTarget()).getBuffPrize())
++			{
++				player.sendMessage("not enought adena");
++			}
++
++			try
++			{
++				L2Skill s = SkillTable.getInstance().getInfo(id, 2);
++				s.getEffects(player, player);
++				player.sendMessage("You buyed: "+s.getName());
++				player.getInventory().destroyItemByItemId("", 57, target.getBuffPrize(), target, null);
++				target.getInventory().addItem("", 57, target.getBuffPrize(), target, null);
++			}
++			catch(Exception e)
++			{
++				e.printStackTrace();
++			}
++		}
++		else if(_command.startsWith("actr"))
++		{
++			String l = _command.substring(5);
++			
++			int p = 0;
++			
++			p = Integer.parseInt(l);
++			
++			
++			if(p == 0)
++				return;
++			
++			if(p > 2000000000)
++			{
++				player.sendMessage("Too big prize");
++				return;
++			}
++			
++			player.setBuffPrize(p);
++			player.sitDown();
++			player.setSellBuff(true);
++			player.getAppearance().setNameColor(0x1111);
++			player.setTitle("=SELL BUFFS=");
++			player.broadcastUserInfo();
++			player.broadcastTitleInfo();
++		}
+ 		else if (_command.startsWith("_diary"))
+ 		{
+ 			String params = _command.substring(_command.indexOf("?") + 1);
+ 			StringTokenizer st = new StringTokenizer(params, "&");
+ 			int heroclass = Integer.parseInt(st.nextToken().split("=")[1]);
+ 			int heropage = Integer.parseInt(st.nextToken().split("=")[1]);
+ 			int heroid = HeroManager.getInstance().getHeroByClass(heroclass);
+ 			if (heroid > 0)
+ 				HeroManager.getInstance().showHeroDiary(player, heroclass, heroid, heropage);
+ 		}
+ 		else if (_command.startsWith("arenachange")) // change
+ 		{
+ 			final boolean isManager = player.getCurrentFolk() instanceof OlympiadManagerNpc;
+ 			if (!isManager)
+ 			{
+ 				// Without npc, command can be used only in observer mode on arena
+ 				if (!player.isInObserverMode() || player.isInOlympiadMode() || player.getOlympiadGameId() < 0)
+ 					return;
+ 			}
+ 			
+ 			// Olympiad registration check.
+ 			if (OlympiadManager.getInstance().isRegisteredInComp(player))
+@@ -303,44 +362,53 @@
+ 								catch (Exception e)
+ 								{
+ 									showNpcInfoEffects(player, (Npc) wo, html, 1);
+ 								}
+ 								break;
+ 						}
+ 					}
+ 					player.sendPacket(html);
+ 				}
+ 			}
+ 			catch (Exception e)
+ 			{
+ 				LOGGER.error("bypass user_npc_info error", e);
+ 			}

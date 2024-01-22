@@ -1,0 +1,190 @@
+=================================================
+Index: net.sf.l2j.gameserver.model.actor.instance
+=================================================
+
+=================================================
+Index: net.sf.l2j.gameserver.model.actor.instance.AugmenterShop.java     ++++Crie a Nova Class
+=================================================
+
++	package net.sf.l2j.gameserver.model.actor.instance;
++	
++	import net.sf.l2j.Config;
++	import net.sf.l2j.gameserver.data.SkillTable;
++	import net.sf.l2j.gameserver.data.xml.AugmentationData;
++	import net.sf.l2j.gameserver.model.Augmentation;
++	import net.sf.l2j.gameserver.model.actor.Player;
++	import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++	import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++	import net.sf.l2j.gameserver.model.itemcontainer.Inventory;
++	import net.sf.l2j.gameserver.network.serverpackets.InventoryUpdate;
++	import net.sf.l2j.gameserver.network.serverpackets.StatusUpdate;
++	
++	/**
++	 * @author Dev
++	 *
++	 */
++	public class AugmenterShop extends Folk
++	{
++		public int augmenterCoin = Config.DONATION_COIN_ID;
++		
++		public AugmenterShop(int objectId, NpcTemplate template)
++		{
++			super(objectId, template);
++		}
++		
++		@Override
++		public void onBypassFeedback(Player player, String command)
++		{
++			if (command.startsWith("learn"))
++			{
++				String[] args = command.substring(6).split(" ");
++				
++				int id = Integer.parseInt(args[0]);
++				int count = Config.ARGUMENT_SHOP_COIN_CONT; // we dont care about count from html (just override)
++				
++				if (player.getAugsBought() >= 100)
++				{
++					showChatWindow(player, 0);
++					player.sendMessage("You cannot learn more skills.");
++					return;
++				}
++				if (player.getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND) == null)
++				{
++					showChatWindow(player, 0);
++					player.sendMessage("You need to equip a weapon to learn a skill.");
++					return;
++				}
++				if (!player.getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND).isWeapon())
++				{
++					showChatWindow(player, 0);
++					player.sendMessage("You need to equip a weapon to learn a skill.");
++					return;
++				}
++				if (player.getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND).getAugmentation() != null)
++				{
++					showChatWindow(player, 0);
++					player.sendMessage("Your weapon is already augmented.");
++					return;
++				}
++				
++				if (player.getInventory().getItemByItemId(augmenterCoin) == null || player.getInventory().getItemByItemId(augmenterCoin).getCount() < count)
++				{
++					player.sendMessage("Incorrect item count.");
++					return;
++				}
++				
++				player.destroyItemByItemId("donation shop", augmenterCoin, count, this, true);
++				
++				ItemInstance wep = player.getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND);
++				player.disarmWeapons();
++				Augmentation aug = AugmentationData.getInstance().generateAugmentationWithSkill(id, SkillTable.getInstance().getMaxLevel(id));
++				if (wep.isAugmented())
++				{
++					wep.removeAugmentation();
++					InventoryUpdate iu = new InventoryUpdate();
++					iu.addModifiedItem(wep);
++					player.sendPacket(iu);
++				}
++				wep.setAugmentation(aug);
++				InventoryUpdate iuu = new InventoryUpdate();
++				iuu.addModifiedItem(wep);
++				player.sendPacket(iuu);
++				StatusUpdate su = new StatusUpdate(player);
++				su.addAttribute(StatusUpdate.CUR_LOAD, player.getCurrentLoad());
++				player.sendPacket(su);
++				showChatWindow(player, 0);
++				player.setAugsBought(player.getAugsBought() + 1);
++				player.store();
++			}
++			else
++				super.onBypassFeedback(player, command);
++		}
++	
++		@Override
++		public String getHtmlPath(int npcId, int val)
++		{
++			String filename = "";
++			if (val == 0)
++				filename = "" + npcId;
++			else
++				filename = npcId + "-" + val;
++			
++			return "data/html/mods/augmentershop/" + filename + ".htm";
++		}
++	}
++	
++	 No Copiar essa Linha
+
+=================================================
+Index: net.sf.l2j.config.Config.Java
+=================================================
+Index: Procurar Para Adicionar em Baixo
+-	AUTO_LOOT
++	AUTO_LOOT
+
+
+Index: Adicionar!
++	/** Donation coin id */
++	public static int DONATION_COIN_ID;
++	public static int ARGUMENT_SHOP_COIN_CONT;
+
+
+Index: Procure em Qual Config deve Ficar Sua configuração Pra Id da Moeda e Quantidade
+
++		DONATION_COIN_ID = Dev.getProperty("DonationCoinId", 57);
++		ARGUMENT_SHOP_COIN_CONT = Dev.getProperty("ArgumentShopCount", 57);
+
+=================================================
+Index: gameserver/data/html/mods/augmentershop/
+=================================================
+
+Index: Baixei o Arquivo da descrição do tóipico para colocar as HTML do ArgumentShop
+
+=================================================
+Index: gameserver/data/xml/npcs/ArgumentShop.xml
+=================================================
++	<?xml version="1.0" encoding="utf-8"?>
++	<list>
++			<npc id="50016" idTemplate="31324" name="Lister" title="Argument Shop">
++			<set name="usingServerSideName" val="true"/>
++			<set name="usingServerSideTitle" val="true"/>
++			<set name="level" val="70"/>
++			<set name="radius" val="8"/>
++			<set name="height" val="24.5"/>
++			<set name="rHand" val="0"/>
++			<set name="lHand" val="0"/>
++			<set name="type" val="AugmenterShop"/>
++			<set name="exp" val="0"/>
++			<set name="sp" val="0"/>
++			<set name="hp" val="2444.46819"/>
++			<set name="mp" val="1345.8"/>
++			<set name="hpRegen" val="7.5"/>
++			<set name="mpRegen" val="2.7"/>
++			<set name="pAtk" val="688.86373"/>
++			<set name="pDef" val="295.91597"/>
++			<set name="mAtk" val="470.40463"/>
++			<set name="mDef" val="216.53847"/>
++			<set name="crit" val="4"/>
++			<set name="atkSpd" val="253"/>
++			<set name="str" val="40"/>
++			<set name="int" val="21"/>
++			<set name="dex" val="30"/>
++			<set name="wit" val="20"/>
++			<set name="con" val="43"/>
++			<set name="men" val="10"/>
++			<set name="corpseTime" val="7"/>
++			<set name="walkSpd" val="50"/>
++			<set name="runSpd" val="120"/>
++			<set name="dropHerbGroup" val="0"/>
++			<ai type="DEFAULT" ssCount="0" ssRate="0" spsCount="0" spsRate="0" aggro="0" canMove="true" seedable="false"/>
++			<skills>
++				<skill id="4045" level="1"/>
++				<skill id="4416" level="14"/>
++			</skills>
++		</npc>
++	</list>
+
+=================================================
++ HTML LINK
+Index: https://mega.nz/file/oRZBlYpS#PwJTfp34qNebSYAxINsYwN_q47rav8eOhYQuFKzV0xI
+=================================================

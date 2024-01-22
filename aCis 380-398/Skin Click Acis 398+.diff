@@ -1,0 +1,1936 @@
+diff --git a/aCis_gameserver/config/Skin.properties b/aCis_gameserver/config/Skin.properties
+new file mode 100644
+index 0000000..4c3069e
+--- /dev/null
++++ b/aCis_gameserver/config/Skin.properties
+@@ -0,0 +1,193 @@
++#===============================================================
++#                    Skin Item
++#===============================================================
++#Enable Skin
++AllowDressMeSystem = True
++
++#Como registrar item?
++#só escolher o id do item no xml e registrar cada skin com exemplo de 1 a 15
++#<set name="handler" val="Skin1" />,<set name="handler" val="Skin2" /> etc.
++
++#Effect Time All Skins
++# 4000 = 4 Segunds
++SkillEffectsTime = 4000
++
++#Skill ID Skin 1
++SkillIDSkin1 = 1036
++
++#Skill ID Skin 2
++SkillIDSkin2 = 0
++
++#Skill ID Skin 3
++SkillIDSkin3 = 0
++
++#Skill ID Skin 4
++SkillIDSkin4 = 0
++
++#Skill ID Skin 5
++SkillIDSkin5 = 0
++
++#Skill ID Skin 6
++SkillIDSkin6 = 0
++
++#Skill ID Skin 7
++SkillIDSkin7 = 0
++
++#Skill ID Skin 8
++SkillIDSkin8 = 0
++
++#Skill ID Skin 9
++SkillIDSkin9 = 0
++
++#Skill ID Skin 10
++SkillIDSkin10 = 0
++
++#Skill ID Skin 11
++SkillIDSkin11 = 0
++
++#Skill ID Skin 12
++SkillIDSkin12 = 0
++
++#Skill ID Skin 13
++SkillIDSkin13 = 0
++
++#Skill ID Skin 14
++SkillIDSkin14 = 0
++
++#Skill ID Skin 15
++SkillIDSkin15 = 0
++
++#None Quando equipar Item
++NameArmor1 = Draconic Light
++NameArmor2 = Titanium Armor Wizzard
++NameArmor3 = Titanium Armor Heavy
++NameArmor4 = Dark Knight Heavy
++NameArmor5 = Dark Knight Light
++NameArmor6 = Dark Knight Wizzard
++NameArmor7 = Dynasty Armor Heavy
++NameArmor8 = Dynasty Armor Light
++NameArmor9 = Dynasty Armor Wizzard
++NameArmor10 = Vesper Black Armor Heavy
++NameArmor11 = Vesper Black Armor Light
++NameArmor12 = Vesper Black Armor Wizzard
++NameArmor13 = Moirai Armor Heavy
++NameArmor14 = Moirai Armor Light
++NameArmor15 = Moirai Armor Wizzard
++
++# DressMe values.
++#Aqui não pode ultilizar Espaco!
++# Skin name (Example: "Draconic")
++SkinName1 = Draconic_light
++SkinName2 = Titanium_Robe
++SkinName3 = Titanium_Heavy
++SkinName4 = Dark_Kinight_Heavy
++SkinName5 = Dark_Kinight_Light
++SkinName6 = Dark_Kinight_Robe
++SkinName7 = Dynasty_Heavy
++SkinName8 = Dynasty_Light
++SkinName9 = Dynasty_Robe
++SkinName10 = VesperBlack_Heavy
++SkinName11 = VesperBlack_Light
++SkinName12 = VesperBlack_Robe
++SkinName13 = Moirai_H
++SkinName14 = Moirai_L
++SkinName15 = Moirai_R
++
++# Note: It works like name,id;name,id
++# WARNING: No spaces on names, use _ instead of space.
++#Hair Accesories
++DressMeHair = Draconic_light,6842;\
++Titanium_Robe,21002;\
++Titanium_Heavy,21002;\
++Dark_Kinight_Heavy,21003;\
++Dark_Kinight_Light,21004;\
++Dark_Kinight_Robe,21005;\
++Dynasty_Heavy,21006;\
++Dynasty_Light,21011;\
++Dynasty_Robe,21010;\
++VesperBlack_Heavy,21009;\
++VesperBlack_Light,21008;\
++VesperBlack_Robe,21007;\
++Moirai_H,21001;\
++Moirai_L,21000;\
++Moirai_R,20097;\
++Tauti_H,20089;\
++Tauti_L,20090;\
++Tauti_R,20091
++
++#Armor Chests
++DressMeChests = Draconic_light,6379;\
++Titanium_Robe,20071;\
++Titanium_Heavy,20067;\
++Dark_Kinight_Heavy,21023;\
++Dark_Kinight_Light,21028;\
++Dark_Kinight_Robe,21033;\
++Dynasty_Heavy,21038;\
++Dynasty_Light,21043;\
++Dynasty_Robe,21048;\
++VesperBlack_Heavy,21053;\
++VesperBlack_Light,21058;\
++VesperBlack_Robe,21063;\
++Moirai_H,21068;\
++Moirai_L,21073;\
++Moirai_R,21078;\
++Tauti_H,21083;\
++Tauti_L,21088;\
++Tauti_R,21093
++
++# Armor Legs
++DressMeLegs = Dark_Kinight_Heavy,21024;\
++Dark_Kinight_Light,21029;\
++Dark_Kinight_Robe,21034;\
++Dynasty_Heavy,21039;\
++Dynasty_Light,21044;\
++Dynasty_Robe,21049;\
++VesperBlack_Heavy,21054;\
++VesperBlack_Light,21059;\
++VesperBlack_Robe,21064;\
++Moirai_H,21069;\
++Moirai_L,21074;\
++Moirai_R,21079;\
++Tauti_H,21084;\
++Tauti_L,21089;\
++Tauti_R,21094
++
++# Armor Gloves
++DressMeGloves = Draconic_light,6380;\
++Titanium_Robe,20072;\
++Titanium_Heavy,20068;\
++Dark_Kinight_Heavy,21025;\
++Dark_Kinight_Light,21030;\
++Dark_Kinight_Robe,21035;\
++Dynasty_Heavy,21040;\
++Dynasty_Light,21045;\
++Dynasty_Robe,21050;\
++VesperBlack_Heavy,21055;\
++VesperBlack_Light,21060;\
++VesperBlack_Robe,21065;\
++Moirai_H,21070;\
++Moirai_L,21075;\
++Moirai_R,21080;\
++Tauti_H,21085;\
++Tauti_L,21090;\
++Tauti_R,21095
++
++#Armor Boots
++DressMeBoots = Draconic_light,6381;\
++Titanium_Robe,20073;\
++Titanium_Heavy,20069;\
++Dark_Kinight_Heavy,21026;\
++Dark_Kinight_Light,21031;\
++Dark_Kinight_Robe,21036;\
++Dynasty_Heavy,21041;\
++Dynasty_Light,21046;\
++Dynasty_Robe,21051;\
++VesperBlack_Heavy,21056;\
++VesperBlack_Light,21061;\
++VesperBlack_Robe,21066;\
++Moirai_H,21071;\
++Moirai_L,21076;\
++Moirai_R,21081;\
++Tauti_H,21086;\
++Tauti_L,21091;\
++Tauti_R,21096
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/Config.java b/aCis_gameserver/java/net/sf/l2j/Config.java
+index a2139f4..a5568dc 100644
+--- a/aCis_gameserver/java/net/sf/l2j/Config.java
++++ b/aCis_gameserver/java/net/sf/l2j/Config.java
+@@ -35,6 +35,7 @@
+ 	public static final String PLAYERS_FILE = "./config/players.properties";
+ 	public static final String SERVER_FILE = "./config/server.properties";
+ 	public static final String SIEGE_FILE = "./config/siege.properties";
++	public static final String SKIN_FILE = "./config/Skin.properties";
+ 	
+ 	// --------------------------------------------------
+ 	// Clans settings
+@@ -113,6 +114,61 @@
+ 	public static int CH_FRONT1_FEE;
+ 	public static int CH_FRONT2_FEE;
+ 	
++	/**Variaveis Skin Click*/
++	public static int SEGUNDS_SKILL_ANIMATION;
++	public static int SKILL_ID_SKIN1;
++	public static int SKILL_ID_SKIN2;
++	public static int SKILL_ID_SKIN3;
++	public static int SKILL_ID_SKIN4;
++	public static int SKILL_ID_SKIN5;
++	public static int SKILL_ID_SKIN6;
++	public static int SKILL_ID_SKIN7;
++	public static int SKILL_ID_SKIN8;
++	public static int SKILL_ID_SKIN9;
++	public static int SKILL_ID_SKIN10;
++	public static int SKILL_ID_SKIN11;
++	public static int SKILL_ID_SKIN12;
++	public static int SKILL_ID_SKIN13;
++	public static int SKILL_ID_SKIN14;
++	public static int SKILL_ID_SKIN15;
++	public static boolean ALLOW_DRESS_ME_SYSTEM;
++	public static Map<String, Integer> DRESS_ME_HELMET = new HashMap<>();
++	public static Map<String, Integer> DRESS_ME_CHESTS = new HashMap<>();
++	public static Map<String, Integer> DRESS_ME_LEGS = new HashMap<>();
++	public static Map<String, Integer> DRESS_ME_BOOTS = new HashMap<>();
++	public static Map<String, Integer> DRESS_ME_GLOVES = new HashMap<>();
++	public static String SKIN_NAME1;
++	public static String SKIN_NAME2;
++	public static String SKIN_NAME3;
++	public static String SKIN_NAME4;
++	public static String SKIN_NAME5;
++	public static String SKIN_NAME6;
++	public static String SKIN_NAME7;
++	public static String SKIN_NAME8;
++	public static String SKIN_NAME9;
++	public static String SKIN_NAME10;
++	public static String SKIN_NAME11;
++	public static String SKIN_NAME12;
++	public static String SKIN_NAME13;
++	public static String SKIN_NAME14;
++	public static String SKIN_NAME15;
++	public static String NAME1;
++	public static String NAME2;
++	public static String NAME3;
++	public static String NAME4;
++	public static String NAME5;
++	public static String NAME6;
++	public static String NAME7;
++	public static String NAME8;
++	public static String NAME9;
++	public static String NAME10;
++	public static String NAME11;
++	public static String NAME12;
++	public static String NAME13;
++	public static String NAME14;
++	public static String NAME15;
+
+ 	// --------------------------------------------------
+ 	// Events settings
+ 	// --------------------------------------------------
+@@ -721,6 +777,102 @@
+ 	}
+ 	
++ 	/**
++	 * Loads Skin Click settings.<br>
++	 */
++	private static final void loadSkin()
++	{
++		final ExProperties Skins = initProperties(SKIN_FILE);
++		SEGUNDS_SKILL_ANIMATION = Integer.parseInt(Skins.getProperty("SkillEffectsTime", "0"));
++		SKILL_ID_SKIN1 = Integer.parseInt(Skins.getProperty("SkillIDSkin1", "0"));
++		SKILL_ID_SKIN2 = Integer.parseInt(Skins.getProperty("SkillIDSkin2", "0"));
++		SKILL_ID_SKIN3 = Integer.parseInt(Skins.getProperty("SkillIDSkin3", "0"));
++		SKILL_ID_SKIN4 = Integer.parseInt(Skins.getProperty("SkillIDSkin4", "0"));
++		SKILL_ID_SKIN5 = Integer.parseInt(Skins.getProperty("SkillIDSkin5", "0"));
++		SKILL_ID_SKIN6 = Integer.parseInt(Skins.getProperty("SkillIDSkin6", "0"));
++		SKILL_ID_SKIN7 = Integer.parseInt(Skins.getProperty("SkillIDSkin7", "0"));
++		SKILL_ID_SKIN8 = Integer.parseInt(Skins.getProperty("SkillIDSkin8", "0"));
++		SKILL_ID_SKIN9 = Integer.parseInt(Skins.getProperty("SkillIDSkin9", "0"));
++		SKILL_ID_SKIN10 = Integer.parseInt(Skins.getProperty("SkillIDSkin10", "0"));
++		SKILL_ID_SKIN11 = Integer.parseInt(Skins.getProperty("SkillIDSkin11", "0"));
++		SKILL_ID_SKIN12 = Integer.parseInt(Skins.getProperty("SkillIDSkin12", "0"));
++		SKILL_ID_SKIN13 = Integer.parseInt(Skins.getProperty("SkillIDSkin13", "0"));
++		SKILL_ID_SKIN14 = Integer.parseInt(Skins.getProperty("SkillIDSkin14", "0"));
++		SKILL_ID_SKIN15 = Integer.parseInt(Skins.getProperty("SkillIDSkin15", "0"));
++		ALLOW_DRESS_ME_SYSTEM = Boolean.parseBoolean(Skins.getProperty("AllowDressMeSystem", "false"));
++		SKIN_NAME1 = String.valueOf(Skins.getProperty("SkinName1", "SkinName"));
++		SKIN_NAME2 = String.valueOf(Skins.getProperty("SkinName2", "SkinName"));
++		SKIN_NAME3 = String.valueOf(Skins.getProperty("SkinName3", "SkinName"));
++		SKIN_NAME4 = String.valueOf(Skins.getProperty("SkinName4", "SkinName"));
++		SKIN_NAME5 = String.valueOf(Skins.getProperty("SkinName5", "SkinName"));
++		SKIN_NAME6 = String.valueOf(Skins.getProperty("SkinName6", "SkinName"));
++		SKIN_NAME7 = String.valueOf(Skins.getProperty("SkinName7", "SkinName"));
++		SKIN_NAME8 = String.valueOf(Skins.getProperty("SkinName8", "SkinName"));
++		SKIN_NAME9 = String.valueOf(Skins.getProperty("SkinName9", "SkinName"));
++		SKIN_NAME10 = String.valueOf(Skins.getProperty("SkinName10", "SkinName"));
++		SKIN_NAME11 = String.valueOf(Skins.getProperty("SkinName11", "SkinName"));
++		SKIN_NAME12 = String.valueOf(Skins.getProperty("SkinName12", "SkinName"));
++		SKIN_NAME13 = String.valueOf(Skins.getProperty("SkinName13", "SkinName"));
++		SKIN_NAME14 = String.valueOf(Skins.getProperty("SkinName14", "SkinName"));
++		SKIN_NAME15 = String.valueOf(Skins.getProperty("SkinName15", "SkinName"));
++		
++		String temp = Skins.getProperty("DressMeChests", "");
++		String[] temp2 = temp.split(";");
++		for (String s : temp2)
++		{
++			String[] t = s.split(",");
++			DRESS_ME_CHESTS.put(t[0], Integer.parseInt(t[1]));
++		}
++		
++		temp = Skins.getProperty("DressMeHair", "");
++		temp2 = temp.split(";");
++		for (String s : temp2)
++		{
++			String[] t = s.split(",");
++			DRESS_ME_HELMET.put(t[0], Integer.parseInt(t[1]));
++		}
++		
++		
++		temp = Skins.getProperty("DressMeLegs", "");
++		temp2 = temp.split(";");
++		for (String s : temp2)
++		{
++			String[] t = s.split(",");
++			DRESS_ME_LEGS.put(t[0], Integer.parseInt(t[1]));
++		}
++		temp = Skins.getProperty("DressMeBoots", "");
++		temp2 = temp.split(";");
++		for (String s : temp2)
++		{
++			String[] t = s.split(",");
++			DRESS_ME_BOOTS.put(t[0], Integer.parseInt(t[1]));
++		}
++		temp = Skins.getProperty("DressMeGloves", "");
++		temp2 = temp.split(";");
++		for (String s : temp2)
++		{
++			String[] t = s.split(",");
++			DRESS_ME_GLOVES.put(t[0], Integer.parseInt(t[1]));
++		}
++		
++		NAME1 = Skins.getProperty("NameArmor1", " Skins Dressme");
++		NAME2 = Skins.getProperty("NameArmor2", " Skins Dressme");
++		NAME3 = Skins.getProperty("NameArmor3", " Skins Dressme");
++		NAME4 = Skins.getProperty("NameArmor4", " Skins Dressme");
++		NAME5 = Skins.getProperty("NameArmor5", " Skins Dressme");
++		NAME6 = Skins.getProperty("NameArmor6", " Skins Dressme");
++		NAME7 = Skins.getProperty("NameArmor7", " Skins Dressme");
++		NAME8 = Skins.getProperty("NameArmor8", " Skins Dressme");
++		NAME9 = Skins.getProperty("NameArmor9", " Skins Dressme");
++		NAME10 = Skins.getProperty("NameArmor10", " Skins Dressme");
++		NAME11 = Skins.getProperty("NameArmor11", " Skins Dressme");
++		NAME12 = Skins.getProperty("NameArmor12", " Skins Dressme");
++		NAME13 = Skins.getProperty("NameArmor13", " Skins Dressme");
++		NAME14 = Skins.getProperty("NameArmor14", " Skins Dressme");
++		NAME15 = Skins.getProperty("NameArmor15", " Skins Dressme");
++		}
+	/**
+ 	 * Loads event settings.<br>
+ 	 * Such as olympiad, seven signs festival, four sepulchures, dimensional rift, weddings, lottery, fishing championship.
+ 	 */
+@@ -1278,6 +1430,9 @@
+ 		// events settings
+ 		loadEvents();
+ 		
++		// Loads Skin Click
++		loadSkin();
+
+ 		// geoengine settings
+ 		loadGeoengine();
+ 		
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/data/xml/DressMeData.java b/aCis_gameserver/java/net/sf/l2j/gameserver/data/xml/DressMeData.java
+new file mode 100644
+index 0000000..2b78d86
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/data/xml/DressMeData.java
+@@ -0,0 +1,81 @@
++package net.sf.l2j.gameserver.data.xml;
++
++public class DressMeData
++{
++	private int chestId,
++	helmetId,
++	legsId,
++	glovesId,
++	feetId,
++	weapId;
++	
++	public DressMeData()
++	{
++		helmetId = 0;
++		chestId = 0;
++		legsId = 0;
++		glovesId = 0;
++		feetId = 0;
++		weapId = 0;
++	}
++	
++	public int getHelmetId()
++	{
++		return helmetId;
++	}
++	
++	public int getChestId()
++	{
++		return chestId;
++	}
++	
++	public int getLegsId()
++	{
++		return legsId;
++	}
++	
++	public int getGlovesId()
++	{
++		return glovesId;
++	}
++	
++	public int getBootsId()
++	{
++		return feetId;
++	}
++	
++	public int getWeapId()
++	{
++		return weapId;
++	}
++	
++	public void setHelmetId(int val)
++	{
++		helmetId = val;
++	}
++	
++	public void setChestId(int val)
++	{
++		chestId = val;
++	}
++	
++	public void setLegsId(int val)
++	{
++		legsId = val;
++	}
++	
++	public void setGlovesId(int val)
++	{
++		glovesId = val;
++	}
++	
++	public void setBootsId(int val)
++	{
++		feetId = val;
++	}
++	
++	public void setWeapId(int val)
++	{
++		weapId = val;
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/ItemHandler.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+index cf6ae07..4b00458 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/ItemHandler.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+@@ -24,6 +24,21 @@
+ import net.sf.l2j.gameserver.handler.itemhandlers.ScrollsOfResurrection;
+ import net.sf.l2j.gameserver.handler.itemhandlers.Seeds;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SevenSignsRecords;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin1;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin10;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin11;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin12;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin13;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin14;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin15;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin2;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin3;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin4;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin5;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin6;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin7;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin8;
++import net.sf.l2j.gameserver.handler.itemhandlers.Skin9;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SoulCrystals;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SoulShots;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SpecialXMas;
+@@ -37,6 +52,21 @@
+ 	
+ 	protected ItemHandler()
+ 	{
++		registerHandler(new Skin1());
++		registerHandler(new Skin2());
++		registerHandler(new Skin3());
++		registerHandler(new Skin4());
++		registerHandler(new Skin5());
++		registerHandler(new Skin6());
++		registerHandler(new Skin7());
++		registerHandler(new Skin8());
++		registerHandler(new Skin9());
++		registerHandler(new Skin10());
++		registerHandler(new Skin11());
++		registerHandler(new Skin12());
++		registerHandler(new Skin13());
++		registerHandler(new Skin14());
++		registerHandler(new Skin15());
+ 		registerHandler(new BeastSoulShots());
+ 		registerHandler(new BeastSpices());
+ 		registerHandler(new BeastSpiritShots());
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin1.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin1.java
+new file mode 100644
+index 0000000..0191bcb
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin1.java
+@@ -0,0 +1,66 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin1 implements IItemHandler
++
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN1, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));	
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			
++			Player activeChar = (Player)playable;
++			
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME1);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME1);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME1);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME1);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME1);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME1 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin10.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin10.java
+new file mode 100644
+index 0000000..cebeef9
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin10.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin10 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN10, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME10);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME10);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME10);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME10);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME10);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME10 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++	
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin11.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin11.java
+new file mode 100644
+index 0000000..df0ecce
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin11.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin11 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN11, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME11);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME11);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME11);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME11);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME11);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME11 + " skin.");
++				
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin12.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin12.java
+new file mode 100644
+index 0000000..3c2088a
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin12.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin12 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN12, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME12);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME12);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME12);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME12);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME12);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME12 + " skin.");
++				
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin13.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin13.java
+new file mode 100644
+index 0000000..4b2c965
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin13.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin13 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN13, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME13);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME13);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME13);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME13);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME13);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME13 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin14.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin14.java
+new file mode 100644
+index 0000000..698e76a
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin14.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin14 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN14, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME14);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME14);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME14);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME14);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME14);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME14 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin15.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin15.java
+new file mode 100644
+index 0000000..81bf81d
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin15.java
+@@ -0,0 +1,66 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin15 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN15, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			
++			Player activeChar = (Player)playable;
++			
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME15);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME15);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME15);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME15);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME15);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME15 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin2.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin2.java
+new file mode 100644
+index 0000000..b0f7fa9
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin2.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin2 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN2, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME2);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME2);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME2);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME2);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME2);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++				
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME2 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin3.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin3.java
+new file mode 100644
+index 0000000..ff72668
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin3.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin3 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN3, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME3);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME3);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME3);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME3);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME3);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++				
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME3 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin4.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin4.java
+new file mode 100644
+index 0000000..b458a13
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin4.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin4 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN4, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME4);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME4);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME4);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME4);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME4);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++				
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME4 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin5.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin5.java
+new file mode 100644
+index 0000000..960f1dd
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin5.java
+@@ -0,0 +1,63 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin5 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN5, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME5);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME5);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME5);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME5);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME5);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++				
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME5 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin6.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin6.java
+new file mode 100644
+index 0000000..f65056a
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin6.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin6 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN6, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME6);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME6);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME6);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME6);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME6);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME6 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin7.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin7.java
+new file mode 100644
+index 0000000..1858048
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin7.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin7 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);		
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN7, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME7);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME7);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME7);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME7);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME7);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME7 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin8.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin8.java
+new file mode 100644
+index 0000000..1f8a4a2
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin8.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin8 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN8, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if (Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if (!(playable instanceof Player))
++				return;
++			Player activeChar = (Player) playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME8);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME8);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME8);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME8);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME8);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME8 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin9.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin9.java
+new file mode 100644
+index 0000000..b433767
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/itemhandlers/Skin9.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.commons.pool.ThreadPool;
++import net.sf.l2j.gameserver.enums.GaugeColor;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.WorldObject;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.clientpackets.RequestBypassToServer;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.SetupGauge;
++
++public class Skin9 implements IItemHandler
++{
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				playable.setIsParalyzed(false);
++			}
++		}, Config.SEGUNDS_SKILL_ANIMATION);
++		final Player player = playable.getActingPlayer();
++		final WorldObject oldTarget = playable.getTarget();
++		playable.setTarget(playable);
++		player.broadcastPacketInRadius(new MagicSkillUse(playable, playable, Config.SKILL_ID_SKIN9, 1, Config.SEGUNDS_SKILL_ANIMATION, 0), 600);
++		playable.setTarget(oldTarget);
++		playable.sendPacket(new SetupGauge(GaugeColor.BLUE, Config.SEGUNDS_SKILL_ANIMATION));
++		playable.setIsParalyzed(true);
++		if(Config.ALLOW_DRESS_ME_SYSTEM)
++		{
++			if(!(playable instanceof Player))
++				return;
++			Player activeChar = (Player)playable;
++			RequestBypassToServer.setPart(activeChar, "helmet", Config.SKIN_NAME9);
++			RequestBypassToServer.setPart(activeChar, "chest", Config.SKIN_NAME9);
++			RequestBypassToServer.setPart(activeChar, "legs", Config.SKIN_NAME9);
++			RequestBypassToServer.setPart(activeChar, "gloves", Config.SKIN_NAME9);
++			RequestBypassToServer.setPart(activeChar, "boots", Config.SKIN_NAME9);
++			
++			if (activeChar.isDressMeEnabled())
++			{
++				activeChar.setDressMeEnabled(false);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have disabled skin.");
++			}
++			else
++			{
++				activeChar.setDressMeEnabled(true);
++				activeChar.broadcastUserInfo();
++				activeChar.sendMessage("You have activated " + Config.NAME9 + " skin.");
++			}
++		}
++		else
++			playable.sendMessage("Sorry, admin has disabled skins.");
++	}
++}
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
+index d38bc8b..11c2ec7 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
+@@ -20,13 +20,12 @@
+ import java.util.concurrent.locks.ReentrantLock;
+ import java.util.stream.Collectors;
+ 
++import net.sf.l2j.Config;
+ import net.sf.l2j.commons.math.MathUtil;
+ import net.sf.l2j.commons.pool.ConnectionPool;
+ import net.sf.l2j.commons.pool.ThreadPool;
+ import net.sf.l2j.commons.random.Rnd;
+ import net.sf.l2j.commons.util.ArraysUtil;
+-
+-import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.LoginServerThread;
+ import net.sf.l2j.gameserver.communitybbs.CommunityBoard;
+ import net.sf.l2j.gameserver.communitybbs.model.Forum;
+@@ -44,6 +43,7 @@
+ import net.sf.l2j.gameserver.data.sql.ClanTable;
+ import net.sf.l2j.gameserver.data.sql.PlayerInfoTable;
+ import net.sf.l2j.gameserver.data.xml.AdminData;
++import net.sf.l2j.gameserver.data.xml.DressMeData;
+ import net.sf.l2j.gameserver.data.xml.ItemData;
+ import net.sf.l2j.gameserver.data.xml.MapRegionData;
+ import net.sf.l2j.gameserver.data.xml.MapRegionData.TeleportType;
+@@ -7214,7 +7214,27 @@
+ 	{
+ 		_requestedGate = door;
+ 	}
++	private DressMeData _dressmedata = null;
++	private boolean _dressed = false;
++	public DressMeData getDressMeData()
++	{
++		return _dressmedata;
++	}
++
++	public void setDressMeData(DressMeData val)
++	{
++		_dressmedata = val;
++	}
++
++	public boolean isDressMeEnabled()
++	{
++		return _dressed;
++	}
++
++	public void setDressMeEnabled(boolean val)
++	{
++		_dressed = val;
++	}
+ 	@Override
+ 	public boolean polymorph(int npcId)
+ 	{
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java b/aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+index 800291b..f8cddab 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+@@ -7,7 +7,9 @@
+ import net.sf.l2j.gameserver.communitybbs.CommunityBoard;
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.xml.AdminData;
++import net.sf.l2j.gameserver.data.xml.DressMeData;
+ import net.sf.l2j.gameserver.enums.FloodProtector;
++import net.sf.l2j.gameserver.enums.Paperdoll;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
+@@ -202,4 +204,199 @@
+ 			player.enterOlympiadObserverMode(arenaId);
+ 		}
+ 	}
++	public static void setPart(Player p, String part, String type)
++	{
++		if (p.getDressMeData() == null)
++		{
++			DressMeData dmd = new DressMeData();
++			p.setDressMeData(dmd);
++		}
++		
++		switch (part)
++		{
++			
++			case "helmet":
++			{
++				if (Config.DRESS_ME_HELMET.keySet().contains(type))
++				{
++					p.getDressMeData().setHelmetId(Config.DRESS_ME_HELMET.get(type));
++				}
++				
++				break;
++			}
++			
++			
++			case "chest":
++			{
++				if (Config.DRESS_ME_CHESTS.keySet().contains(type))
++				{
++					p.getDressMeData().setChestId(Config.DRESS_ME_CHESTS.get(type));
++				}
++				
++				break;
++			}
++			case "legs":
++			{
++				if (Config.DRESS_ME_LEGS.keySet().contains(type))
++				{
++					p.getDressMeData().setLegsId(Config.DRESS_ME_LEGS.get(type));
++				}
++				
++				break;
++			}
++			case "gloves":
++			{
++				if (Config.DRESS_ME_GLOVES.keySet().contains(type))
++				{
++					p.getDressMeData().setGlovesId(Config.DRESS_ME_GLOVES.get(type));
++				}
++				
++				break;
++			}
++			case "boots":
++			{
++				if (Config.DRESS_ME_BOOTS.keySet().contains(type))
++				{
++					p.getDressMeData().setBootsId(Config.DRESS_ME_BOOTS.get(type));
++				}
++				
++				break;
++			}
++			
++		}
++		
++		p.broadcastUserInfo();
++		//		sendEditWindow(p, part);
++	}
++	public static void stealTarget(Player p, String part)
++	{
++		if (p.getTarget() == null || !(p.getTarget() instanceof Player))
++		{
++			p.sendMessage("Invalid target.");
++			return;
++		}
++		
++		Player t = (Player)p.getTarget();
++		
++		if (p.getDressMeData() == null)
++		{
++			DressMeData dmd = new DressMeData();
++			p.setDressMeData(dmd);
++		}
++		
++		
++		switch (part)
++		{
++			case "helmet":
++			{
++				if (t.getInventory().getItemFrom(Paperdoll.FACE) == null)
++				{
++					p.getDressMeData().setHelmetId(0);
++				}
++				else
++				{
++					p.getDressMeData().setHelmetId(t.getInventory().getItemFrom(Paperdoll.FACE).getItemId());
++				}
++				break;
++			}
++			
++			case "chest":
++			{
++				if (t.getInventory().getItemFrom(Paperdoll.CHEST) == null)
++				{
++					p.getDressMeData().setChestId(0);
++				}
++				else
++				{
++					p.getDressMeData().setChestId(t.getInventory().getItemFrom(Paperdoll.CHEST).getItemId());
++				}
++				break;
++			}
++			case "legs":
++			{
++				if (t.getInventory().getItemFrom(Paperdoll.LEGS) == null)
++				{
++					p.getDressMeData().setLegsId(0);
++				}
++				else
++				{
++					p.getDressMeData().setLegsId(t.getInventory().getItemFrom(Paperdoll.LEGS).getItemId());
++				}
++				break;
++			}
++			case "gloves":
++			{
++				if (t.getInventory().getItemFrom(Paperdoll.GLOVES) == null)
++				{
++					p.getDressMeData().setGlovesId(0);
++				}
++				else
++				{
++					p.getDressMeData().setGlovesId(t.getInventory().getItemFrom(Paperdoll.GLOVES).getItemId());
++				}
++				break;
++			}
++			case "boots":
++			{
++				if (t.getInventory().getItemFrom(Paperdoll.FEET) == null)
++				{
++					p.getDressMeData().setBootsId(0);
++				}
++				else
++				{
++					p.getDressMeData().setBootsId(t.getInventory().getItemFrom(Paperdoll.FEET).getItemId());
++				}
++				break;
++			}
++			case "all":
++			{
++				
++				if (t.getInventory().getItemFrom(Paperdoll.FACE) == null)
++				{
++					p.getDressMeData().setHelmetId(0);
++				}
++				else
++				{
++					p.getDressMeData().setHelmetId(t.getInventory().getItemFrom(Paperdoll.FACE).getItemId());
++				}
++				
++				if (t.getInventory().getItemFrom(Paperdoll.CHEST) == null)
++				{
++					p.getDressMeData().setChestId(0);
++				}
++				else
++				{
++					p.getDressMeData().setChestId(t.getInventory().getItemFrom(Paperdoll.CHEST).getItemId());
++				}
++				if (t.getInventory().getItemFrom(Paperdoll.LEGS) == null)
++				{
++					p.getDressMeData().setLegsId(0);
++				}
++				else
++				{
++					p.getDressMeData().setLegsId(t.getInventory().getItemFrom(Paperdoll.LEGS).getItemId());
++				}
++				if (t.getInventory().getItemFrom(Paperdoll.GLOVES) == null)
++				{
++					p.getDressMeData().setGlovesId(0);
++				}
++				else
++				{
++					p.getDressMeData().setGlovesId(t.getInventory().getItemFrom(Paperdoll.GLOVES).getItemId());
++				}
++				if (t.getInventory().getItemFrom(Paperdoll.FEET) == null)
++				{
++					p.getDressMeData().setBootsId(0);
++				}
++				else
++				{
++					p.getDressMeData().setBootsId(t.getInventory().getItemFrom(Paperdoll.FEET).getItemId());
++				}
++				
++				break;
++			}
++		}
++		
++		p.broadcastUserInfo();
++	}
+ }
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/CharInfo.java b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/CharInfo.java
+index f83da89..077e584 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/CharInfo.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/CharInfo.java
+@@ -40,7 +40,8 @@
+ 		writeD(_player.getRace().ordinal());
+ 		writeD(_player.getAppearance().getSex().ordinal());
+ 		writeD((_player.getClassIndex() == 0) ? _player.getClassId().getId() : _player.getBaseClass());
+
++		if (!_player.isDressMeEnabled())
++		{
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HAIRALL));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HEAD));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RHAND));
+@@ -53,6 +54,22 @@
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RHAND));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HAIR));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.FACE));
++		}
++		else
++		{
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HAIRALL));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HEAD));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RHAND));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LHAND));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : (_player.getDressMeData().getGlovesId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : _player.getDressMeData().getGlovesId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : (_player.getDressMeData().getChestId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : _player.getDressMeData().getChestId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : (_player.getDressMeData().getLegsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : _player.getDressMeData().getLegsId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : (_player.getDressMeData().getBootsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : _player.getDressMeData().getBootsId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.CLOAK));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RHAND));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : _player.getDressMeData().getHelmetId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : _player.getDressMeData().getHelmetId()));
++		}
+ 		
+ 		writeH(0x00);
+ 		writeH(0x00);
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
+index bb1ce74..adeec87 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
+@@ -55,7 +55,8 @@
+ 		writeD(_player.getCurrentWeight());
+ 		writeD(_player.getWeightLimit());
+ 		writeD(_player.getActiveWeaponItem() != null ? 40 : 20);
+
++		if (!_player.isDressMeEnabled())
++		{
+ 		writeD(_player.getInventory().getItemObjectIdFrom(Paperdoll.HAIRALL));
+ 		writeD(_player.getInventory().getItemObjectIdFrom(Paperdoll.REAR));
+ 		writeD(_player.getInventory().getItemObjectIdFrom(Paperdoll.LEAR));
+@@ -91,6 +92,45 @@
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RHAND));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HAIR));
+ 		writeD(_player.getInventory().getItemIdFrom(Paperdoll.FACE));
++		}
++		else
++		{
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.HAIRALL) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.HAIRALL) : _player.getDressMeData().getHelmetId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.REAR));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LEAR));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.NECK));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RFINGER));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LFINGER));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HEAD));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : (_player.getDressMeData().getWeapId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : _player.getDressMeData().getWeapId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LHAND));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : (_player.getDressMeData().getGlovesId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : _player.getDressMeData().getGlovesId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : (_player.getDressMeData().getChestId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : _player.getDressMeData().getChestId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : (_player.getDressMeData().getLegsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : _player.getDressMeData().getLegsId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : (_player.getDressMeData().getBootsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : _player.getDressMeData().getBootsId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.CLOAK));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : (_player.getDressMeData().getWeapId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : _player.getDressMeData().getWeapId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : _player.getDressMeData().getHelmetId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : _player.getDressMeData().getHelmetId()));
++
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.HAIRALL) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.HAIRALL) : _player.getDressMeData().getHelmetId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.REAR));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LEAR));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.NECK));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.RFINGER));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LFINGER));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.HEAD));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : (_player.getDressMeData().getWeapId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : _player.getDressMeData().getWeapId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.LHAND));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : (_player.getDressMeData().getGlovesId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.GLOVES) : _player.getDressMeData().getGlovesId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : (_player.getDressMeData().getChestId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.CHEST) : _player.getDressMeData().getChestId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : (_player.getDressMeData().getLegsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.LEGS) : _player.getDressMeData().getLegsId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : (_player.getDressMeData().getBootsId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FEET) : _player.getDressMeData().getBootsId()));
++		writeD(_player.getInventory().getItemIdFrom(Paperdoll.CLOAK));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : (_player.getDressMeData().getWeapId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.RHAND) : _player.getDressMeData().getWeapId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.HAIR) : _player.getDressMeData().getHelmetId()));
++		writeD(_player.getDressMeData() == null ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : (_player.getDressMeData().getHelmetId() == 0 ? _player.getInventory().getItemIdFrom(Paperdoll.FACE) : _player.getDressMeData().getHelmetId()));
++		}
+ 		
+ 		writeH(0x00);
+ 		writeH(0x00);

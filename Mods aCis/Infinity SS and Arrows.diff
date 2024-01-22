@@ -1,0 +1,134 @@
+Index: net.sf.l2j;Config.java
+===================================================================
+--- net.sf.l2j;Config.java (revision 84)
++++ net.sf.l2j;Config.java (working copy)
+
++	/** Infinity SS and Arrows */
++	public static boolean INFINITY_SS;
++	public static boolean INFINITY_ARROWS;
+
++	INFINITY_SS = player.getProperty("InfinitySS", false);
++	INFINITY_ARROWS = player.getProperty("InfinityArrows", false);
+
+Index: net.sf.l2j.gameserver.handler.itemhandlers;BeastSoulShot.java
+===================================================================
+--- net.sf.l2j.gameserver.handler.itemhandlers;BeastSoulShot.java (revision 84)
++++ net.sf.l2j.gameserver.handler.itemhandlers;BeastSoulShot.java (working copy)
+
+	// SoulShots are already active.
+	if (activePet.isChargedShot(ShotType.SOULSHOT))
+		return;
+	
++	// If the player doesn't have enough beast soulshot remaining, remove any auto soulshot task.
++	if (!Config.INFINITY_SS && !activeOwner.destroyItemWithoutTrace("Consume", item.getObjectId(), activePet.getSoulShotsPerHit(), null, false))
++	{
++		if (!activeOwner.disableAutoShot(item.getItemId()))
++			activeOwner.sendPacket(SystemMessageId.NOT_ENOUGH_SOULSHOTS_FOR_PET);
++		return;
++	}
+
+Index: net.sf.l2j.gameserver.handler.itemhandlers;BeastSpiritShot.java
+===================================================================
+--- net.sf.l2j.gameserver.handler.itemhandlers;BeastSpiritShot.java (revision 84)
++++ net.sf.l2j.gameserver.handler.itemhandlers;BeastSpiritShot.java (working copy)
+
+	// shots are already active.
+	if (activePet.isChargedShot(isBlessed ? ShotType.BLESSED_SPIRITSHOT : ShotType.SPIRITSHOT))
+		return;
+	
++	if (!Config.INFINITY_SS && !activeOwner.destroyItemWithoutTrace("Consume", item.getObjectId(), activePet.getSpiritShotsPerHit(), null, false))
++	{
++		if (!activeOwner.disableAutoShot(itemId))
++			activeOwner.sendPacket(SystemMessageId.NOT_ENOUGH_SPIRITSHOTS_FOR_PET);
++		return;
++	}
+
+Index: net.sf.l2j.gameserver.handler.itemhandlers;BlessedSpiritShot.java
+===================================================================
+--- net.sf.l2j.gameserver.handler.itemhandlers;BlessedSpiritShot.java (revision 84)
++++ net.sf.l2j.gameserver.handler.itemhandlers;BlessedSpiritShot.java (working copy)
+
+	// Check for correct grade.
+	if (weaponItem.getCrystalType() != item.getItem().getCrystalType())
+	{
+		if (!activeChar.getAutoSoulShot().contains(itemId))
+			activeChar.sendPacket(SystemMessageId.SPIRITSHOTS_GRADE_MISMATCH);
+		
+		return;
+	}
+	
++	// Consume bss if player has enough of them
++	if (!Config.INFINITY_SS && !activeChar.destroyItemWithoutTrace("Consume", item.getObjectId(), weaponItem.getSpiritShotCount(), null, false))
++	{
++		if (!activeChar.disableAutoShot(itemId))
++			activeChar.sendPacket(SystemMessageId.NOT_ENOUGH_SPIRITSHOTS);
++		
++		return;
++	}
+
+Index: net.sf.l2j.gameserver.handler.itemhandlers;SoulShots.java
+===================================================================
+--- net.sf.l2j.gameserver.handler.itemhandlers;SoulShots.java (revision 84)
++++ net.sf.l2j.gameserver.handler.itemhandlers;SoulShots.java (working copy)
+
+	// Consume Soulshots if player has enough of them.
+	int ssCount = weaponItem.getSoulShotCount();
+	if (weaponItem.getReducedSoulShot() > 0 && Rnd.get(100) < weaponItem.getReducedSoulShotChance())
+		ssCount = weaponItem.getReducedSoulShot();
+	
++	if (!Config.INFINITY_SS && !activeChar.destroyItemWithoutTrace("Consume", item.getObjectId(), ssCount, null, false))
++	{
++		if (!activeChar.disableAutoShot(itemId))
++			activeChar.sendPacket(SystemMessageId.NOT_ENOUGH_SOULSHOTS);
++		
++		return;
++	}
+
+Index: net.sf.l2j.gameserver.handler.itemhandlers;SpiritShot.java
+===================================================================
+--- net.sf.l2j.gameserver.handler.itemhandlers;SpiritShot.java (revision 84)
++++ net.sf.l2j.gameserver.handler.itemhandlers;SpiritShot.java (working copy)
+
+	if (weaponItem.getCrystalType() != item.getItem().getCrystalType())
+	{
+		if (!activeChar.getAutoSoulShot().contains(itemId))
+			activeChar.sendPacket(SystemMessageId.SPIRITSHOTS_GRADE_MISMATCH);
+		
+		return;
+	}
+	
++	// Consume sps if player has enough of them
++	if (!Config.INFINITY_SS && !activeChar.destroyItemWithoutTrace("Consume", item.getObjectId(), weaponItem.getSpiritShotCount(), null, false))
++	{
++		if (!activeChar.disableAutoShot(itemId))
++			activeChar.sendPacket(SystemMessageId.NOT_ENOUGH_SPIRITSHOTS);
++		return;
++	}
+
+Index: net.sf.l2j.gameserver.model.actor;Creature.java
+===================================================================
+--- net.sf.l2j.gameserver.model.actor;Creature.java (revision 84)
++++ net.sf.l2j.gameserver.model.actor;Creature.java (working copy)
+
+	private boolean doAttackHitByBow(Attack attack, Creature target, int sAtk, Weapon weapon)
+	{
+		int damage1 = 0;
+		byte shld1 = 0;
+		boolean crit1 = false;
+		
+		// Calculate if hit is missed or not
+		boolean miss1 = Formulas.calcHitMiss(this, target);
+		
++	// Consume arrows
++	if (!Config.INFINITY_ARROWS)
++	reduceArrowCount();
+
+
+Index: config/player.propertis
+===================================================================
+--- config/player.propertis (revision 84)
++++ config/player.propertis (working copy)
+
+# Infinity SS and Arrows
+InfinitySS = True
+InfinityArrows = True
