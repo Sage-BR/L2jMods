@@ -1,0 +1,331 @@
+### Eclipse Workspace Patch 1.0
+#P 405 (1)
+diff --git aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
+index 2d0b8e7..16a84e2 100644
+--- aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
++++ aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
+@@ -1,32 +1,31 @@
+ package net.sf.l2j.gameserver;
+ 
+ import java.io.File;
+ import java.io.FileInputStream;
+ import java.io.InputStream;
+ import java.net.InetAddress;
+ import java.util.logging.LogManager;
+ 
++import net.sf.l2j.Config;
+ import net.sf.l2j.commons.lang.StringUtil;
+ import net.sf.l2j.commons.logging.CLogger;
+ import net.sf.l2j.commons.mmocore.SelectorConfig;
+ import net.sf.l2j.commons.mmocore.SelectorThread;
+ import net.sf.l2j.commons.pool.ConnectionPool;
+ import net.sf.l2j.commons.pool.ThreadPool;
+ import net.sf.l2j.commons.util.SysUtil;
+-
+-import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.communitybbs.CommunityBoard;
+ import net.sf.l2j.gameserver.data.SkillTable;
+ import net.sf.l2j.gameserver.data.cache.CrestCache;
+ import net.sf.l2j.gameserver.data.cache.HtmCache;
+ import net.sf.l2j.gameserver.data.manager.BoatManager;
+ import net.sf.l2j.gameserver.data.manager.BufferManager;
+ import net.sf.l2j.gameserver.data.manager.BuyListManager;
+ import net.sf.l2j.gameserver.data.manager.CastleManager;
+ import net.sf.l2j.gameserver.data.manager.CastleManorManager;
+ import net.sf.l2j.gameserver.data.manager.ClanHallManager;
+ import net.sf.l2j.gameserver.data.manager.CoupleManager;
+ import net.sf.l2j.gameserver.data.manager.CursedWeaponManager;
+ import net.sf.l2j.gameserver.data.manager.DerbyTrackManager;
+ import net.sf.l2j.gameserver.data.manager.DimensionalRiftManager;
+ import net.sf.l2j.gameserver.data.manager.FestivalOfDarknessManager;
+@@ -66,30 +65,31 @@
+ import net.sf.l2j.gameserver.data.xml.ScriptData;
+ import net.sf.l2j.gameserver.data.xml.SkillTreeData;
+ import net.sf.l2j.gameserver.data.xml.SoulCrystalData;
+ import net.sf.l2j.gameserver.data.xml.SpellbookData;
+ import net.sf.l2j.gameserver.data.xml.StaticObjectData;
+ import net.sf.l2j.gameserver.data.xml.SummonItemData;
+ import net.sf.l2j.gameserver.data.xml.TeleportData;
+ import net.sf.l2j.gameserver.data.xml.WalkerRouteData;
+ import net.sf.l2j.gameserver.geoengine.GeoEngine;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.ChatHandler;
+ import net.sf.l2j.gameserver.handler.ItemHandler;
+ import net.sf.l2j.gameserver.handler.SkillHandler;
+ import net.sf.l2j.gameserver.handler.TargetHandler;
+ import net.sf.l2j.gameserver.handler.UserCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.idfactory.IdFactory;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.boat.BoatGiranTalking;
+ import net.sf.l2j.gameserver.model.boat.BoatGludinRune;
+ import net.sf.l2j.gameserver.model.boat.BoatInnadrilTour;
+ import net.sf.l2j.gameserver.model.boat.BoatRunePrimeval;
+ import net.sf.l2j.gameserver.model.boat.BoatTalkingGludin;
+ import net.sf.l2j.gameserver.model.olympiad.Olympiad;
+ import net.sf.l2j.gameserver.model.olympiad.OlympiadGameManager;
+ import net.sf.l2j.gameserver.network.GameClient;
+ import net.sf.l2j.gameserver.network.GamePacketHandler;
+ import net.sf.l2j.gameserver.taskmanager.AttackStanceTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.DecayTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.GameTimeTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.ItemsOnGroundTaskManager;
+@@ -257,30 +257,31 @@
+ 			CoupleManager.getInstance();
+ 		
+ 		if (Config.ALLOW_FISH_CHAMPIONSHIP)
+ 			FishingChampionshipManager.getInstance();
+ 		
+ 		StringUtil.printSection("Spawns");
+ 		SpawnManager.getInstance().spawn();
+ 		
+ 		StringUtil.printSection("Handlers");
+ 		LOGGER.info("Loaded {} admin command handlers.", AdminCommandHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} chat handlers.", ChatHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} item handlers.", ItemHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} skill handlers.", SkillHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} target handlers.", TargetHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} user command handlers.", UserCommandHandler.getInstance().size());
++		LOGGER.info("Loaded {} user VoicedCommandHandler handlers.", VoicedCommandHandler.getInstance().size());
+ 		
+ 		StringUtil.printSection("System");
+ 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
+ 		
+ 		if (Config.DEADLOCK_DETECTOR)
+ 		{
+ 			LOGGER.info("Deadlock detector is enabled. Timer: {}s.", Config.DEADLOCK_CHECK_INTERVAL);
+ 			
+ 			final DeadLockDetector deadDetectThread = new DeadLockDetector();
+ 			deadDetectThread.setDaemon(true);
+ 			deadDetectThread.start();
+ 		}
+ 		else
+ 			LOGGER.info("Deadlock detector is disabled.");
+ 		
+diff --git aCis_gameserver/java/net/sf/l2j/gameserver/handler/IVoicedCommandHandler.java
+new file mode 100644
+index 0000000..c7b29f5
+--- /dev/null
++++ aCis_gameserver/java/net/sf/l2j/gameserver/handler/IVoicedCommandHandler.java
+@@ -0,0 +1,10 @@
++package net.sf.l2j.gameserver.handler;
++
++import net.sf.l2j.gameserver.model.actor.Player;
++
++public interface IVoicedCommandHandler
++{
++	public boolean useVoicedCommand(String command, Player activeChar, String params);
++	
++	public String[] getVoicedCommandList();
++}
+diff --git aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+new file mode 100644
+index 0000000..0c706a8
+--- /dev/null
++++ aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -0,0 +1,49 @@
++package net.sf.l2j.gameserver.handler;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public class VoicedCommandHandler
++{
++	private final Map<Integer, IVoicedCommandHandler> _datatable = new HashMap<>();
++	
++	public static VoicedCommandHandler getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	
++	protected VoicedCommandHandler()
++	{
++		//Codigos para colocar aqui dentro
++		//Exemplo -> registerHandler(new ExemploMod());
++		
++	}
++	
++	public void registerHandler(IVoicedCommandHandler handler)
++	{
++		String[] ids = handler.getVoicedCommandList();
++		
++		for (int i = 0; i < ids.length; i++)
++			_datatable.put(ids[i].hashCode(), handler);
++	}
++	
++	public IVoicedCommandHandler getHandler(String voicedCommand)
++	{
++		String command = voicedCommand;
++		
++		if (voicedCommand.indexOf(" ") != -1)
++			command = voicedCommand.substring(0, voicedCommand.indexOf(" "));
++		
++		return _datatable.get(command.hashCode());
++	}
++	
++	public int size()
++	{
++		return _datatable.size();
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final VoicedCommandHandler _instance = new VoicedCommandHandler();
++	}
++}
+diff --git aCis_gameserver/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
+index ac326e9..1ab0de7 100644
+--- aCis_gameserver/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
++++ aCis_gameserver/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
+@@ -1,34 +1,65 @@
+ package net.sf.l2j.gameserver.handler.chathandlers;
+ 
++import java.util.StringTokenizer;
++
+ import net.sf.l2j.gameserver.enums.FloodProtector;
+ import net.sf.l2j.gameserver.enums.SayType;
+ import net.sf.l2j.gameserver.handler.IChatHandler;
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
+ 
+ public class ChatAll implements IChatHandler
+ {
+ 	private static final SayType[] COMMAND_IDS =
+ 	{
+ 		SayType.ALL
+ 	};
+ 	
+ 	@Override
+ 	public void handleChat(SayType type, Player player, String target, String text)
+ 	{
+ 		if (!player.getClient().performAction(FloodProtector.GLOBAL_CHAT))
+ 			return;
+-		
+-		final CreatureSay cs = new CreatureSay(player, type, text);
+-		for (Player knownPlayer : player.getKnownTypeInRadius(Player.class, 1250))
+-			knownPlayer.sendPacket(cs);
+-		
+-		player.sendPacket(cs);
++		boolean vcd_used = false;
++		if (text.startsWith("."))
++		{
++			StringTokenizer st = new StringTokenizer(text);
++			IVoicedCommandHandler vch;
++			String command = "";
++			if (st.countTokens() > 1)
++			{
++				command = st.nextToken().substring(1);
++				target = text.substring(command.length() + 2);
++				vch = VoicedCommandHandler.getInstance().getHandler(command);
++			}
++			else
++			{
++				command = text.substring(1);
++				vch = VoicedCommandHandler.getInstance().getHandler(command);
++			}
++
++			if (vch != null)
++			{
++				vch.useVoicedCommand(command, player, text);
++				vcd_used = true;
++
++			}
++		}
++		if (!vcd_used)
++		{
++			final CreatureSay cs = new CreatureSay(player, type, text);
++			for (Player knownPlayer : player.getKnownTypeInRadius(Player.class, 1250))
++				knownPlayer.sendPacket(cs);
++
++			player.sendPacket(cs);
++		}
+ 	}
+ 	
+ 	@Override
+ 	public SayType[] getChatTypeList()
+ 	{
+ 		return COMMAND_IDS;
+ 	}
+ }
+\ No newline at end of file
+diff --git aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+index 882ab73..b973fdd 100644
+--- aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
++++ aCis_gameserver/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+@@ -1,27 +1,29 @@
+ package net.sf.l2j.gameserver.network.clientpackets;
+ 
+ import java.util.StringTokenizer;
+ import java.util.logging.Logger;
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.communitybbs.CommunityBoard;
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.xml.AdminData;
+ import net.sf.l2j.gameserver.enums.FloodProtector;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.WorldObject;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.model.actor.instance.OlympiadManagerNpc;
+ import net.sf.l2j.gameserver.model.olympiad.OlympiadManager;
+ import net.sf.l2j.gameserver.network.SystemMessageId;
+ import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
+ import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
+ import net.sf.l2j.gameserver.scripting.QuestState;
+ 
+ public final class RequestBypassToServer extends L2GameClientPacket
+ {
+ 	private static final Logger GMAUDIT_LOG = Logger.getLogger("gmaudit");
+ 	
+@@ -86,30 +88,44 @@
+ 			if (cmd.length > 1)
+ 			{
+ 				final int itemId = Integer.parseInt(cmd[1]);
+ 				html.setItemId(itemId);
+ 				
+ 				if (itemId == 7064 && cmd[0].equalsIgnoreCase("lidias_diary/7064-16.htm"))
+ 				{
+ 					final QuestState qs = player.getQuestList().getQuestState("Q023_LidiasHeart");
+ 					if (qs != null && qs.getCond() == 5 && qs.getInteger("diary") == 0)
+ 						qs.set("diary", "1");
+ 				}
+ 			}
+ 			html.disableValidation();
+ 			player.sendPacket(html);
+ 		}
++		else if (_command.startsWith("voiced_"))
++		{
++			String command = _command.split(" ")[0];
++
++			IVoicedCommandHandler ach = VoicedCommandHandler.getInstance().getHandler(_command.substring(7));
++
++			if (ach == null)
++			{
++				player.sendMessage("The command " + command.substring(7) + " does not exist!");
++				LOGGER.warn("No handler registered for command '" + _command + "'");
++				return;
++			}
++			ach.useVoicedCommand(_command.substring(7), player, null);
++		}
+ 		else if (_command.startsWith("npc_"))
+ 		{
+ 			if (!player.validateBypass(_command))
+ 				return;
+ 			
+ 			int endOfId = _command.indexOf('_', 5);
+ 			String id;
+ 			if (endOfId > 0)
+ 				id = _command.substring(4, endOfId);
+ 			else
+ 				id = _command.substring(4);
+ 			
+ 			try
+ 			{
+ 				final WorldObject object = World.getInstance().getObject(Integer.parseInt(id));

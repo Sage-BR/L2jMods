@@ -1,0 +1,277 @@
+### Eclipse Workspace Patch 1.0
+#P core
+diff --git java/config/Custom.properties
+index ac00dc7..cdf1f97 100644
+--- java/config/Custom.properties
++++ java/config/Custom.properties
+@@ -80,60 +80,65 @@
+ # To set all champion mobs to Passive (not aggro), set true.
+ ChampionPassive = False
+ # Chance for a mob to became champion (in percents) - 0 to disable
+ ChampionFrequency = 5
+ # Title of all Champion Mobs
+ ChampionTitle = Champion
+ # Min and max lvl allowed for a mob to be champion.
+ ChampionMinLevel = 20
+ ChampionMaxLevel = 70
+ # Hp multiplier
+ ChampionHp = 8
+ # Hp Regen Multiplier
+ ChampionHpRegen = 1.
+ # Rewards multiplier (drop rate * champion rewards rate)
+ ChampionRewards = 8.
+ # Adenas & seal stones rewards multiplier (adenas & seal stones drop rate * champion adenas rewards rate)
+ ChampionAdenasRewards = 1.
+ # Atk bonus for champion (changes apply on patk & matk)
+ ChampionAtk = 1.
+ # Spd Atk bonus for champion (changes apply on patkspd & matkspd)
+ ChampionSpdAtk = 1.
+ # Chance to obtain a specified reward item from a higher lvl champion (in percents)   default is off using glittering medal as reward
+ ChampionRewardLowerLvlItemChance = 0
+ # Chance to obtain a specified reward item from a lower lvl champion (in percents)   default is off using glittering medal as reward
+ ChampionRewardHigherLvlItemChance = 0
+ # Specified reward item ID
+ ChampionRewardItemID = 6393
+ # Specified reward item random quantity
+ ChampionRewardItemQty = 1
+ 
++# Enable aura from champion mobs
++# 0 - no aura / 1 - blue aura / 2 - red aura
++# Default = 0
++ChampionEnableAura = 1
+
+ # ------------------------------------------------------------
+ # Enable Auto Target
+ # ------------------------------------------------------------
+ # Allows players to auto-target NPCs that dealt damage to them,
+ # provided that they haven't got any other target at that time.
+ # This setting is also useful for attacks from mobs stuck inside walls.
+ EnableAutoTargetNPC = False
+ 
+ # ------------------------------------------------------------
+ # Show NPC Crest
+ # ------------------------------------------------------------
+ # Shows clan and alliance crests for territory NPCs.
+ ShowNpcCrest = False
+ 
+ # ------------------------------------------------------------
+ # Choose any kind of subclass to any Village Master
+ # ------------------------------------------------------------
+ # Allows players to choose any kind of subclass to any village master
+ ChooseAllSubClassesEveryWhere = False
+ 
+ # ------------------------------------------------------------
+ # Auto Noblesse Status At Login
+ # ------------------------------------------------------------
+ # Give noblesse status to all characters at login
+ AutoNoblesseAtLogin = False
+ 
+ # ------------------------------------------------------------
+ # Allow Enchanting Hero Items
+ # ------------------------------------------------------------
+ # Allows players to enchant a hero weapon.
+diff --git java/net/sf/l2j/Config.java
+index 189f5e5..0fcb19c 100644
+--- java/net/sf/l2j/Config.java
++++ java/net/sf/l2j/Config.java
+@@ -994,60 +994,61 @@
+ 	
+ 	/** Allow players to keep subclass skills ? */
+ 	public static boolean KEEP_SUBCLASS_SKILLS;
+ 	
+ 	/** Allow use Event Managers for change occupation ? */
+ 	public static boolean ALLOW_CLASS_MASTERS;
+ 	public static ClassMasterSettings CLASS_MASTER_SETTINGS;
+ 	public static boolean ALLOW_ENTIRE_TREE;
+ 	public static boolean ALTERNATE_CLASS_MASTER;
+ 	
+ 	/** Auto rewarding players */
+ 	public static boolean ALLOW_AUTO_REWARDER;
+ 	public static int AUTO_REWARD_DELAY;
+ 	public static int AUTO_REWARD_ID;
+ 	public static int AUTO_REWARD_COUNT;
+ 	
+ 	/** Allow players to view all available classes to the same village master */
+ 	public static boolean CHANGE_SUBCLASS_EVERYWHERE;
+ 	
+ 	/** Auto Noblesse status at login */
+ 	public static boolean AUTO_NOBLE_STATUS;
+ 	
+ 	/** Allow enchanting hero items */
+ 	public static boolean ALLOW_HERO_ENCHANT;
+ 	
+ 	/** Maximum clients per IP */
+ 	public static int MAX_CLIENTS_PER_IP;
+ 	
+ 	/** Use /block command as an AntiBuff shield */
+ 	public static boolean ANTIBUFF_SHIELD_ENABLE;
++	public static int L2JMOD_CHAMPION_ENABLE_AURA;
+ 	
+ 	/** Allow atk/casting spd affect skill reuse delay */
+ 	public static boolean SKILL_REUSE_INDEPENDENT;
+ 	
+ 	/** Allow password change using .changepassword voiced command */
+ 	public static boolean PASSWORD_CHANGE_ENABLE;
+ 
+ 	/** Enable custom data tables ? */
+ 	public static boolean CUSTOM_SPAWNLIST_TABLE;
+ 	public static boolean SAVE_GMSPAWN_ON_CUSTOM;
+ 	public static boolean CUSTOM_NPC_TABLE;
+ 	public static boolean CUSTOM_NPC_SKILLS_TABLE;
+ 	public static boolean CUSTOM_MINIONS_TABLE;
+ 	public static boolean CUSTOM_ITEM_TABLES;
+ 	public static boolean CUSTOM_ARMORSETS_TABLE;
+ 	public static boolean CUSTOM_TELEPORT_TABLE;
+ 	public static boolean CUSTOM_DROPLIST_TABLE;
+ 	public static boolean CUSTOM_MERCHANT_TABLES;
+ 	public static boolean CUSTOM_MULTISELL_LOAD;
+ 	
+ 	/** Champion Mod */
+ 	public static boolean CHAMPION_ENABLE;
+ 	public static boolean CHAMPION_PASSIVE;
+ 	public static int CHAMPION_FREQUENCY;
+ 	public static String CHAMPION_TITLE;
+ 	public static int CHAMP_MIN_LVL;
+ 	public static int CHAMP_MAX_LVL;
+ 	public static int CHAMPION_HP;
+ 	public static float CHAMPION_REWARDS;
+ 	public static float CHAMPION_ADENAS_REWARDS;
+@@ -2658,78 +2659,79 @@
+ 			ALT_OLY_CLASSED = Integer.parseInt(olympiadSettings.getProperty("AltOlyClassedParticipants", "5"));
+ 			ALT_OLY_REG_DISPLAY = Integer.parseInt(olympiadSettings.getProperty("AltOlyRegistrationDisplayNumber","10"));
+ 			ALT_OLY_NONCLASSED = Integer.parseInt(olympiadSettings.getProperty("AltOlyNonClassedParticipants", "9"));
+ 			ALT_OLY_BATTLE_REWARD_ITEM = Integer.parseInt(olympiadSettings.getProperty("AltOlyBattleRewItem", "6651"));
+ 			ALT_OLY_CLASSED_RITEM_C = Integer.parseInt(olympiadSettings.getProperty("AltOlyClassedRewItemCount", "50"));
+ 			ALT_OLY_NONCLASSED_RITEM_C = Integer.parseInt(olympiadSettings.getProperty("AltOlyNonClassedRewItemCount", "30"));
+ 			ALT_OLY_COMP_RITEM = Integer.parseInt(olympiadSettings.getProperty("AltOlyCompRewItem", "6651"));
+ 			ALT_OLY_GP_PER_POINT = Integer.parseInt(olympiadSettings.getProperty("AltOlyGPPerPoint", "1000"));
+ 			ALT_OLY_HERO_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyHeroPoints", "300"));
+ 			ALT_OLY_RANK1_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyRank1Points", "100"));
+ 			ALT_OLY_RANK2_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyRank2Points", "75"));
+ 			ALT_OLY_RANK3_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyRank3Points", "55"));
+ 			ALT_OLY_RANK4_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyRank4Points", "40"));
+ 			ALT_OLY_RANK5_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyRank5Points", "30"));
+ 			ALT_OLY_MAX_POINTS = Integer.parseInt(olympiadSettings.getProperty("AltOlyMaxPoints", "10"));
+ 			ALT_OLY_LOSE_POINTS_ON_TIE = Boolean.valueOf(olympiadSettings.getProperty("AltOlyLosePointsOnTie", "true"));
+ 			ALT_OLY_SHOW_MONTHLY_WINNERS = Boolean.valueOf(olympiadSettings.getProperty("AltOlyShowMonthlyWinners", "true"));
+ 			ALT_OLY_ENCHANT_LIMIT = Integer.parseInt(olympiadSettings.getProperty("AltOlyEnchantLimit", "-1"));
+ 			
+ 			// Custom settings
+ 			Properties customSettings = new Properties();
+ 			try (InputStream is = new FileInputStream(new File(CUSTOM_FILE)))
+ 			{
+ 				customSettings.load(is);
+ 			}
+ 			catch (Exception e)
+ 			{
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + CUSTOM_FILE + " File.");
+ 			}
+ 			ANTIBUFF_SHIELD_ENABLE = Boolean.valueOf(customSettings.getProperty("AntibuffShieldEnable", "false"));
+ 			SKILL_REUSE_INDEPENDENT = Boolean.valueOf(customSettings.getProperty("SkillReuseIndependent", "false"));
+ 			
+ 			PASSWORD_CHANGE_ENABLE = Boolean.valueOf(customSettings.getProperty("PasswordChangeEnable", "false"));
+ 
+ 			CUSTOM_SPAWNLIST_TABLE = Boolean.valueOf(customSettings.getProperty("CustomSpawnlistTable", "false"));
+ 			SAVE_GMSPAWN_ON_CUSTOM = Boolean.valueOf(customSettings.getProperty("SaveGmSpawnOnCustom", "false"));
+ 			CUSTOM_NPC_TABLE = Boolean.valueOf(customSettings.getProperty("CustomNpcTable", "false"));
+ 			CUSTOM_NPC_SKILLS_TABLE = Boolean.valueOf(customSettings.getProperty("CustomNpcSkillsTable", "false"));
+ 			CUSTOM_MINIONS_TABLE = Boolean.valueOf(customSettings.getProperty("CustomMinionsTable", "false"));
+ 			CUSTOM_ITEM_TABLES = Boolean.valueOf(customSettings.getProperty("CustomItemTables", "false"));
+ 			CUSTOM_ARMORSETS_TABLE = Boolean.valueOf(customSettings.getProperty("CustomArmorSetsTable", "false"));
+ 			CUSTOM_TELEPORT_TABLE = Boolean.valueOf(customSettings.getProperty("CustomTeleportTable", "false"));
+ 			CUSTOM_DROPLIST_TABLE = Boolean.valueOf(customSettings.getProperty("CustomDroplistTable", "false"));
+ 			CUSTOM_MERCHANT_TABLES = Boolean.valueOf(customSettings.getProperty("CustomMerchantTables", "false"));
+ 			CUSTOM_MULTISELL_LOAD = Boolean.valueOf(customSettings.getProperty("CustomMultisellLoad", "false"));
++			if (L2JMOD_CHAMPION_ENABLE_AURA != 0 && L2JMOD_CHAMPION_ENABLE_AURA != 1 && L2JMOD_CHAMPION_ENABLE_AURA != 2) L2JMOD_CHAMPION_ENABLE_AURA = 0;
++			L2JMOD_CHAMPION_ENABLE_AURA = Integer.parseInt(customSettings.getProperty("ChampionEnableAura", "0"));
+ 			CHAMPION_ENABLE = Boolean.valueOf(customSettings.getProperty("ChampionEnable", "false"));
+ 			CHAMPION_PASSIVE = Boolean.valueOf(customSettings.getProperty("ChampionPassive", "false"));
+ 			CHAMPION_FREQUENCY = Integer.parseInt(customSettings.getProperty("ChampionFrequency", "0"));
+ 			CHAMPION_TITLE = customSettings.getProperty("ChampionTitle", "Champion");
+ 			CHAMP_MIN_LVL = Integer.parseInt(customSettings.getProperty("ChampionMinLevel", "20"));
+ 			CHAMP_MAX_LVL = Integer.parseInt(customSettings.getProperty("ChampionMaxLevel", "70"));
+ 			CHAMPION_HP = Integer.parseInt(customSettings.getProperty("ChampionHp", "8"));
+ 			CHAMPION_HP_REGEN = Float.parseFloat(customSettings.getProperty("ChampionHpRegen", "1."));
+ 			CHAMPION_REWARDS = Float.parseFloat(customSettings.getProperty("ChampionRewards", "8."));
+ 			CHAMPION_ADENAS_REWARDS = Float.parseFloat(customSettings.getProperty("ChampionAdenasRewards", "1."));
+ 			CHAMPION_ATK = Float.parseFloat(customSettings.getProperty("ChampionAtk", "1."));
+ 			CHAMPION_SPD_ATK = Float.parseFloat(customSettings.getProperty("ChampionSpdAtk", "1."));
+ 			CHAMPION_REWARD_LOWER_CHANCE = Integer.parseInt(customSettings.getProperty("ChampionRewardLowerLvlItemChance", "0"));
+ 			CHAMPION_REWARD_HIGHER_CHANCE = Integer.parseInt(customSettings.getProperty("ChampionRewardHigherLvlItemChance", "0"));
+ 			CHAMPION_REWARD_ID = Integer.parseInt(customSettings.getProperty("ChampionRewardItemID", "6393"));
+ 			CHAMPION_REWARD_QTY = Integer.parseInt(customSettings.getProperty("ChampionRewardItemQty", "1"));
+ 			
+ 			ALLOW_AUTO_REWARDER = Boolean.valueOf(customSettings.getProperty("AllowAutoRewarder", "False"));
+ 			AUTO_REWARD_DELAY = Integer.parseInt(customSettings.getProperty("AutoRewardDelay", "1200"));
+ 			AUTO_REWARD_ID = Integer.parseInt(customSettings.getProperty("AutoRewardID", "57"));
+ 			AUTO_REWARD_COUNT = Integer.parseInt(customSettings.getProperty("AutoRewardCount", "1000"));
+ 			
+ 			Boost_EXP_COMMAND = Boolean.parseBoolean(customSettings.getProperty("SpExpCommand", "False"));
+ 			AUTO_TARGET_NPC = Boolean.parseBoolean(customSettings.getProperty("EnableAutoTargetNPC", "False"));
+ 			SHOW_NPC_CREST = Boolean.parseBoolean(customSettings.getProperty("ShowNpcCrest", "False"));
+ 			CHANGE_SUBCLASS_EVERYWHERE = Boolean.parseBoolean(customSettings.getProperty("ChooseAllSubClassesEveryWhere", "False"));
+ 			AUTO_NOBLE_STATUS = Boolean.parseBoolean(customSettings.getProperty("AutoNoblesseAtLogin", "False"));
+ 			ALLOW_HERO_ENCHANT = Boolean.parseBoolean(customSettings.getProperty("AllowEnchantHeroItems", "False"));
+ 			MAX_CLIENTS_PER_IP = Integer.parseInt(customSettings.getProperty("MaximumClientsPerIP", "0"));
+ 			ENABLE_REAL_TIME = Boolean.parseBoolean(customSettings.getProperty("EnableRealTime", "False"));
+diff --git java/net/sf/l2j/gameserver/network/serverpackets/NpcInfo.java
+index 9384b83..985e1e4 100644
+--- java/net/sf/l2j/gameserver/network/serverpackets/NpcInfo.java
++++ java/net/sf/l2j/gameserver/network/serverpackets/NpcInfo.java
+@@ -196,48 +196,54 @@
+ 		writeD(_swimRunSpd); // swimspeed
+ 		writeD(_swimWalkSpd); // swimspeed
+ 		writeD(_flRunSpd);
+ 		writeD(_flWalkSpd);
+ 		writeD(_flyRunSpd);
+ 		writeD(_flyWalkSpd);
+ 		writeF(_movementMultiplier);
+ 		writeF(_attackSpeedMultiplier);
+ 		writeF(collisionRadius);
+ 		writeF(collisionHeight);
+ 		writeD(_rhand); // right hand weapon
+ 		writeD(_chest);
+ 		writeD(_lhand); // left hand weapon
+ 		writeC(1); // name above char 1=true ... ??
+ 		writeC(_cha.isRunning() ? 1 : 0); // char always running
+ 		writeC(_cha.isInCombat() ? 1 : 0);
+ 		writeC(_isAlikeDead ? 1 : 0);
+ 		writeC(_showSpawnAnimation ? 2 : _val); // 0=teleported 1=default 2=summoned
+ 		writeS(_name);
+ 		writeS(_title);
+ 		writeD(_playableFlag);
+ 		writeD(_pvpFlag);
+ 		writeD(_karma);
+ 		
+ 		writeD(_cha.getAbnormalEffect()); // C2
+ 		writeD(_clanId); // clan id
+ 		writeD(_clanCrest); // crest id
+ 		writeD(_allyId); // ally id
+ 		writeD(_allyCrest); // all crest
+ 		writeC(0000); // C2
+-		writeC(_auraColor); // Title color 0=client default
++		if (Config.CHAMPION_ENABLE)
++		{
++			writeC(_cha.isChampion() ? Config.L2JMOD_CHAMPION_ENABLE_AURA : 0);
++		}
++		else
++		{
++			writeC(_auraColor); // Title color 0=client default
++		}
+ 		writeF(collisionRadius);
+ 		writeF(collisionHeight);
+ 		writeD(0x00); // C4
+ 	}
+ 	
+ 	/*
+ 	 * (non-Javadoc)
+ 	 * @see net.sf.l2j.gameserver.serverpackets.L2GameServerPacket#getType()
+ 	 */
+ 	@Override
+ 	public String getType()
+ 	{
+ 		return _S__22_NPCINFO;
+ 	}
+ }
+\ No newline at end of file

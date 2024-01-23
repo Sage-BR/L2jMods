@@ -1,0 +1,928 @@
+diff --git a/config/PartyFarm.properties b/config/PartyFarm.properties
+new file mode 100644
+index 0000000..bb00eed
+--- /dev/null
++++ b/config/PartyFarm.properties
+@@ -0,0 +1,86 @@
++#=====================================================
++#               PARTY FARM EVENT
++#=====================================================
++
++MonsterLoc = -50324, 137542, -2871;\
++-49694,	138843,	-2919;\
++-48580,	139801,	-2930;\
++-51061,	139072,	-2925;\
++-52648,	139600,	-2937;\
++-52084,	137211,	-2884;\
++-51885,	140437,	-2859;\
++-51313,	141965,	-2878;\
++-53470,	141986,	-2858;\
++-54383,	139210,	-2906;\
++-55321,	137909,	-2911;\
++-57082,	138361,	-2714;\
++-57845,	140766,	-2649;\
++-56629,	143361,	-2566;\
++-59379,	139309,	-2466;\
++-60082,	137623,	-2327;\
++-58639,	135770,	-2457;\
++-56714,	135084,	-2433;\
++-56715,	136673,	-2789;\
++-56264,	141358,	-2628;\
++-54986,	142629,	-2839;\
++-53362,	143202,	-2892;\
++-52410,	141770,	-2925;\
++-50588,	143081,	-2895;\
++-51088,	144450,	-2893;\
++-50856,	145485,	-2812;\
++-52172,	145466,	-2820;\
++-54007,	145158,	-2875;\
++-54325,	146502,	-2877;\
++-52890,	144172,	-2908;\
++-54113,	137140,	-2752;\
++-51976,	138979,	-2952;\
++-53666,	139817,	-2857;\
++-52753,	137986,	-2921;\
++-50593,	140423,	-2855;\
++-51996,	143661,	-2892;
++
++#=========================================================
++#                  PARTY DROP REWARD
++#=========================================================
++# Party Zone Monster ID
++PartyEventMonster = 50056
++
++# Format: itemId,min,max,chance(%);itemId,min,max,(chance(%)(optional));.
++# Normal hour reward
++PartyZoneReward = 6392,600,900;6393,1,1,30;6577,1,2,70;6578,1,2,70;
++#=========================================================                   
++# Tempo em Segundos para o MOB aparecer apos ser morto
++# Default: 300 (5 minutos)
++MonsterDelay = 10
++
++# Id do Mob
++MonsterId = 50056
++
++# Remover protesao renewal por ip?
++# Retail = False (Manter Protesao)
++RenewalDualBoxPTFarm = False
++
++#Ativar o Party Farm Event por tempo igual TvT
++PartyFarmEventEnabled = False
++
++# Iniciar party farm ao ligar o server
++StartSpawnPartyFarm = False
++
++#=========================================================
++#                CONFIG START TIME EVENT             
++#=========================================================
++# PartyFarmEventEnabled=11:00,15:00,19:00,23:00,
++#
++# PartyFarm comando spawn manual //ptfarm ou //ptfarm para terminar o evento.
++#
++EventBestFarmTime = 50
++BestFarmStartTime = 00:45,00:47,21:46,
++
++# Show screen Party message on character login
++# Default: False
++ScreenPartyMessageEnable = True
++
++# Screen Party Farm message text
++ScreenPartyFarmMessageText = Party Farm is active
++# Show screen PartyFarm message for x seconds.
++ScreenPartyFarmMessageTime = 6
+diff --git a/java/Dev/Events/PartyFarm/InitialPartyFarm.java b/java/Dev/Events/PartyFarm/InitialPartyFarm.java
+new file mode 100644
+index 0000000..6454a60
+--- /dev/null
++++ b/java/Dev/Events/PartyFarm/InitialPartyFarm.java
+@@ -0,0 +1,92 @@
++package Dev.Events.PartyFarm;
++
++import java.text.SimpleDateFormat;
++import java.util.Calendar;
++import java.util.logging.Logger;
++
++import net.sf.l2j.commons.concurrent.ThreadPool;
++
++import net.sf.l2j.Config;
++
++public class InitialPartyFarm
++{
++	private static InitialPartyFarm _instance = null;
++	protected static final Logger _log = Logger.getLogger(InitialPartyFarm.class.getName());
++	private Calendar NextEvent;
++	private final SimpleDateFormat format = new SimpleDateFormat("HH:mm");
++	
++	public static InitialPartyFarm getInstance()
++	{
++		if (_instance == null)
++		{
++			_instance = new InitialPartyFarm();
++		}
++		return _instance;
++	}
++	
++	public String getRestartNextTime()
++	{
++		if (NextEvent.getTime() != null)
++		{
++			return format.format(NextEvent.getTime());
++		}
++		return "Erro";
++	}
++	
++	public void StartCalculationOfNextEventTime()
++	{
++		try
++		{
++			Calendar currentTime = Calendar.getInstance();
++			Calendar testStartTime = null;
++			long flush2 = 0L;
++			long timeL = 0L;
++			int count = 0;
++			for (String timeOfDay : Config.EVENT_BEST_FARM_INTERVAL_BY_TIME_OF_DAY)
++			{
++				testStartTime = Calendar.getInstance();
++				testStartTime.setLenient(true);
++				String[] splitTimeOfDay = timeOfDay.split(":");
++				testStartTime.set(11, Integer.parseInt(splitTimeOfDay[0]));
++				testStartTime.set(12, Integer.parseInt(splitTimeOfDay[1]));
++				testStartTime.set(13, 0);
++				if (testStartTime.getTimeInMillis() < currentTime.getTimeInMillis())
++				{
++					testStartTime.add(5, 1);
++				}
++				timeL = testStartTime.getTimeInMillis() - currentTime.getTimeInMillis();
++				if (count == 0)
++				{
++					flush2 = timeL;
++					NextEvent = testStartTime;
++				}
++				if (timeL < flush2)
++				{
++					flush2 = timeL;
++					NextEvent = testStartTime;
++				}
++				count++;
++			}
++			_log.info("[Party Farm]: Proximo Evento: " + NextEvent.getTime().toString());
++			ThreadPool.schedule(new StartEventTask(), flush2);
++		}
++		catch (Exception e)
++		{
++			System.out.println("[Party Farm]: Algum erro nas config foi encontrado!");
++		}
++	}
++	
++	class StartEventTask implements Runnable
++	{
++		StartEventTask()
++		{
++		}
++		
++		@Override
++		public void run()
++		{
++			InitialPartyFarm._log.info("[Party Farm]: Event Started.");
++			PartyFarm.bossSpawnMonster();
++		}
++	}
++}
+\ No newline at end of file
+diff --git a/java/Dev/Events/PartyFarm/PartyFarm.java b/java/Dev/Events/PartyFarm/PartyFarm.java
+new file mode 100644
+index 0000000..4f0a5c0
+--- /dev/null
++++ b/java/Dev/Events/PartyFarm/PartyFarm.java
+@@ -0,0 +1,179 @@
++package Dev.Events.PartyFarm;
++
++import java.util.ArrayList;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.data.sql.SpawnTable;
++import net.sf.l2j.gameserver.data.xml.NpcData;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCustom;
++import net.sf.l2j.gameserver.model.World;
++import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++import net.sf.l2j.gameserver.model.spawn.L2Spawn;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++
++
++public class PartyFarm
++{
++	public static L2Spawn _monster;
++	public static int _bossHeading = 0;
++	public static String _eventName = "";
++	public static boolean _started = false;
++	public static boolean _aborted = false;
++	protected static boolean _finish = false;
++	static PartyFarm _instance;
++	
++	public static void bossSpawnMonster()
++	{
++		spawnMonsters();
++		
++		World.gameAnnounceToOnlinePlayers("Teleport Now!");
++		World.gameAnnounceToOnlinePlayers("[Party Farm]: Duration: " + Config.EVENT_BEST_FARM_TIME + " minute(s)!");
++		_aborted = false;
++		_started = true;
++		
++		waiter(Config.EVENT_BEST_FARM_TIME * 60 * 1000);
++		if (!_aborted)
++		{
++			Finish_Event();
++		}
++	}
++	
++	public static void Finish_Event()
++	{
++		unSpawnMonsters();
++		
++		_started = false;
++		_finish = true;
++		
++		World.gameAnnounceToOnlinePlayers("[Party Farm]: Finished!");
++		if (!AdminCustom._bestfarm_manual)
++		{
++			InitialPartyFarm.getInstance().StartCalculationOfNextEventTime();
++		}
++		else
++		{
++			AdminCustom._bestfarm_manual = false;
++		}
++	}
++	
++	public static void spawnMonsters()
++	{
++		for (int i = 0; i < Config.MONSTER_LOCS_COUNT; i++)
++		{
++			int[] coord = Config.MONSTER_LOCS[i];
++			monsters.add(spawnNPC(coord[0], coord[1], coord[2], Config.monsterId));
++		}
++	}
++	
++	public static boolean is_started()
++	{
++		return _started;
++	}
++	
++	public static boolean is_finish()
++	{
++		return _finish;
++	}
++	
++	protected static L2Spawn spawnNPC(int xPos, int yPos, int zPos, int npcId)
++	{
++		NpcTemplate template = NpcData.getInstance().getTemplate(npcId);
++		try
++		{
++			L2Spawn spawn = new L2Spawn(template);
++			spawn.setLoc(xPos, yPos, zPos, 0);
++			spawn.setRespawnDelay(Config.PARTY_FARM_MONSTER_DALAY);
++			
++			SpawnTable.getInstance().addSpawn(spawn, false);
++			
++			spawn.setRespawnState(true);
++			spawn.doSpawn(false);
++			spawn.getNpc().isAggressive();
++			spawn.getNpc().decayMe();
++			spawn.getNpc().spawnMe(spawn.getNpc().getX(), spawn.getNpc().getY(), spawn.getNpc().getZ());
++			spawn.getNpc().broadcastPacket(new MagicSkillUse(spawn.getNpc(), spawn.getNpc(), 1034, 1, 1, 1));
++			return spawn;
++		}
++		catch (Exception e)
++		{
++		}
++		return null;
++	}
++	
++	protected static ArrayList<L2Spawn> monsters = new ArrayList<>();
++	
++	protected static void unSpawnMonsters()
++	{
++		for (L2Spawn s : monsters)
++		{
++			if (s == null)
++			{
++				monsters.remove(s);
++				return;
++			}
++			
++			s.getNpc().deleteMe();
++			s.setRespawnState(false);
++			SpawnTable.getInstance().deleteSpawn(s, true);
++			
++		}
++	}
++	
++	protected static void waiter(long interval)
++	{
++		long startWaiterTime = System.currentTimeMillis();
++		int seconds = (int) (interval / 1000L);
++		while ((startWaiterTime + interval > System.currentTimeMillis()) && (!_aborted))
++		{
++			seconds--;
++			switch (seconds)
++			{
++				case 3600:
++					if (_started)
++					{
++						
++						World.gameAnnounceToOnlinePlayers("[Party Farm]: " + seconds / 60 / 60 + " hour(s) till event finish!");
++					}
++					break;
++				case 60:
++				case 120:
++				case 180:
++				case 240:
++				case 300:
++				case 600:
++				case 900:
++				case 1800:
++					if (_started)
++					{
++						
++						World.gameAnnounceToOnlinePlayers("[Party Farm]: " + seconds / 60 + " minute(s) till event finish!");
++					}
++					break;
++				case 1:
++				case 2:
++				case 3:
++				case 10:
++				case 15:
++				case 30:
++					if (_started)
++					{
++						World.gameAnnounceToOnlinePlayers("[Party Farm]: " + seconds + " second(s) till event finish!");
++					}
++					break;
++			}
++			long startOneSecondWaiterStartTime = System.currentTimeMillis();
++			while (startOneSecondWaiterStartTime + 1000L > System.currentTimeMillis())
++			{
++				try
++				{
++					Thread.sleep(1L);
++				}
++				catch (InterruptedException ie)
++				{
++					ie.printStackTrace();
++				}
++			}
++		}
++	}
++	
++}
+\ No newline at end of file
+diff --git a/java/Dev/Events/PartyFarm/PartyZoneReward.java b/java/Dev/Events/PartyFarm/PartyZoneReward.java
+new file mode 100644
+index 0000000..2a721d5
+--- /dev/null
++++ b/java/Dev/Events/PartyFarm/PartyZoneReward.java
+@@ -0,0 +1,97 @@
++package Dev.Events.PartyFarm;
++
++import java.util.HashMap;
++import java.util.List;
++import java.util.logging.Logger;
++
++import net.sf.l2j.commons.random.Rnd;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.model.actor.Creature;
++import net.sf.l2j.gameserver.model.actor.Npc;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.Player;
++
++public class PartyZoneReward
++{
++	protected static final Logger _log = Logger.getLogger(PartyZoneReward.class.getName());
++	
++	protected PartyZoneReward()
++	{
++	}
++	
++	private static boolean _canReward = false;
++	private static HashMap<String, Integer> _playerHwids = new HashMap<>();
++	
++	// Give Reward
++	public final static void addPartyZoneReward(Creature killer, Npc monster)
++	{
++		if (killer instanceof Playable)
++		{
++			Player player = killer.getActingPlayer();
++			
++			if (player.isInParty())
++			{
++				List<Player> party = player.getParty().getMembers();
++				
++				for (Player member : party)
++				{
++					//String pHwid = member.getHWID();
++					String pHwid = member.getClient().getConnection().getInetAddress().getHostAddress();
++					if (!_playerHwids.containsKey(pHwid) || Config.ENABLE_DUALBOX_PARTYFARM)
++					{
++						_playerHwids.put(pHwid, 1);
++						_canReward = true;
++					}
++					else
++					{
++						int count = _playerHwids.get(pHwid);
++						
++						if (count < 1)
++						{
++							_playerHwids.remove(pHwid);
++							_playerHwids.put(pHwid, count + 1);
++							_canReward = true;
++						}
++						else
++						{
++							member.sendMessage("You are Other PC Reward.");
++							_canReward = false;
++						}
++					}
++					if (_canReward)
++					{
++						if (member.isInsideRadius(monster.getX(), monster.getY(), monster.getZ(), 1000, false, false))
++							RandomReward(member);
++						else
++							member.sendMessage("You are too far from your party to be rewarded.");
++					}
++				}
++				_playerHwids.clear();   
++			}
++			else
++				RandomReward(player);
++		}
++	}
++	
++	public static void RandomReward(Player player)
++	{
++		for (RewardHolder reward : Config.PARTY_ZONE_REWARDS)
++		{
++			if (Rnd.get(100) <= reward.getRewardChance())
++			{
++				player.addItem("Random Reward", reward.getRewardId(), Rnd.get(reward.getRewardMin(), reward.getRewardMax()), player, true);
++			}
++		}
++	}
++	
++	public static final PartyZoneReward getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final PartyZoneReward _instance = new PartyZoneReward();
++	}
++}
+\ No newline at end of file
+diff --git a/java/Dev/Events/PartyFarm/RewardHolder.java b/java/Dev/Events/PartyFarm/RewardHolder.java
+new file mode 100644
+index 0000000..9540a78
+--- /dev/null
++++ b/java/Dev/Events/PartyFarm/RewardHolder.java
+@@ -0,0 +1,76 @@
++package Dev.Events.PartyFarm;
++
++public class RewardHolder
++{
++	private int _id;
++	private int _min;
++	private int _max;
++	private int _chance;
++	
++	/**
++	 * @param rewardId
++	 * @param rewardMin
++	 * @param rewardMax
++	 */
++	public RewardHolder(int rewardId, int rewardMin, int rewardMax)
++	{
++		_id = rewardId;
++		_min = rewardMin;
++		_max = rewardMax;
++		_chance = 100;
++	}
++	
++	/**
++	 * @param rewardId
++	 * @param rewardMin
++	 * @param rewardMax
++	 * @param rewardChance
++	 */
++	public RewardHolder(int rewardId, int rewardMin, int rewardMax, int rewardChance)
++	{
++		_id = rewardId;
++		_min = rewardMin;
++		_max = rewardMax;
++		_chance = rewardChance;
++	}
++	
++	public int getRewardId()
++	{
++		return _id;
++	}
++	
++	public int getRewardMin()
++	{
++		return _min;
++	}
++	
++	public int getRewardMax()
++	{
++		return _max;
++	}
++	
++	public int getRewardChance()
++	{
++		return _chance;
++	}
++	
++	public void setId(int id)
++	{
++		_id = id;
++	}
++	
++	public void setMin(int min)
++	{
++		_min = min;
++	}
++	
++	public void setMax(int max)
++	{
++		_max = max;
++	}
++	
++	public void setChance(int chance)
++	{
++		_chance = chance;
++	}
++}
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 4b7181f..632fe49 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -18,6 +18,8 @@
+ 
+ import net.sf.l2j.gameserver.model.holder.IntIntHolder;
+ 
++import Dev.Events.PartyFarm.RewardHolder;
+
+ /**
+  * This class contains global server configuration.<br>
+  * It has static final fields initialized from configuration files.
+@@ -35,7 +37,7 @@
+ 	public static final String PLAYERS_FILE = "./config/players.properties";
+ 	public static final String SERVER_FILE = "./config/server.properties";
+ 	public static final String SIEGE_FILE = "./config/siege.properties";
++	public static final String PARTY_FILE = "./config/PartyFarm.properties";
+ 	// --------------------------------------------------
+ 	// Clans settings
+ 	// --------------------------------------------------
+@@ -462,6 +464,26 @@
+ 	public static int ATTACKERS_RESPAWN_DELAY;
+ 	
++ 	// --------------------------------------------------
++	// Party Farm
++	// --------------------------------------------------
++	
++	public static int EVENT_BEST_FARM_TIME;
++	public static String[] EVENT_BEST_FARM_INTERVAL_BY_TIME_OF_DAY;
++	public static int PARTY_FARM_MONSTER_DALAY;
++	public static String PARTY_FARM_MESSAGE_TEXT;
++	public static int PARTY_FARM_MESSAGE_TIME;
++	public static int monsterId;
++	public static int MONSTER_LOCS_COUNT;
++	public static int[][] MONSTER_LOCS;
++	public static boolean PARTY_MESSAGE_ENABLED;
++	public static boolean ENABLE_DUALBOX_PARTYFARM;
++	public static boolean PARTY_FARM_BY_TIME_OF_DAY;
++	public static boolean START_PARTY;
++	public static String PART_ZONE_MONSTERS_EVENT;
++	public static List<Integer> PART_ZONE_MONSTERS_EVENT_ID;
++	public static List<RewardHolder> PARTY_ZONE_REWARDS = new ArrayList<>();
++	
+	// --------------------------------------------------
+ 	// Server
+ 	// --------------------------------------------------
+ 	
+@@ -1089,6 +1111,65 @@
+ 	}
+ 	
++ 	/**
++	 * Loads Party Farm settings.
++	 */
++	
++	private static final void loadPtFarm()
++	{
++		final ExProperties BestFarm = initProperties(Config.PARTY_FILE);
++		
++		PART_ZONE_MONSTERS_EVENT = BestFarm.getProperty("PartyEventMonster");
++		PART_ZONE_MONSTERS_EVENT_ID = new ArrayList<>();
++		for (String id : PART_ZONE_MONSTERS_EVENT.split(","))
++			PART_ZONE_MONSTERS_EVENT_ID.add(Integer.parseInt(id));
++		PARTY_ZONE_REWARDS = parseReward(BestFarm, "PartyZoneReward");
++		
++		PARTY_FARM_MONSTER_DALAY = Integer.parseInt(BestFarm.getProperty("MonsterDelay", "10"));
++		PARTY_FARM_BY_TIME_OF_DAY = Boolean.parseBoolean(BestFarm.getProperty("PartyFarmEventEnabled", "false"));
++		START_PARTY = Boolean.parseBoolean(BestFarm.getProperty("StartSpawnPartyFarm", "false"));
++		ENABLE_DUALBOX_PARTYFARM = Boolean.parseBoolean(BestFarm.getProperty("RenewalDualBoxPTFarm", "false"));
++		EVENT_BEST_FARM_TIME = Integer.parseInt(BestFarm.getProperty("EventBestFarmTime", "1"));
++		EVENT_BEST_FARM_INTERVAL_BY_TIME_OF_DAY = BestFarm.getProperty("BestFarmStartTime", "20:00").split(",");
++		PARTY_MESSAGE_ENABLED = Boolean.parseBoolean(BestFarm.getProperty("ScreenPartyMessageEnable", "false"));
++		PARTY_FARM_MESSAGE_TEXT = BestFarm.getProperty("ScreenPartyFarmMessageText", "Welcome to l2j server!");
++		PARTY_FARM_MESSAGE_TIME = Integer.parseInt(BestFarm.getProperty("ScreenPartyFarmMessageTime", "10")) * 1000;
++		
++		String[] monsterLocs2 = BestFarm.getProperty("MonsterLoc", "").split(";");
++		String[] locSplit3 = null;
++		
++		monsterId = Integer.parseInt(BestFarm.getProperty("MonsterId", "1"));
++		
++		MONSTER_LOCS_COUNT = monsterLocs2.length;
++		MONSTER_LOCS = new int[MONSTER_LOCS_COUNT][3];
++		int g;
++		for (int e = 0; e < MONSTER_LOCS_COUNT; e++)
++		{
++			locSplit3 = monsterLocs2[e].split(",");
++			for (g = 0; g < 3; g++)
++			{
++				MONSTER_LOCS[e][g] = Integer.parseInt(locSplit3[g].trim());
++			}
++		}
++	}
++	
++	public static List<RewardHolder> parseReward(Properties propertie, String configName)
++	{
++		List<RewardHolder> auxReturn = new ArrayList<>();
++		
++		String aux = propertie.getProperty(configName).trim();
++		for (String randomReward : aux.split(";"))
++		{
++			final String[] infos = randomReward.split(",");
++			
++			if (infos.length > 3)
++				auxReturn.add(new RewardHolder(Integer.valueOf(infos[0]), Integer.valueOf(infos[1]), Integer.valueOf(infos[2]), Integer.valueOf(infos[3])));
++			else
++				auxReturn.add(new RewardHolder(Integer.valueOf(infos[0]), Integer.valueOf(infos[1]), Integer.valueOf(infos[2])));
++		}
++		return auxReturn;
++	}
++
+	/**
+ 	 * Loads siege settings.
+ 	 */
+ 	private static final void loadSieges()
+@@ -1307,6 +1388,9 @@
+ 		// siege settings
+ 		loadSieges();
+ 		
++		// party farm settings
++		loadPtFarm();
++		
+ 		// server settings
+ 		loadServer();
+ 	}
+diff --git a/java/net/sf/l2j/gameserver/GameServer.java b/java/net/sf/l2j/gameserver/GameServer.java
+index 41a9f92..952d76a 100644
+--- a/java/net/sf/l2j/gameserver/GameServer.java
++++ b/java/net/sf/l2j/gameserver/GameServer.java
+@@ -102,6 +102,10 @@
+ import net.sf.l2j.util.DeadLockDetector;
+ import net.sf.l2j.util.IPv4Filter;
+ 
++import Dev.Events.PartyFarm.InitialPartyFarm;
++import Dev.Events.PartyFarm.PartyFarm;
++import Dev.Events.PartyFarm.PartyZoneReward;
++
+ public class GameServer
+ {
+ 	private static final CLogger LOGGER = new CLogger(GameServer.class.getName());
+@@ -214,7 +218,34 @@
+ 		RandomAnimationTaskManager.getInstance();
+ 		ShadowItemTaskManager.getInstance();
+ 		WaterTaskManager.getInstance();
++		PartyZoneReward.getInstance();
++		class SpawnMonsters implements Runnable
++		{
++			public SpawnMonsters()
++			{
++			}
++			
++			@Override
++			public void run()
++			{
++				PartyFarm._aborted = false;
++				PartyFarm._started = true;
++				
++				PartyFarm.spawnMonsters();
++			}	
++			
++		}
++		StringUtil.printSection("Party Farm Events");
++		if ((Config.PARTY_FARM_BY_TIME_OF_DAY) && (!Config.START_PARTY))
++		{
++			InitialPartyFarm.getInstance().StartCalculationOfNextEventTime();
++			LOGGER.info("[Party Farm Time]: Enabled");
++		}
++		else if ((Config.START_PARTY) && (!Config.PARTY_FARM_BY_TIME_OF_DAY))
++		{
++			LOGGER.info("[Start Spawn Party Farm]: Enabled");
++			ThreadPool.schedule(new SpawnMonsters(), 1000L);
++		}
+ 		StringUtil.printSection("Auto Spawns");
+ 		AutoSpawnTable.getInstance();
+ 		
+@@ -258,7 +289,6 @@
+ 			BoatRunePrimeval.load();
+ 			BoatTalkingGludin.load();
+ 		}
+ 		StringUtil.printSection("Events");
+ 		DerbyTrackManager.getInstance();
+ 		LotteryManager.getInstance();
+diff --git a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+index 7d72334..a8b1dce 100644
+--- a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+@@ -12,6 +12,7 @@
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminClanHall;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCreateItem;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCursedWeapons;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminCustom;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDelete;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminDoorControl;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminEditChar;
+@@ -53,6 +54,7 @@
+ 	
+ 	protected AdminCommandHandler()
+ 	{
++		registerHandler(new AdminCustom());
+ 		registerHandler(new AdminAdmin());
+ 		registerHandler(new AdminAnnouncements());
+ 		registerHandler(new AdminBan());
+diff --git a/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminCustom.java b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminCustom.java
+new file mode 100644
+index 0000000..99e74ce
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminCustom.java
+@@ -0,0 +1,86 @@
++package net.sf.l2j.gameserver.handler.admincommandhandlers;
++
++import java.util.logging.Logger;
++
++import net.sf.l2j.commons.concurrent.ThreadPool;
++
++import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.model.actor.Player;
++
++import Dev.Events.PartyFarm.PartyFarm;
++
++public class AdminCustom implements IAdminCommandHandler
++{
++	
++	private static final String[] ADMIN_COMMANDS =
++	{
++		"admin_tour",
++		"admin_ptfarm"
++		
++	};
++	
++	protected static final Logger _log = Logger.getLogger(AdminCustom.class.getName());
++	public static boolean _arena_manual = false;
++	public static boolean _bestfarm_manual = false;
++	
++	@Override
++	public boolean useAdminCommand(String command, Player activeChar)
++	{
++		if (command.equals("admin_ptfarm"))
++		{
++			if (PartyFarm._started)
++			{
++				_log.info("----------------------------------------------------------------------------");
++				_log.info("[Party Farm]: Event Finished.");
++				_log.info("----------------------------------------------------------------------------");
++				PartyFarm._aborted = true;
++				finishEventPartyFarm();
++				
++				activeChar.sendMessage("SYS: Voce Finalizou o Party Farm Manualmente..");
++			}
++			else
++			{
++				_log.info("----------------------------------------------------------------------------");
++				_log.info("[Party Farm]: Event Started.");
++				_log.info("----------------------------------------------------------------------------");
++				initEventPartyFarm();
++				_bestfarm_manual = true;
++				activeChar.sendMessage("SYS: Voce ativou o Best Farm Manualmente..");
++			}
++		}
++		return true;
++	}
++	
++	private static void initEventPartyFarm()
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				
++				PartyFarm.bossSpawnMonster();
++			}
++		}, 1L);
++	}
++	
++	private static void finishEventPartyFarm()
++	{
++		ThreadPool.schedule(new Runnable()
++		{
++			@Override
++			public void run()
++			{
++				
++				PartyFarm.Finish_Event();
++				
++			}
++		}, 1L);
++	}
++	
++	@Override
++	public String[] getAdminCommandList()
++	{
++		return ADMIN_COMMANDS;
++	}
++}
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/model/World.java b/java/net/sf/l2j/gameserver/model/World.java
+index a2feebc..14ab8c4 100644
+--- a/java/net/sf/l2j/gameserver/model/World.java
++++ b/java/net/sf/l2j/gameserver/model/World.java
+@@ -250,7 +250,10 @@
+ 	{
+ 		toAllOnlinePlayers(new CreatureSay(0, (critical) ? Say2.CRITICAL_ANNOUNCE : Say2.ANNOUNCEMENT, "", text));
+ 	}
++	public static void gameAnnounceToOnlinePlayers(String text)
++	{
++		toAllOnlinePlayers(new CreatureSay(0, Say2.CRITICAL_ANNOUNCE, "", text));
++	}
+ 	public static World getInstance()
+ 	{
+ 		return SingletonHolder.INSTANCE;
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/Monster.java b/java/net/sf/l2j/gameserver/model/actor/instance/Monster.java
+index 22f8b21..6607601 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/Monster.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/Monster.java
+@@ -35,6 +35,8 @@
+ import net.sf.l2j.gameserver.network.SystemMessageId;
+ import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
+ 
++import Dev.Events.PartyFarm.PartyZoneReward;
++
+ /**
+  * A monster extends {@link Attackable} class.<br>
+  * <br>
+@@ -1091,7 +1093,8 @@
+ 		final Player player = mainDamageDealer.getActingPlayer();
+ 		if (player == null)
+ 			return;
++		if (Config.PART_ZONE_MONSTERS_EVENT_ID.contains(Integer.valueOf(npcTemplate.getNpcId())))
++			PartyZoneReward.addPartyZoneReward(player, this);
+ 		// level modifier in %'s (will be subtracted from drop chance)
+ 		final int levelModifier = calculateLevelModifierForDrop(player);
+ 		
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+index 9e45695..0977fdd 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+@@ -37,6 +37,7 @@
+ import net.sf.l2j.gameserver.network.GameClient.GameClientState;
+ import net.sf.l2j.gameserver.network.SystemMessageId;
+ import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
+ import net.sf.l2j.gameserver.network.serverpackets.Die;
+ import net.sf.l2j.gameserver.network.serverpackets.EtcStatusUpdate;
+ import net.sf.l2j.gameserver.network.serverpackets.ExMailArrived;
+@@ -59,6 +60,8 @@
+ import net.sf.l2j.gameserver.scripting.QuestState;
+ import net.sf.l2j.gameserver.taskmanager.GameTimeTaskManager;
+ 
++import Dev.Events.PartyFarm.PartyFarm;
++
+ public class EnterWorld extends L2GameClientPacket
+ {
+ 	private static final String LOAD_PLAYER_QUESTS = "SELECT name,var,value FROM character_quests WHERE charId=?";
+@@ -208,6 +211,11 @@
+ 		player.sendPacket(SevenSignsManager.getInstance().getCurrentPeriod().getMessageId());
+ 		AnnouncementData.getInstance().showAnnouncements(player, false);
+ 		
++		if ((PartyFarm.is_started()) && (Config.PARTY_FARM_BY_TIME_OF_DAY))
++		{
++			player.sendPacket(new CreatureSay(0, 3, ".", "" + Config.PARTY_FARM_MESSAGE_TEXT + ":."));
++		}
++		
+ 		// if player is DE, check for shadow sense skill at night
+ 		if (player.getRace() == ClassRace.DARK_ELF && player.hasSkill(L2Skill.SKILL_SHADOW_SENSE))
+ 			player.sendPacket(SystemMessage.getSystemMessage((GameTimeTaskManager.getInstance().isNight()) ? SystemMessageId.NIGHT_S1_EFFECT_APPLIES : SystemMessageId.DAY_S1_EFFECT_DISAPPEARS).addSkillName(L2Skill.SKILL_SHADOW_SENSE));

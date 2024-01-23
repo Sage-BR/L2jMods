@@ -1,0 +1,412 @@
+### Eclipse Workspace Patch 1.0
+#P L2J_Mobius_C6_Interlude
+diff --git dist/game/data/xml/ImprovedBuffs.xml dist/game/data/xml/ImprovedBuffs.xml
+new file mode 100644
+index 0000000..cafdcac
+--- /dev/null
++++ dist/game/data/xml/ImprovedBuffs.xml
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="utf-8"?>
++<ImprovedBuffs>
++   <improved BuffId="4358"> 
++       <replace buffId="4342"/> 
++       <replace buffId="4355"/> 
++       <replace buffId="4356"/> 
++   </improved>
++   <improved BuffId="1311"> 
++       <replace buffId="4345"/> 
++       <replace buffId="4357"/> 
++       <replace buffId="4342"/>
++
++   </improved>
++</ImprovedBuffs>
+\ No newline at end of file
+diff --git java/Base/Improved/ImprovedBuff.java java/Base/Improved/ImprovedBuff.java
+new file mode 100644
+index 0000000..b716c8b
+--- /dev/null
++++ java/Base/Improved/ImprovedBuff.java
+@@ -0,0 +1,36 @@
++package Base.Improved;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class ImprovedBuff {
++    private int buffId;
++    private List<Integer> replaceBuffIds;
++    private boolean active;
++
++    public ImprovedBuff(int buffId) {
++        this.buffId = buffId;
++        this.replaceBuffIds = new ArrayList<>();
++        this.active = false;
++    }
++
++    public int getBuffId() {
++        return buffId;
++    }
++
++    public List<Integer> getReplaceBuffIds() {
++        return replaceBuffIds;
++    }
++
++    public void addReplaceBuff(int replaceBuffId) {
++        replaceBuffIds.add(replaceBuffId);
++    }
++
++    public boolean isActive() {
++        return active;
++    }
++
++    public void setActive(boolean active) {
++        this.active = active;
++    }
++}
+diff --git java/Base/Improved/ImprovedData.java java/Base/Improved/ImprovedData.java
+new file mode 100644
+index 0000000..6bb675a
+--- /dev/null
++++ java/Base/Improved/ImprovedData.java
+@@ -0,0 +1,104 @@
++package Base.Improved;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++import Base.XML.XMLDocument;
++
++public class ImprovedData extends XMLDocument
++{
++	private final Map<Integer, ImprovedBuff> improvedBuffs;
++	
++	public ImprovedData()
++	{
++		improvedBuffs = new HashMap<>();
++		load();
++	}
++	
++	public static ImprovedData getInstance()
++	{
++		return SingletonHolder.INSTANCE;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final ImprovedData INSTANCE = new ImprovedData();
++	}
++	
++	@Override
++	protected void load()
++	{
++		loadDocument("./data/xml/ImprovedBuffs.xml");
++		LOG.info("ImprovedData: Loaded " + improvedBuffs.size() + " improved buffs.");
++	}
++	
++	@Override
++	protected void parseDocument(Document doc, File file)
++	{
++		try
++		{
++			final Node root = doc.getFirstChild();
++			
++			for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling())
++			{
++				if (!"improved".equalsIgnoreCase(node.getNodeName()))
++				{
++					continue;
++				}
++				
++				NamedNodeMap attrs = node.getAttributes();
++				int buffId = Integer.parseInt(attrs.getNamedItem("BuffId").getNodeValue());
++				
++				ImprovedBuff improvedBuff = new ImprovedBuff(buffId);
++				
++				for (Node replaceNode = node.getFirstChild(); replaceNode != null; replaceNode = replaceNode.getNextSibling())
++				{
++					if (!"replace".equalsIgnoreCase(replaceNode.getNodeName()))
++					{
++						continue;
++					}
++					
++					NamedNodeMap replaceAttrs = replaceNode.getAttributes();
++					int replaceBuffId = Integer.parseInt(replaceAttrs.getNamedItem("buffId").getNodeValue());
++					
++					improvedBuff.addReplaceBuff(replaceBuffId);
++				}
++				
++				improvedBuffs.put(buffId, improvedBuff);
++			}
++		}
++		catch (Exception e)
++		{
++			// LOG.warning("ImprovedData: Error while loading improved buffs: " + e);
++			e.printStackTrace();
++		}
++	}
++	
++	public Map<Integer, ImprovedBuff> getImprovedBuffs()
++	{
++		return improvedBuffs;
++	}
++	
++	public ImprovedBuff getImprovedBuffById(int buffId)
++	{
++		return improvedBuffs.get(buffId);
++	}
++	
++	public List<Integer> getReplaceBuffIds(int buffId)
++	{
++		ImprovedBuff improvedBuff = improvedBuffs.get(buffId);
++		if (improvedBuff != null)
++		{
++			return improvedBuff.getReplaceBuffIds();
++		}
++		return new ArrayList<>(); // Devuelve una lista vacía si no se encuentran replaceBuffIds
++	}
++	
++}
+diff --git java/org/l2jmobius/gameserver/GameServer.java java/org/l2jmobius/gameserver/GameServer.java
+index dcb71b0..cc2b44c 100644
+--- java/org/l2jmobius/gameserver/GameServer.java
++++ java/org/l2jmobius/gameserver/GameServer.java
+@@ -129,6 +129,7 @@
+ import org.l2jmobius.gameserver.ui.Gui;
+ 
+ import Base.Data.IconTable;
++import Base.Improved.ImprovedData;
+ import Base.RandomCraft.RandomCraftXML;
+ import Base.XML.XMLDocumentFactory;
+ 
+@@ -347,6 +348,9 @@
+ 		printSection("RandomCraft - Terius");
+ 		RandomCraftXML.getInstance();
+ 		
++		printSection("Buff Improved - Terius");
++		ImprovedData.getInstance();
++		
+ 		XMLDocumentFactory.getInstance();
+ 		
+ 		printSection("Handlers");
+diff --git java/org/l2jmobius/gameserver/model/actor/Player.java java/org/l2jmobius/gameserver/model/actor/Player.java
+index acdedfa..2e6f883 100644
+--- java/org/l2jmobius/gameserver/model/actor/Player.java
++++ java/org/l2jmobius/gameserver/model/actor/Player.java
+@@ -15649,4 +15649,16 @@
+ 	{
+ 		return true;
+ 	}
++	
++	boolean active = false;
++	
++	public boolean isActiveImproved()
++	{
++		return active;
++	}
++	
++	public void setActiveImproved(boolean active)
++	{
++		this.active = active;
++	}
+ }
+\ No newline at end of file
+diff --git java/org/l2jmobius/gameserver/model/effects/Effect.java java/org/l2jmobius/gameserver/model/effects/Effect.java
+index 957cff3..635232e 100644
+--- java/org/l2jmobius/gameserver/model/effects/Effect.java
++++ java/org/l2jmobius/gameserver/model/effects/Effect.java
+@@ -124,6 +124,7 @@
+ 	private final EffectTemplate _template;
+ 	
+ 	private boolean _inUse = false;
++	private boolean _startConditionsCorrect = true;
+ 	
+ 	protected Effect(Env env, EffectTemplate template)
+ 	{
+@@ -209,9 +210,21 @@
+ 		return _inUse;
+ 	}
+ 	
+-	public void setInUse(boolean inUse)
++	public boolean setInUse(boolean inUse)
+ 	{
+ 		_inUse = inUse;
++		
++		if (_inUse)
++		{
++			_startConditionsCorrect = onStart2();
++		}
++		else
++		{
++			onExit();
++		}
++		
++		return _startConditionsCorrect;
++		
+ 	}
+ 	
+ 	public String getStackType()
+@@ -350,7 +363,8 @@
+ 	 */
+ 	public abstract EffectType getEffectType();
+ 	
+-	/** Notify started */
++	/* /** Notify started */
++	
+ 	public void onStart()
+ 	{
+ 		if (_abnormalEffect != 0)
+@@ -360,6 +374,20 @@
+ 	}
+ 	
+ 	/**
++	 * Fire an event, happening on start2.
++	 * @return Always true, but overidden in each effect.
++	 */
++	public boolean onStart2()
++	{
++		if (_abnormalEffect != 0)
++		{
++			_effected.startAbnormalEffect(_abnormalEffect);
++		}
++		
++		return true;
++	}
++	
++	/**
+ 	 * Cancel the effect in the the abnormal effect map of the effected Creature.
+ 	 */
+ 	public void onExit()
+@@ -403,6 +431,8 @@
+ 			_state = EffectState.ACTING;
+ 			
+ 			onStart();
++			// Effects not having count or period should start.
++			_startConditionsCorrect = onStart2();
+ 			
+ 			if (_skill.isPvpSkill() && (_effected != null) && (_effected instanceof Player) && _template.showIcon)
+ 			{
+diff --git java/org/l2jmobius/gameserver/model/skill/effects/EffectBuff.java java/org/l2jmobius/gameserver/model/skill/effects/EffectBuff.java
+index 3a62890..d9a8be1 100644
+--- java/org/l2jmobius/gameserver/model/skill/effects/EffectBuff.java
++++ java/org/l2jmobius/gameserver/model/skill/effects/EffectBuff.java
+@@ -16,10 +16,17 @@
+  */
+ package org.l2jmobius.gameserver.model.skill.effects;
+ 
++import java.util.List;
++import java.util.Map;
++
++import org.l2jmobius.gameserver.model.actor.Player;
+ import org.l2jmobius.gameserver.model.effects.Effect;
+ import org.l2jmobius.gameserver.model.effects.EffectType;
+ import org.l2jmobius.gameserver.model.skill.Env;
+ 
++import Base.Improved.ImprovedBuff;
++import Base.Improved.ImprovedData;
++
+ /**
+  * @author mkizub TODO To change the template for this generated type comment go to Window - Preferences - Java - Code Style - Code Templates
+  */
+@@ -37,6 +44,95 @@
+ 	}
+ 	
+ 	@Override
++	public boolean onStart2()
++	{
++		
++		super.onStart();
++		
++		if (getEffected() instanceof Player)
++		{
++			Player player = (Player) getEffected();
++			ImprovedData improvedData = ImprovedData.getInstance();
++			
++			// Obtener los Improved Buff IDs del archivo XML
++			Map<Integer, ImprovedBuff> improvedBuffs = improvedData.getImprovedBuffs();
++			
++			// Iterar sobre los Improved Buffs
++			for (ImprovedBuff improvedBuff : improvedBuffs.values())
++			{
++				int buffId = improvedBuff.getBuffId();
++				
++				List<Integer> buffIdr = improvedBuff.getReplaceBuffIds();
++				
++				if (player.isActiveImproved() && buffIdr.contains(getSkill().getId()))
++				{
++					
++					// Verificar si el Improved Buff correspondiente está activo
++					int improvedBuffId = improvedBuff.getBuffId();
++					if (player.getFirstEffect(improvedBuffId) != null)
++					{
++						// Obtener los replace buff IDs asociados al Improved Buff activo
++						List<Integer> replaceBuffIds2 = improvedBuff.getReplaceBuffIds();
++						for (int replaceBuffId : replaceBuffIds2)
++						{
++							if (player.getFirstEffect(replaceBuffId) != null)
++							{
++								player.stopSkillEffects(replaceBuffId);
++							}
++						}
++					}
++				}
++				
++				// Verificar si el ID del skill actual coincide con el Improved Buff ID
++				if (getSkill().getId() == buffId)
++				{
++					// Eliminar los ReplaceBuffs activos
++					List<Integer> replaceBuffIds = improvedBuff.getReplaceBuffIds();
++					for (int replaceBuffId : replaceBuffIds)
++					{
++						if (player.getFirstEffect(replaceBuffId) != null)
++						{
++							player.stopSkillEffects(replaceBuffId);
++						}
++						
++					}
++					player.setActiveImproved(true);
++					
++					break;
++				}
++			}
++		}
++		return super.onStart2();
++		
++	}
++	
++	@Override
++	public void onExit()
++	{
++		super.onExit();
++		if (getEffected() instanceof Player)
++		{
++			Player player = (Player) getEffected();
++			ImprovedData improvedData = ImprovedData.getInstance();
++			
++			// Obtener los Improved Buff IDs del archivo XML
++			Map<Integer, ImprovedBuff> improvedBuffs = improvedData.getImprovedBuffs();
++			
++			// Iterar sobre los Improved Buffs
++			for (ImprovedBuff improvedBuff : improvedBuffs.values())
++			{
++				int buffId = improvedBuff.getBuffId();
++				
++				if (getSkill().getId() == buffId)
++				{
++					player.setActiveImproved(false);
++				}
++			}
++			
++		}
++	}
++	
++	@Override
+ 	public boolean onActionTime()
+ 	{
+ 		// just stop this effect

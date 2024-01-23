@@ -1,0 +1,102 @@
+diff --git a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index a1b430a..9692d25 100644
+--- a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -17,6 +17,8 @@
+ import java.util.HashMap;
+ import java.util.Map;
+ 
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.CastleManagersVCmd;
++
+ public class VoicedCommandHandler
+ {
+ 	private final Map<Integer, IVoicedCommandHandler> _datatable = new HashMap<>();
+@@ -28,7 +30,7 @@
+ 
+ 	protected VoicedCommandHandler()
+ 	{
+-
++		 registerHandler(new CastleManagersVCmd());
+ 	}
+ 	public void registerHandler(IVoicedCommandHandler handler)
+ 	{
+diff --git a/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/CastleManagersVCmd.java b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/CastleManagersVCmd.java
+new file mode 100644
+index 0000000..8b355ce
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/CastleManagersVCmd.java
+@@ -0,0 +1,73 @@
++package net.sf.l2j.gameserver.handler.voicedcommandhandlers;
++
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.instancemanager.CastleManager;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++import net.sf.l2j.gameserver.model.entity.Castle;
++import net.sf.l2j.gameserver.network.SystemMessageId;
++import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++import net.sf.l2j.gameserver.network.serverpackets.SiegeInfo;
++
++public class CastleManagersVCmd implements IVoicedCommandHandler
++{
++	private static final String[] _voicedCommands = {"castlemanager","siege_gludio","siege_dion","siege_giran","siege_oren","siege_aden","siege_innadril","siege_goddard","siege_rune","siege_schuttgart"};
++	
++	@Override
++	public boolean useVoicedCommand(String command, Player activeChar, String target)
++	{
++		if (command.startsWith("castlemanager")) 
++		{
++			sendHtml(activeChar);
++		}
++		
++		if (command.startsWith("siege_")) 
++		{
++			if (activeChar.getClan() != null && !activeChar.isClanLeader()) 
++			{
++				activeChar.sendPacket(SystemMessageId.YOU_ARE_NOT_AUTHORIZED_TO_DO_THAT);
++				return false;
++			}
++			
++			int castleId = 0;
++			
++			if (command.startsWith("siege_gludio"))
++				castleId = 1;
++			else if (command.startsWith("siege_dion"))
++				castleId = 2;
++			else if (command.startsWith("siege_giran"))
++				castleId = 3;
++			else if (command.startsWith("siege_oren"))
++				castleId = 4;
++			else if (command.startsWith("siege_aden"))
++				castleId = 5;
++			else if (command.startsWith("siege_innadril"))
++				castleId = 6;
++			else if (command.startsWith("siege_goddard"))
++				castleId = 7;
++			else if (command.startsWith("siege_rune"))
++				castleId = 8;
++			else if (command.startsWith("siege_schuttgart"))
++				castleId = 9;
++			
++			Castle castle = CastleManager.getInstance().getCastleById(castleId);
++			if(castle != null && castleId != 0)
++				activeChar.sendPacket(new SiegeInfo(castle));
++		}
++		return true;
++	}
++	
++	private static void sendHtml(Player activeChar)
++	{
++		String htmFile = "data/html/mods/CastleManager.htm";
++		
++		NpcHtmlMessage msg = new NpcHtmlMessage(5);
++		msg.setFile(htmFile);
++		activeChar.sendPacket(msg);
++	}
++	
++	@Override
++	public String[] getVoicedCommandList()
++	{
++		return _voicedCommands;
++	}
++}
+\ No newline at end of file

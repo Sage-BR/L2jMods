@@ -1,0 +1,38 @@
+diff --git a/src/l2jfrozen/game/model/L2Character.java b/src/l2jfrozen/game/model/L2Character.java
+index bf2dfb6..1dbc862 100644
+--- a/src/l2jfrozen/game/model/L2Character.java
++++ b/src/l2jfrozen/game/model/L2Character.java
+@@ -168,7 +168,7 @@
+ 	private boolean _isMuted = false; // Cannot use magic
+ 	private boolean _isPsychicalMuted = false; // Cannot use psychical skills
+ 	private boolean _isKilledAlready = false;
+-	private boolean _isImmobilized = false;
++	private int _isImmobilized = 0;
+ 	private boolean _isOverloaded = false; // the char is carrying too much
+ 	private boolean _isParalyzed = false;
+ 	private boolean _isRiding = false; //Is Riding strider?
+@@ -2776,7 +2776,7 @@
+ 	 */
+ 	public boolean isImobilised()
+ 	{
+-		return _isImmobilized;
++		return _isImmobilized > 0; 
+ 	}
+ 	
+ 	/**
+@@ -2788,7 +2788,14 @@
+ 		// Stop this if he is moving
+ 		getAI().setIntention(CtrlIntention.AI_INTENTION_IDLE); 
+ 		
+-		_isImmobilized = value;
++		if (value)
++		{
++			_isImmobilized++;
++		}
++		else
++		{
++			_isImmobilized--;
++		}
+ 	}
+ 
+ 	/**

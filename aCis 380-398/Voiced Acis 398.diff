@@ -1,0 +1,222 @@
+diff --git a/java/net/sf/l2j/gameserver/GameServer.java b/java/net/sf/l2j/gameserver/GameServer.java
+index 6c1638e..7081406 100644
+--- a/java/net/sf/l2j/gameserver/GameServer.java
++++ b/java/net/sf/l2j/gameserver/GameServer.java
+@@ -81,6 +81,7 @@
+ import net.sf.l2j.gameserver.handler.SkillHandler;
+ import net.sf.l2j.gameserver.handler.TargetHandler;
+ import net.sf.l2j.gameserver.handler.UserCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.idfactory.IdFactory;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.boat.BoatGiranTalking;
+@@ -274,7 +275,7 @@
+ 		LOGGER.info("Loaded {} skill handlers.", SkillHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} target handlers.", TargetHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} user command handlers.", UserCommandHandler.getInstance().size());
++		LOGGER.info("Loaded {} user VoicedCommandHandler handlers.", VoicedCommandHandler.getInstance().size());
+ 		StringUtil.printSection("System");
+ 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
+ 		
+diff --git a/java/net/sf/l2j/gameserver/handler/IVoicedCommandHandler.java b/java/net/sf/l2j/gameserver/handler/IVoicedCommandHandler.java
+new file mode 100644
+index 0000000..8646215
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/IVoicedCommandHandler.java
+@@ -0,0 +1,25 @@
++package net.sf.l2j.gameserver.handler;
++
++import net.sf.l2j.gameserver.model.actor.Player;
++
++/**
++ * This class ...
++ * @version $Revision: 1.1.4.2 $ $Date: 2005/03/27 15:30:09 $
++ */
++public interface IVoicedCommandHandler
++{
++	/**
++	 * this is the worker method that is called when someone uses an admin command.
++	 * @param activeChar
++	 * @param command
++	 * @param target
++	 * @return command success
++	 */
++	public boolean useVoicedCommand(String command, Player activeChar, String target);
++	
++	/**
++	 * this method is called at initialization to register all the item ids automatically
++	 * @return all known itemIds
++	 */
++	public String[] getVoicedCommandList();
++}
+diff --git a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+new file mode 100644
+index 0000000..4082f7a
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -0,0 +1,65 @@
++package net.sf.l2j.gameserver.handler;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.logging.Logger;
++
++import net.sf.l2j.gameserver.GameServer;
++
++public class VoicedCommandHandler
++{
++	private static Logger LOGGER = Logger.getLogger(GameServer.class.getName());
++	
++	private static VoicedCommandHandler _instance;
++	
++	private final Map<String, IVoicedCommandHandler> _datatable;
++	
++	public static VoicedCommandHandler getInstance()
++	{
++		if (_instance == null)
++		{
++			_instance = new VoicedCommandHandler();
++		}
++		
++		return _instance;
++	}
++	
++	private VoicedCommandHandler()
++	{
++		_datatable = new HashMap<>();
++		//registrar comando aqui exemplo abaixo
++		//registerVoicedCommandHandler(new Shiff_Mod());
++		
++		LOGGER.info("VoicedCommandHandler: Loaded " + _datatable.size() + " handlers.");
++	}
++	
++	public void registerVoicedCommandHandler(final IVoicedCommandHandler handler)
++	{
++		String[] ids = handler.getVoicedCommandList();
++		
++		for (final String id : ids)
++		{
++			_datatable.put(id, handler);
++		}
++		
++		ids = null;
++	}
++	
++	public IVoicedCommandHandler getVoicedCommandHandler(final String voicedCommand)
++	{
++		String command = voicedCommand;
++		
++		if (voicedCommand.indexOf(" ") != -1)
++		{
++			command = voicedCommand.substring(0, voicedCommand.indexOf(" "));
++		}
++		return _datatable.get(command);
++	}
++	/**
++	 * @return
++	 */
++	public int size()
++	{
++		return _datatable.size();
++	}
++}
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java b/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
+index a707ce5..6c2d0f2 100644
+--- a/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
++++ b/java/net/sf/l2j/gameserver/handler/chathandlers/ChatAll.java
+@@ -1,8 +1,12 @@
+ package net.sf.l2j.gameserver.handler.chathandlers;
+ 
++import java.util.StringTokenizer;
++
+ import net.sf.l2j.gameserver.enums.FloodProtector;
+ import net.sf.l2j.gameserver.enums.SayType;
+ import net.sf.l2j.gameserver.handler.IChatHandler;
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
+ 
+@@ -18,12 +22,41 @@
+ 	{
+ 		if (!player.getClient().performAction(FloodProtector.GLOBAL_CHAT))
+ 			return;
++		boolean vcd_used = false;
++		if (text.startsWith("."))
++		{
++		    StringTokenizer st = new StringTokenizer(text);
++		    IVoicedCommandHandler vch;
++		    String command = "";
++		    if (st.countTokens() > 1)
++		    {
++		        command = st.nextToken().substring(1);
++		        target = text.substring(command.length() + 2);
++		        vch = VoicedCommandHandler.getInstance().getVoicedCommandHandler(command);
++		    }
++		    else
++		    {
++		        command = text.substring(1);
++		        vch = VoicedCommandHandler.getInstance().getVoicedCommandHandler(command);
++		    }
++		            
++		    if (vch != null)
++		    {
++		        vch.useVoicedCommand(command, player, text);
++		        vcd_used = true;
++		        
++		    }
++		}
+ 		
+-		final CreatureSay cs = new CreatureSay(player, type, text);
+-		for (Player knownPlayer : player.getKnownTypeInRadius(Player.class, 1250))
+-			knownPlayer.sendPacket(cs);
+-		
+-		player.sendPacket(cs);
++		    if (!vcd_used)
++		    {
++		    	final CreatureSay cs = new CreatureSay(player, type, text);
++		    	for (Player knownPlayer : player.getKnownTypeInRadius(Player.class, 1250))
++		    		knownPlayer.sendPacket(cs);
++		    	
++		    	player.sendPacket(cs);
++		    
++		}
+ 	}
+ 	
+ 	@Override
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java b/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+index d3a2c47..1b528aa 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/RequestBypassToServer.java
+@@ -10,6 +10,8 @@
+ import net.sf.l2j.gameserver.enums.FloodProtector;
+ import net.sf.l2j.gameserver.handler.AdminCommandHandler;
+ import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.handler.VoicedCommandHandler;
+ import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.WorldObject;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+@@ -98,6 +100,21 @@
+ 			html.disableValidation();
+ 			player.sendPacket(html);
+ 		}
++		else if (_command.startsWith("voiced_"))
++		{
++		String command = _command.split(" ")[0];
++			
++		IVoicedCommandHandler ach = VoicedCommandHandler.getInstance().getVoicedCommandHandler(_command.substring(7));
++		
++		if (ach == null)
++		{
++			player.sendMessage("The command " + command.substring(7) + " does not exist!");
++			LOGGER.warn("No handler registered for command '" + _command + "'");
++			return;
++		}
++		
++		ach.useVoicedCommand(_command.substring(7), player, null);
++		}
+ 		else if (_command.startsWith("npc_"))
+ 		{
+ 			if (!player.validateBypass(_command))

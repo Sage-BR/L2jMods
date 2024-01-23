@@ -1,0 +1,443 @@
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index d78b026..b034ed5 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -44,6 +44,9 @@
+ 	// Clans settings
+ 	// --------------------------------------------------
+ 	/** Clans */
++	public static boolean ANNOUNCE_BOSS_ALIVE;
++	public static boolean ANNOUNCE_RAIDBOS_KILL;
++	public static boolean ANNOUNCE_GRANDBOS_KILL;
+ 	public static String MESSAGE_XPON;
+ 	public static int MESSAGE_TIME_XPON;
+ 	public static String MESSAGE_XPOFF;
+@@ -1111,6 +1114,9 @@
+ 	private static final void loadSpecial()
+ 	{
+ 		final ExProperties Special = initProperties(SPECIAL_MODS);
++		ANNOUNCE_RAIDBOS_KILL = Boolean.parseBoolean(Special.getProperty("AnnounceRaidBossKill", "false"));
++		ANNOUNCE_GRANDBOS_KILL = Boolean.parseBoolean(Special.getProperty("AnnounceGranBossKill", "false"));
++		ANNOUNCE_BOSS_ALIVE =  Boolean.parseBoolean(Special.getProperty("AnnounceSpawnAllBoss", "false"));
+ 		ALT_OLY_END_ANNOUNCE = Boolean.parseBoolean(Special.getProperty("AltOlyEndAnnounce", "False"));
+ 		ENABLE_ALTERNATIVE_SKILL_DURATION = Boolean.parseBoolean(Special.getProperty("EnableModifySkillDuration", "false"));
+ 		if (ENABLE_ALTERNATIVE_SKILL_DURATION)
+diff --git a/java/net/sf/l2j/gameserver/model/World.java b/java/net/sf/l2j/gameserver/model/World.java
+index aa74cb5..5ff3e41 100644
+--- a/java/net/sf/l2j/gameserver/model/World.java
++++ b/java/net/sf/l2j/gameserver/model/World.java
+@@ -285,4 +285,9 @@
+ 	{
+ 		protected static final World INSTANCE = new World();
+ 	}
++
++	public static void gameAnnounceToOnlinePlayers(String text)
++	{
++		toAllOnlinePlayers(new CreatureSay(0, SayType.CRITICAL_ANNOUNCE, "", text));
++	}
+ }
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/GrandBoss.java b/java/net/sf/l2j/gameserver/model/actor/instance/GrandBoss.java
+index ca72456..4f6afc1 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/GrandBoss.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/GrandBoss.java
+@@ -2,8 +2,10 @@
+ 
+ import net.sf.l2j.commons.random.Rnd;
+ 
++import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.manager.RaidPointManager;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
+@@ -41,6 +43,13 @@
+ 		final Player player = killer.getActingPlayer();
+ 		if (player != null)
+ 		{
++			if (Config.ANNOUNCE_GRANDBOS_KILL)
++			{
++				if (player.getClan() != null)
++					World.gameAnnounceToOnlinePlayers("Epic Boss: "+getName() +" was killed by " + player.getName()+ " of the clan: " + player.getClan().getName());
++				else
++					World.gameAnnounceToOnlinePlayers("Epic Boss: "+getName() +" was killed by " + player.getName());
++			}
+ 			broadcastPacket(SystemMessage.getSystemMessage(SystemMessageId.RAID_WAS_SUCCESSFUL));
+ 			broadcastPacket(new PlaySound("systemmsg_e.1209"));
+ 			
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/RaidBoss.java b/java/net/sf/l2j/gameserver/model/actor/instance/RaidBoss.java
+index 760e02a..75a513d 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/RaidBoss.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/RaidBoss.java
+@@ -9,6 +9,7 @@
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.manager.RaidBossManager;
+ import net.sf.l2j.gameserver.data.manager.RaidPointManager;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Player;
+ import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
+@@ -109,6 +110,13 @@
+ 			final Player player = killer.getActingPlayer();
+ 			if (player != null)
+ 			{
++				if (Config.ANNOUNCE_RAIDBOS_KILL)
++				{
++					if (player.getClan() != null)
++						World.gameAnnounceToOnlinePlayers("Boss: " + getName() + " was killed by " + player.getName()+ " of the clan: " + player.getClan().getName());
++					else
++						World.gameAnnounceToOnlinePlayers("Boss: " + getName() + " was killed by " + player.getName());
++				}
+ 				broadcastPacket(SystemMessage.getSystemMessage(SystemMessageId.RAID_WAS_SUCCESSFUL));
+ 				broadcastPacket(new PlaySound("systemmsg_e.1209"));
+ 				
+diff --git a/java/net/sf/l2j/gameserver/model/spawn/BossSpawn.java b/java/net/sf/l2j/gameserver/model/spawn/BossSpawn.java
+index f30299a..c7c5a19 100644
+--- a/java/net/sf/l2j/gameserver/model/spawn/BossSpawn.java
++++ b/java/net/sf/l2j/gameserver/model/spawn/BossSpawn.java
+@@ -10,7 +10,9 @@
+ import net.sf.l2j.commons.pool.ThreadPool;
+ import net.sf.l2j.commons.random.Rnd;
+ 
++import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.enums.BossStatus;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ 
+ /**
+@@ -173,7 +175,8 @@
+ 		
+ 		// Refresh the database for this particular boss entry.
+ 		updateOnDb();
+-		
++		if (Config.ANNOUNCE_BOSS_ALIVE)
++			World.gameAnnounceToOnlinePlayers("Boss: " + npc.getName() + " has spawned in the world!");
+ 		LOGGER.info("{} raid boss has spawned.", npc.getName());
+ 	}
+ 	
+@@ -231,4 +234,5 @@
+ 			LOGGER.error("Couldn't update raid boss #{}.", e, _spawn.getNpcId());
+ 		}
+ 	}
+ }
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Antharas.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Antharas.java
+index 6be3f40..650265b 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Antharas.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Antharas.java
+@@ -12,6 +12,7 @@
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.enums.ScriptEventType;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Playable;
+@@ -102,7 +103,10 @@
+ 				
+ 				final Npc antharas = addSpawn(_antharasId, loc_x, loc_y, loc_z, heading, false, 0, false);
+ 				GrandBossManager.getInstance().addBoss(ANTHARAS, (GrandBoss) antharas);
+-				
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss: " + antharas.getName() + " spawned in world.");
++				}
+ 				antharas.getStatus().setHpMp(hp, mp);
+ 				antharas.forceRunStance();
+ 				
+@@ -230,7 +234,10 @@
+ 			final Npc antharas = addSpawn(_antharasId, 181323, 114850, -7623, 32542, false, 0, false);
+ 			GrandBossManager.getInstance().addBoss(ANTHARAS, (GrandBoss) antharas);
+ 			antharas.setInvul(true);
+-			
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + antharas.getName() + " spawned in world.");
++			}
+ 			// Earthquake.
+ 			antharas.broadcastPacket(new Earthquake(antharas, 20, 10, true));
+ 			
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Baium.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Baium.java
+index fcdbf35..0828e46 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Baium.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Baium.java
+@@ -12,6 +12,7 @@
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.enums.ScriptEventType;
+ import net.sf.l2j.gameserver.geoengine.GeoEngine;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Attackable;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+@@ -89,13 +90,20 @@
+ 			else
+ 			{
+ 				addSpawn(STONE_BAIUM, STONE_BAIUM_LOC, false, 0, false);
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss Baium Stone spawned in world.");
++				}
+ 				GrandBossManager.getInstance().setBossStatus(LIVE_BAIUM, ASLEEP);
+ 			}
+ 		}
+ 		else if (status == AWAKE)
+ 		{
+ 			final Npc baium = addGrandBossSpawn(LIVE_BAIUM, info);
+-			
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + baium.getName() + " spawned in world.");
++			}
+ 			// Start monitoring Baium's inactivity.
+ 			_timeTracker = System.currentTimeMillis();
+ 			
+@@ -115,6 +123,11 @@
+ 		}
+ 		else
+ 			addSpawn(STONE_BAIUM, STONE_BAIUM_LOC, false, 0, false);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++			World.gameAnnounceToOnlinePlayers("Epic Boss Baium Stone spawned in world.");
++			}
++		
+ 	}
+ 	
+ 	@Override
+@@ -233,6 +246,10 @@
+ 		{
+ 			GrandBossManager.getInstance().setBossStatus(LIVE_BAIUM, ASLEEP);
+ 			addSpawn(STONE_BAIUM, STONE_BAIUM_LOC, false, 0, false);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss Baium Stone spawned in world.");
++			}
+ 		}
+ 		else if (name.equalsIgnoreCase("angels_aggro_reconsider"))
+ 		{
+@@ -276,7 +293,6 @@
+ 		if (GrandBossManager.getInstance().getBossStatus(LIVE_BAIUM) == ASLEEP)
+ 		{
+ 			GrandBossManager.getInstance().setBossStatus(LIVE_BAIUM, AWAKE);
+-			
+ 			final Npc baium = addSpawn(LIVE_BAIUM, npc, false, 0, false);
+ 			baium.setInvul(true);
+ 			
+@@ -291,7 +307,10 @@
+ 			startQuestTimer("sacrifice_waker", baium, player, 24000);
+ 			startQuestTimer("baium_roar", baium, null, 28000);
+ 			startQuestTimer("baium_move", baium, null, 35000);
+-			
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + baium.getName() + " spawned in world.");
++			}
+ 			// Delete the statue.
+ 			npc.deleteMe();
+ 		}
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Core.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Core.java
+index 37a8e03..e7d433e 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Core.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Core.java
+@@ -8,6 +8,7 @@
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Playable;
+@@ -51,6 +52,10 @@
+ 				final GrandBoss core = (GrandBoss) addSpawn(CORE, 17726, 108915, -6480, 0, false, 0, false);
+ 				GrandBossManager.getInstance().setBossStatus(CORE, ALIVE);
+ 				spawnBoss(core);
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss: " + core.getName() + " spawned in world.");
++				}
+ 			}
+ 		}
+ 		else
+@@ -65,6 +70,10 @@
+ 			final GrandBoss core = (GrandBoss) addSpawn(CORE, loc_x, loc_y, loc_z, heading, false, 0, false);
+ 			core.getStatus().setHpMp(hp, mp);
+ 			spawnBoss(core);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + core.getName() + " spawned in world.");
++			}
+ 		}
+ 	}
+ 	
+@@ -114,6 +123,10 @@
+ 			final GrandBoss core = (GrandBoss) addSpawn(CORE, 17726, 108915, -6480, 0, false, 0, false);
+ 			GrandBossManager.getInstance().setBossStatus(CORE, ALIVE);
+ 			spawnBoss(core);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + core.getName() + " spawned in world.");
++			}
+ 		}
+ 		else if (name.equalsIgnoreCase("spawn_minion"))
+ 		{
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Orfen.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Orfen.java
+index 8081510..ce8682e 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Orfen.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Orfen.java
+@@ -6,6 +6,7 @@
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
+ import net.sf.l2j.gameserver.enums.ZoneId;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Attackable;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+@@ -67,6 +68,10 @@
+ 				final GrandBoss orfen = (GrandBoss) addSpawn(ORFEN, ORFEN_LOCATION[Rnd.get(1, 3)], false, 0, false);
+ 				GrandBossManager.getInstance().setBossStatus(ORFEN, ALIVE);
+ 				spawnBoss(orfen);
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss: " + orfen.getName() + " spawned in world.");
++				}
+ 			}
+ 		}
+ 		else
+@@ -81,6 +86,10 @@
+ 			final GrandBoss orfen = (GrandBoss) addSpawn(ORFEN, loc_x, loc_y, loc_z, heading, false, 0, false);
+ 			orfen.getStatus().setHpMp(hp, mp);
+ 			spawnBoss(orfen);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + orfen.getName() + " spawned in world.");
++			}
+ 		}
+ 	}
+ 	
+@@ -101,6 +110,10 @@
+ 			final GrandBoss orfen = (GrandBoss) addSpawn(ORFEN, ORFEN_LOCATION[Rnd.get(1, 3)], false, 0, false);
+ 			GrandBossManager.getInstance().setBossStatus(ORFEN, ALIVE);
+ 			spawnBoss(orfen);
++			if (Config.ANNOUNCE_BOSS_ALIVE)
++			{
++				World.gameAnnounceToOnlinePlayers("Epic Boss: " + orfen.getName() + " spawned in world.");
++			}
+ 		}
+ 		else if (name.equalsIgnoreCase("3001"))
+ 		{
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/QueenAnt.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/QueenAnt.java
+index a95a17d..19eedb2 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/QueenAnt.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/QueenAnt.java
+@@ -8,6 +8,7 @@
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.enums.skills.ElementType;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Attackable;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+@@ -303,7 +304,10 @@
+ 		}
+ 		
+ 		GrandBossManager.getInstance().addBoss(queen);
+-		
++		if (Config.ANNOUNCE_BOSS_ALIVE)
++		{
++			World.gameAnnounceToOnlinePlayers("Epic Boss: " + queen.getName() + " spawned in world.");
++		}
+ 		startQuestTimerAtFixedRate("action", queen, null, 10000);
+ 		startQuestTimer("chaos", queen, null, 90000 + Rnd.get(240000));
+ 		
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Sailren.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Sailren.java
+index 3b62e49..3a98219 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Sailren.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Sailren.java
+@@ -9,6 +9,7 @@
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Playable;
+@@ -73,7 +74,10 @@
+ 				final Npc sailren = addSpawn(SAILREN, loc_x, loc_y, loc_z, heading, false, 0, false);
+ 				GrandBossManager.getInstance().addBoss((GrandBoss) sailren);
+ 				_mobs.add(sailren);
+-				
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss: " + sailren.getName() + " spawned in world.");
++				}
+ 				sailren.getStatus().setHpMp(hp, mp);
+ 				sailren.forceRunStance();
+ 				
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Valakas.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Valakas.java
+index 03cd98e..94e4257 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Valakas.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Valakas.java
+@@ -8,6 +8,7 @@
+ import net.sf.l2j.gameserver.data.manager.GrandBossManager;
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.enums.ScriptEventType;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+ import net.sf.l2j.gameserver.model.actor.Playable;
+@@ -103,7 +104,10 @@
+ 				
+ 				final Npc valakas = addSpawn(VALAKAS, loc_x, loc_y, loc_z, heading, false, 0, false);
+ 				GrandBossManager.getInstance().addBoss((GrandBoss) valakas);
+-				
++				if (Config.ANNOUNCE_BOSS_ALIVE)
++				{
++					World.gameAnnounceToOnlinePlayers("Epic Boss: " + valakas.getName() + " spawned in world.");
++				}
+ 				valakas.getStatus().setHpMp(hp, mp);
+ 				valakas.forceRunStance();
+ 				
+diff --git a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Zaken.java b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Zaken.java
+index e438b9d..dd80b45 100644
+--- a/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Zaken.java
++++ b/java/net/sf/l2j/gameserver/scripting/script/ai/boss/Zaken.java
+@@ -12,6 +12,7 @@
+ import net.sf.l2j.gameserver.data.manager.ZoneManager;
+ import net.sf.l2j.gameserver.data.xml.DoorData;
+ import net.sf.l2j.gameserver.enums.IntentionType;
++import net.sf.l2j.gameserver.model.World;
+ import net.sf.l2j.gameserver.model.actor.Attackable;
+ import net.sf.l2j.gameserver.model.actor.Creature;
+ import net.sf.l2j.gameserver.model.actor.Npc;
+@@ -459,6 +460,7 @@
+ 			final StatSet info = GrandBossManager.getInstance().getStatSet(ZAKEN);
+ 			info.set("respawn_time", System.currentTimeMillis() + respawnTime);
+ 			GrandBossManager.getInstance().setStatSet(ZAKEN, info);
++			
+ 		}
+ 		else if (GrandBossManager.getInstance().getBossStatus(ZAKEN) == ALIVE)
+ 			startQuestTimer("CreateOnePrivateEx", npc, null, ((30 + Rnd.get(60)) * 1000));
+@@ -566,7 +568,10 @@
+ 		}
+ 		
+ 		GrandBossManager.getInstance().addBoss(zaken);
+-		
++		if (Config.ANNOUNCE_BOSS_ALIVE)
++		{
++			World.gameAnnounceToOnlinePlayers("Epic Boss: " + zaken.getName() + " spawned in world.");
++		}
+ 		// Reset variables.
+ 		_teleportCheck = 3;
+ 		_hate = 0;
+
+
+Index: DataPack
+
++#===================================================
++#    Annuncie to Kill/Live raid/GrandBoss World
++#===================================================
++AnnounceRaidBossKill = True
++AnnounceGranBossKill = True
++
++#Annuncie to live all Boss
++AnnounceSpawnAllBoss = True

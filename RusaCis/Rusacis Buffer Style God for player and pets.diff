@@ -1,0 +1,814 @@
+### Eclipse Workspace Patch 1.0
+#P aCis_gameserver
+diff --git java/Base/Data/XMLDocument.java java/Base/Data/XMLDocument.java
+new file mode 100644
+index 0000000..3f06c0f
+--- /dev/null
++++ java/Base/Data/XMLDocument.java
+@@ -0,0 +1,121 @@
++package Base.Data;
++
++
++
++import java.io.File;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.transform.OutputKeys;
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerException;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.dom.DOMSource;
++import javax.xml.transform.stream.StreamResult;
++
++import net.sf.l2j.commons.data.StatSet;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++/**
++ * An XML document, relying on a static and single DocumentBuilderFactory.
++ */
++public abstract class XMLDocument
++{
++	protected static final Logger LOG = Logger.getLogger(XMLDocument.class.getName());
++	
++	protected Document document;
++	
++	private static final DocumentBuilderFactory BUILDER;
++	static
++	{
++		BUILDER = DocumentBuilderFactory.newInstance();
++		BUILDER.setValidating(false);
++		BUILDER.setIgnoringComments(true);
++	}
++	
++	abstract protected void load();
++	
++	abstract protected void parseDocument(Document doc, File f);
++	
++	public void loadDocument(String filePath)
++	{
++		loadDocument(new File(filePath));
++	}
++	
++	public void writeDocument(Document doc, String fileName)
++	{
++		try
++		{
++			TransformerFactory transformerFactory = TransformerFactory.newInstance();
++			Transformer transformer = transformerFactory.newTransformer();
++			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
++			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
++			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
++			
++			DOMSource source = new DOMSource(doc);
++			StreamResult result = new StreamResult(new File(fileName));
++			
++			transformer.transform(source, result);
++			LOG.info("XML file saved to " + fileName);
++		}
++		catch (TransformerException e)
++		{
++			LOG.warning("Error saving XML file: " + e.getMessage());
++		}
++	}
++	
++	/**
++	 * Parse an entire directory or file if found.
++	 * @param file
++	 */
++	public void loadDocument(File file)
++	{
++		if (!file.exists())
++		{
++			LOG.severe("The following file or directory doesn't exist: " + file.getName());
++			return;
++		}
++		
++		if (file.isDirectory())
++		{
++			for (File f : file.listFiles())
++			{
++				loadDocument(f);
++			}
++		}
++		else if (file.isFile())
++		{
++			try
++			{
++				parseDocument(BUILDER.newDocumentBuilder().parse(file), file);
++			}
++			catch (Exception e)
++			{
++				LOG.log(Level.SEVERE, "Error loading XML file " + file.getName(), e);
++			}
++		}
++	}
++	
++	public Document getDocument()
++	{
++		return document;
++	}
++	
++	/**
++	 * This method parses the content of a NamedNodeMap and feed the given StatsSet.
++	 * @param attrs : The NamedNodeMap to parse.
++	 * @param set : The StatsSet to feed.
++	 */
++	public static void parseAndFeed(NamedNodeMap attrs, StatSet set)
++	{
++		for (int i = 0; i < attrs.getLength(); i++)
++		{
++			final Node attr = attrs.item(i);
++			set.set(attr.getNodeName(), attr.getNodeValue());
++		}
++	}
++}
+diff --git config/players.properties config/players.properties
+index 745d341..2bc9c2d 100644
+--- config/players.properties
++++ config/players.properties
+@@ -235,4 +235,7 @@
+ # ExpertisePenalty, чтобы отключить штраф за уровень
+ # False : Игроки могут использовать экипировку S ранга с 1 уровня.
+ # True : Игроки не могут использовать экипировку S ранга с 1 уровня.
+-ExpertisePenalty = True
+\ No newline at end of file
++ExpertisePenalty = True
++
++RadiusBufferTerius = 300
++BufferTeriusAdenaCount = 10000
+\ No newline at end of file
+diff --git data/xml/TeriusBuffs.xml data/xml/TeriusBuffs.xml
+new file mode 100644
+index 0000000..d71f092
+--- /dev/null
++++ data/xml/TeriusBuffs.xml
+@@ -0,0 +1,142 @@
++<TeriusBuffs>
++   <Terius category="Pet" petMinLevel="1" petMaxLevel="30">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1389" level="3"/>
++   </Terius>
++      <Terius category="Pet" petMinLevel="31" petMaxLevel="60">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1389" level="3"/>
++   </Terius>
++      <Terius category="Pet" petMinLevel="61" petMaxLevel="80">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1389" level="3"/>
++   </Terius>
++
++
++
++
++
++
++   <Terius category="Mage" playerMinLevel="1" playerMaxLevel="30">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1389" level="3"/>
++   </Terius>
++   <Terius category="Mage" playerMinLevel="31" playerMaxLevel="60">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1389" level="3"/>
++   </Terius>
++   <Terius category="Mage" playerMinLevel="61" playerMaxLevel="80">
++       <Buffs id="1035" level="4"/>
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1078" level="6"/>
++	   <Buffs id="1085" level="3"/>
++	   <Buffs id="1204" level="2"/>
++
++   </Terius>
++   <Terius category="Fighter" playerMinLevel="1" playerMaxLevel="30">
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1043" level="1"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1068" level="3"/>
++	   <Buffs id="1077" level="3"/>
++	   <Buffs id="1086" level="2"/>
++	   <Buffs id="1240" level="3"/>
++	   <Buffs id="1242" level="3"/>
++	   <Buffs id="1388" level="3"/> 
++   </Terius>
++   <Terius category="Fighter" playerMinLevel="31" playerMaxLevel="60">
++       	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1043" level="1"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1068" level="3"/>
++	   <Buffs id="1077" level="3"/>
++	   <Buffs id="1086" level="2"/>
++	   <Buffs id="1240" level="3"/>
++	   <Buffs id="1242" level="3"/>
++	   <Buffs id="1388" level="3"/> 
++   </Terius>
++   <Terius category="Fighter" playerMinLevel="61" playerMaxLevel="80">
++	   <Buffs id="1036" level="2"/>
++	   <Buffs id="1040" level="3"/>
++	   <Buffs id="1043" level="1"/>
++	   <Buffs id="1045" level="6"/>
++	   <Buffs id="1048" level="6"/>
++	   <Buffs id="1062" level="2"/>
++	   <Buffs id="1204" level="2"/>
++	   <Buffs id="1243" level="3"/>
++	   <Buffs id="1044" level="3"/>
++	   <Buffs id="1068" level="3"/>
++	   <Buffs id="1077" level="3"/>
++	   <Buffs id="1086" level="2"/>
++	   <Buffs id="1240" level="3"/>
++	   <Buffs id="1242" level="3"/>
++	   <Buffs id="1388" level="3"/> 
++   </Terius>
++</TeriusBuffs>
+\ No newline at end of file
+diff --git java/Base/TeriusBuff/TeriusBuff.java java/Base/TeriusBuff/TeriusBuff.java
+new file mode 100644
+index 0000000..a217ae0
+--- /dev/null
++++ java/Base/TeriusBuff/TeriusBuff.java
+@@ -0,0 +1,68 @@
++package Base.TeriusBuff;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class TeriusBuff {
++    private final String category;
++    private final int playerMinLevel;
++    private final int playerMaxLevel;
++    private final int petMinLevel;  // Agregado
++    private final int petMaxLevel;  // Agregado
++    private List<Buff> buffs;
++
++    public TeriusBuff(String category, int playerMinLevel, int playerMaxLevel, int petMinLevel, int petMaxLevel) {
++        this.category = category;
++        this.playerMinLevel = playerMinLevel;
++        this.playerMaxLevel = playerMaxLevel;
++        this.petMinLevel = petMinLevel;  // Agregado
++        this.petMaxLevel = petMaxLevel;  // Agregado
++        buffs = new ArrayList<>();
++    }
++
++    public String getCategory() {
++        return category;
++    }
++
++    public int getPlayerMinLevel() {
++        return playerMinLevel;
++    }
++
++    public int getPlayerMaxLevel() {
++        return playerMaxLevel;
++    }
++
++    public int getPetMinLevel() {
++        return petMinLevel;
++    }
++
++    public int getPetMaxLevel() {
++        return petMaxLevel;
++    }
++
++    public List<Buff> getBuffs() {
++        return buffs;
++    }
++
++    public void addBuff(Buff buff) {
++        buffs.add(buff);
++    }
++
++    public static class Buff {
++        private int id;
++        private int level;
++
++        public Buff(int id, int level) {
++            this.id = id;
++            this.level = level;
++        }
++
++        public int getId() {
++            return id;
++        }
++
++        public int getLevel() {
++            return level;
++        }
++    }
++}
+diff --git java/Base/TeriusBuff/TeriusBuffData.java java/Base/TeriusBuff/TeriusBuffData.java
+new file mode 100644
+index 0000000..2d81c26
+--- /dev/null
++++ java/Base/TeriusBuff/TeriusBuffData.java
+@@ -0,0 +1,113 @@
++package Base.TeriusBuff;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++import Base.Data.XMLDocument;
++
++public class TeriusBuffData extends XMLDocument {
++    private Map<String, List<TeriusBuff>> teriusBuffsByCategory;
++
++    public TeriusBuffData() {
++        teriusBuffsByCategory = new HashMap<>();
++        load();
++    }
++
++    public void reload() {
++        teriusBuffsByCategory.clear();
++        load();
++    }
++
++    public static TeriusBuffData getInstance() {
++        return SingletonHolder.INSTANCE;
++    }
++
++    private static class SingletonHolder {
++        protected static final TeriusBuffData INSTANCE = new TeriusBuffData();
++    }
++
++    @Override
++    protected void load() {
++        loadDocument("./data/xml/TeriusBuffs.xml");
++        LOG.info("TeriusBuffData: Loaded " + teriusBuffsByCategory.size() + " categories.");
++    }
++
++    @Override
++    protected void parseDocument(Document doc, File file) {
++        try {
++            final Node root = doc.getFirstChild();
++
++            for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
++                if (!"Terius".equalsIgnoreCase(node.getNodeName())) {
++                    continue;
++                }
++
++                NamedNodeMap attrs = node.getAttributes();
++                String category = attrs.getNamedItem("category").getNodeValue();
++                int playerMinLevel = 0;
++                int playerMaxLevel = 0;
++                int petMinLevel = 0;
++                int petMaxLevel = 0;
++
++                if ("Pet".equalsIgnoreCase(category)) {
++                    petMinLevel = parseOptionalInt(attrs.getNamedItem("petMinLevel"));
++                    petMaxLevel = parseOptionalInt(attrs.getNamedItem("petMaxLevel"));
++                } else {
++                    playerMinLevel = parseOptionalInt(attrs.getNamedItem("playerMinLevel"));
++                    playerMaxLevel = parseOptionalInt(attrs.getNamedItem("playerMaxLevel"));
++                }
++
++                TeriusBuff teriusBuff = new TeriusBuff(category, playerMinLevel, playerMaxLevel, petMinLevel, petMaxLevel);
++
++                for (Node buffNode = node.getFirstChild(); buffNode != null; buffNode = buffNode.getNextSibling()) {
++                    if (!"Buffs".equalsIgnoreCase(buffNode.getNodeName())) {
++                        continue;
++                    }
++
++                    NamedNodeMap buffAttrs = buffNode.getAttributes();
++                    int id = Integer.parseInt(buffAttrs.getNamedItem("id").getNodeValue());
++                    int level = Integer.parseInt(buffAttrs.getNamedItem("level").getNodeValue());
++
++                    TeriusBuff.Buff buff = new TeriusBuff.Buff(id, level);
++                    teriusBuff.addBuff(buff);
++                }
++
++                List<TeriusBuff> buffList = teriusBuffsByCategory.get(category);
++                if (buffList == null) {
++                    buffList = new ArrayList<>();
++                    teriusBuffsByCategory.put(category, buffList);
++                }
++                buffList.add(teriusBuff);
++            }
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++    }
++
++    
++ // Agrega este método a la clase TeriusBuffData
++    private int parseOptionalInt(Node node) {
++        return (node != null && node.getNodeValue() != null) ? Integer.parseInt(node.getNodeValue()) : 0;
++    }
++    
++    
++    
++    public Map<String, List<TeriusBuff>> getTeriusBuffsByCategory() {
++        return teriusBuffsByCategory;
++    }
++ // Agrega este método a la clase TeriusBuffData
++    public List<TeriusBuff> getTeriusBuffsForPet() {
++        return teriusBuffsByCategory.get("Pet");
++    }
++
++    public List<TeriusBuff> getTeriusBuffsByCategory(String category) {
++        return teriusBuffsByCategory.get(category);
++    }
++}
+diff --git java/net/sf/l2j/Config.java java/net/sf/l2j/Config.java
+index cde5ba4..9c7549b 100644
+--- java/net/sf/l2j/Config.java
++++ java/net/sf/l2j/Config.java
+@@ -52,6 +52,13 @@
+ 	public static final String SERVER_FILE = "./config/server.properties";
+ 	public static final String SIEGE_FILE = "./config/siege.properties";
+ 	
++	
++	
++	public static int RADIUS_BUFFER_TERIUS;
++	public static int TERIUS_BUFF_ADENA_COUNT;	
++	
++	
++	
+ 	// --------------------------------------------------
+ 	// Clans settings
+ 	// --------------------------------------------------
+@@ -1907,6 +1914,10 @@
+ 	{
+ 		final ExProperties players = initProperties(PLAYERS_FILE);
+ 		
++		RADIUS_BUFFER_TERIUS = Integer.parseInt(players.getProperty("RadiusBufferTerius", "130"));			
++		TERIUS_BUFF_ADENA_COUNT = Integer.parseInt(players.getProperty("BufferTeriusAdenaCount", "1000"));			
++		
++		
+ 		EFFECT_CANCELING = players.getProperty("CancelLesserEffect", true);
+ 		HP_REGEN_MULTIPLIER = players.getProperty("HpRegenMultiplier", 1.);
+ 		MP_REGEN_MULTIPLIER = players.getProperty("MpRegenMultiplier", 1.);
+diff --git java/net/sf/l2j/gameserver/GameServer.java java/net/sf/l2j/gameserver/GameServer.java
+index 9d663cf..cdad3b2 100644
+--- java/net/sf/l2j/gameserver/GameServer.java
++++ java/net/sf/l2j/gameserver/GameServer.java
+@@ -116,6 +116,7 @@
+ import net.sf.l2j.util.IPv4Filter;
+ 
+ import Base.DropMaster.DropMaster;
++import Base.TeriusBuff.TeriusBuffData;
+ 
+ public class GameServer
+ {
+@@ -310,6 +311,10 @@
+ 		StringUtil.printSection("Spawns");
+ 		SpawnManager.getInstance().spawn();
+ 		
++		
++		StringUtil.printSection("Terius Buffer");
++		TeriusBuffData.getInstance();
++		
+ 		StringUtil.printSection("Handlers");
+ 		LOGGER.info("Loaded {} admin command handlers.", AdminCommandHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} chat handlers.", ChatHandler.getInstance().size());
+diff --git java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminReload.java java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminReload.java
+index f325d85..d1ac3b2 100644
+--- java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminReload.java
++++ java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminReload.java
+@@ -29,6 +29,7 @@
+ import net.sf.l2j.gameserver.model.actor.Player;
+ 
+ import Base.DropMaster.DropMaster;
++import Base.TeriusBuff.TeriusBuffData;
+ 
+ public class AdminReload implements IAdminCommandHandler
+ {
+@@ -78,6 +79,11 @@
+ 					CrestCache.getInstance().reload();
+ 					player.sendMessage("Crests have been reloaded.");
+ 				}
++				else if (type.startsWith("teriusbuffs"))
++				{
++					TeriusBuffData.getInstance().reload();
++					player.sendMessage("Terius Buffs have been reloaded.");
++				}
+ 				else if (type.startsWith("cw"))
+ 				{
+ 					CursedWeaponManager.getInstance().reload();
+@@ -180,7 +186,7 @@
+ 	{
+ 		player.sendMessage("Usage : //reload <admin|announcement|buylist|config>");
+ 		player.sendMessage("Usage : //reload <crest|cw|dropmaster|door|htm|item|multisell|npc>");
+-		player.sendMessage("Usage : //reload <npcwalker|script|skill|teleport|zone>");
++		player.sendMessage("Usage : //reload <npcwalker|teriusbuffs|script|skill|teleport|zone>");
+ 		player.sendMessage("Usage : //reload <spawnlist|sysstring|capsule>");
+ 	}
+ 	
+diff --git java/net/sf/l2j/gameserver/model/actor/instance/BufferTerius.java java/net/sf/l2j/gameserver/model/actor/instance/BufferTerius.java
+new file mode 100644
+index 0000000..26e80d1
+--- /dev/null
++++ java/net/sf/l2j/gameserver/model/actor/instance/BufferTerius.java
+@@ -0,0 +1,187 @@
++package net.sf.l2j.gameserver.model.actor.instance;
++
++import java.util.concurrent.ScheduledFuture;
++
++import net.sf.l2j.commons.pool.ThreadPool;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.data.SkillTable;
++import net.sf.l2j.gameserver.model.actor.Npc;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.actor.Summon;
++import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++import net.sf.l2j.gameserver.network.serverpackets.MagicSkillUse;
++import net.sf.l2j.gameserver.network.serverpackets.MoveToPawn;
++import net.sf.l2j.gameserver.network.serverpackets.MyTargetSelected;
++import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++import net.sf.l2j.gameserver.network.serverpackets.ValidateLocation;
++import net.sf.l2j.gameserver.skills.L2Skill;
++
++import Base.TeriusBuff.TeriusBuff;
++import Base.TeriusBuff.TeriusBuff.Buff;
++import Base.TeriusBuff.TeriusBuffData;
++
++import java.util.List;
++
++public class BufferTerius extends Folk {
++    private ScheduledFuture<?> _aiTask;
++
++    @Override
++    public void onInteract(Player player) {
++        if (this != player.getTarget()) {
++            player.setTarget(this);
++            player.sendPacket(new MyTargetSelected(getObjectId(), 0));
++            player.sendPacket(new ValidateLocation(this));
++        }
++
++        // Rotate the player to face the instance
++        player.sendPacket(new MoveToPawn(player, this, Npc.INTERACTION_DISTANCE));
++
++
++
++        showMainWindow(player);
++
++        // Send ActionFailed to the player to prevent getting stuck
++        player.sendPacket(ActionFailed.STATIC_PACKET);
++    }
++
++    public void showMainWindow(Player player) {
++        NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++        html.setFile(player.getLocale(), "html/mods/TeriusBuff.htm");
++        html.replace("%objectId%", String.valueOf(getObjectId()));
++        html.replace("%npcname%", getName());
++        player.sendPacket(html);
++    }
++
++    private class TeriusAI implements Runnable {
++        private final BufferTerius _caster;
++
++        protected TeriusAI(final BufferTerius caster) {
++            _caster = caster;
++        }
++
++        @Override
++        public void run() {
++            for (Player player : getKnownType(Player.class)) {
++                int playerLevel = player.getStatus().getLevel();
++                final Summon summon = player.getSummon();
++                String playerClass = player.isMageClass() ? "Mage" : "Fighter";
++
++                List<TeriusBuff> buffs = TeriusBuffData.getInstance().getTeriusBuffsByCategory(playerClass);
++                if (buffs != null) {
++                    for (TeriusBuff buff : buffs) {
++                        if (buff.getPlayerMinLevel() <= playerLevel && buff.getPlayerMaxLevel() >= playerLevel) {
++                            TeriusCast(player, buff.getBuffs());
++                           
++                        }
++                    }
++                }
++                List<TeriusBuff> petBuffs = TeriusBuffData.getInstance().getTeriusBuffsForPet();
++if (summon != null) {
++    if (petBuffs != null) {
++        for (TeriusBuff buff : petBuffs) {
++            
++            int petLevel = summon.getStatus().getLevel();
++            
++            if (
++                buff.getPetMinLevel() <= petLevel && buff.getPetMaxLevel() >= petLevel) {
++                TeriusCastPet(player, buff.getBuffs());
++            }
++        }
++    }
++}
++
++                
++            }
++        }
++        
++   
++
++        private void TeriusCastPet(Player player, List<Buff> buffs) {
++            final Summon summon = player.getSummon();
++            if (summon != null) {
++                if (summon.isDead() || !summon.isVisible() ||
++                        !isIn3DRadius(summon, Config.RADIUS_BUFFER_TERIUS)) {
++                    return;
++                }
++                boolean hasBuffed = false; // Variable para controlar si el jugador ha sido buffeado al menos una vez.
++
++                for (Buff buff : buffs) {
++                    int skillId = buff.getId();
++                    int skillLevel = buff.getLevel();
++
++                    L2Skill skill = SkillTable.getInstance().getInfo(skillId, skillLevel);
++
++                    if (skill == null || summon.getFirstEffect(skill) != null) {
++                        continue;
++                    }
++
++                    // Verificar si el jugador cumple la condición para cobrar adena.
++                    if (player.getStatus().getLevel() >= 31 && player.getAdena() >= Config.TERIUS_BUFF_ADENA_COUNT) {
++                        if (!hasBuffed) { // Solo cobrar adena una vez si ha habido al menos un buff exitoso.
++                           // player.reduceAdena("Cobro", Config.TERIUS_BUFF_ADENA_COUNT, player, true);
++                            player.destroyItemByItemId(57, Config.TERIUS_BUFF_ADENA_COUNT, true);
++                            hasBuffed = true; // Marcar que el jugador ha sido buffeado.
++                        }
++                    }
++
++                    skill.getEffects(_caster, summon);
++                    broadcastPacket(new MagicSkillUse(_caster, summon, skillId, skillLevel, 1000, 0));
++                    player.setTarget(summon);
++                }
++            } else {
++                player.sendMessage("No Tienes Summon");
++            }
++        }
++
++
++
++        private void TeriusCast(final Player player, List<Buff> buffs) {
++            if (player.isDead() || !player.isVisible() || !isIn3DRadius(player, Config.RADIUS_BUFFER_TERIUS)) {
++                return;
++            }
++
++            // Verificar si el jugador tiene suficiente adena
++            if (player.getStatus().getLevel() >= 31 && player.getAdena() < Config.TERIUS_BUFF_ADENA_COUNT) {
++                return; // Ignorar al jugador si no tiene suficiente adena
++            }
++            
++            
++            boolean hasBuffed = false; // Variable para controlar si el jugador ha sido buffeado al menos una vez.
++
++            for (Buff buff : buffs) {
++                int skillId = buff.getId();
++                int skillLevel = buff.getLevel();
++
++                L2Skill skill = SkillTable.getInstance().getInfo(skillId, skillLevel);
++
++                if (skill == null || player.getFirstEffect(skill) != null) {
++                    continue;
++                }
++
++                // Verificar si el jugador cumple la condiciÃ³n para cobrar adena.
++                if (player.getStatus().getLevel() >= 31 && player.getAdena() >= Config.TERIUS_BUFF_ADENA_COUNT) {
++                    if (!hasBuffed) { // Solo cobrar adena una vez si ha habido al menos un buff exitoso.
++                        // player.reduceAdena("Cobro", Config.TERIUS_BUFF_ADENA_COUNT, player, true);
++                        player.destroyItemByItemId(57, Config.TERIUS_BUFF_ADENA_COUNT, true);
++                        hasBuffed = true; // Marcar que el jugador ha sido buffeado.
++                    }
++                }
++
++                skill.getEffects(_caster, player);
++                broadcastPacket(new MagicSkillUse(_caster, player, skillId, skillLevel, 1000, 0));
++            }
++        }
++    }
++
++    public BufferTerius(final int objectId, final NpcTemplate template) {
++        super(objectId, template);
++
++        if (_aiTask != null) {
++            _aiTask.cancel(true);
++        }
++
++        _aiTask = ThreadPool.scheduleAtFixedRate(new TeriusAI(this), 3000, 3000);
++    }
++}
+
+diff --git data/locale/en_US/html/mods/TeriusBuff.htm data/locale/en_US/html/mods/TeriusBuff.htm
+new file mode 100644
+index 0000000..d71f092
+--- /dev/null
++++ data/locale/en_US/html/mods/TeriusBuff.htm
++<html><title>L2ServerName Buffer</title><body>
++<center>
++<br>
++<br>
++<br>
++<br>
++<img src="l2ui_ch3.herotower_deco" width=256 height=32>	
++<br>
++<center><img src="L2UI.SquareGray" width=300 height=1></center>		
++<br1>
++<center>L2ServerName.</center> 
++<br1>
++El Npc Buffer Detecta a los jugadores cerca
++<br1>
++Dependiendo de tu lvl te dara x buffs
++<br1>
++Los Buffs son gratis hasta el nivel 31.
++<br1>
++Te buffean tanto a ti como a tu mascotaa.
++<br1>
++A partir del nivel 31 en adelante empieza a cobrar,
++<br1>
++10.000 de adena por cada vez que el npc te BUFFEA.
++<br>
++<center><img src="L2UI.SquareGray" width=300 height=1></center>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<br>
++<center>Npc Creado Por: <font color="800080">Terius</font></center> 
++
++</body>
++</html>

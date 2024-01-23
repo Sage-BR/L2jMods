@@ -1,0 +1,477 @@
+### Eclipse Workspace Patch 1.0
+#P aCis_gameserver
+diff --git config/players.properties config/players.properties
+index c645204..829d205 100644
+--- config/players.properties
++++ config/players.properties
+@@ -257,4 +257,20 @@
+ MaxBuffsAmount = 20
+ 
+ # Store buffs/debuffs on user logout. Default: True
+-StoreSkillCooltime = True
+\ No newline at end of file
++StoreSkillCooltime = True
++
++
++#=============================================================
++#              SMS-DONATION-MANAGER
++#=============================================================
++SMSItemID = 9494
++SMSItemIdEnchantHeroW = 3470
++
++
++SMSEnchantWeapon = 30
++SMSEnchantHeroWeapon = 30
++SMSEnchantArmor = 30
++SMSEnchantWeaponCount = 10
++SMSEnchantArmorCount = 5
++SMSEnchantHeroWeaponCount = 10000
++
+diff --git java/net/sf/l2j/Config.java java/net/sf/l2j/Config.java
+index 5fb661c..82dbd87 100644
+--- java/net/sf/l2j/Config.java
++++ java/net/sf/l2j/Config.java
+@@ -336,6 +336,19 @@
+ 	public static boolean ALLOW_DELEVEL;
+ 	public static int DEATH_PENALTY_CHANCE;
+ 	
++	
++	public static int SMS_ITEMID;
++
++	public static int SMS_ENCHANTWEAPON;
++	public static int SMS_ENCHANTARMOR;
++	public static int SMS_ENCHANTHEROWEAPON;
++	public static int SMS_ITEMID_ENCHANT_HERO_WEAPON;
++	public static int SMS_HEROWEAPON_COUNT;
++	public static int SMS_ENCHANTWEAPONCOUNT;
++	public static int SMS_ENCHANTARMORCOUNT;
++	
++	
++	
+ 	/** Inventory & WH */
+ 	public static int INVENTORY_MAXIMUM_NO_DWARF;
+ 	public static int INVENTORY_MAXIMUM_DWARF;
+@@ -955,6 +968,17 @@
+ 		ALLOW_DELEVEL = players.getProperty("AllowDelevel", true);
+ 		DEATH_PENALTY_CHANCE = players.getProperty("DeathPenaltyChance", 20);
+ 		
++		SMS_ITEMID = players.getProperty("SMSItemID", 9494);
++		SMS_ENCHANTWEAPON = players.getProperty("SMSEnchantWeapon", 35);
++		SMS_ENCHANTHEROWEAPON = players.getProperty("SMSEnchantHeroWeapon", 30);
++		SMS_ITEMID_ENCHANT_HERO_WEAPON = players.getProperty("SMSItemIdEnchantHeroW", 3470);
++		SMS_HEROWEAPON_COUNT = players.getProperty("SMSEnchantHeroWeaponCount", 10000);
++		SMS_ENCHANTARMOR = players.getProperty("SMSEnchantArmor", 25);
++		SMS_ENCHANTWEAPONCOUNT = players.getProperty("SMSEnchantWeaponCount", 10);
++		SMS_ENCHANTARMORCOUNT = players.getProperty("SMSEnchantArmorCount", 5);
++		
++		
++		
+ 		INVENTORY_MAXIMUM_NO_DWARF = players.getProperty("MaximumSlotsForNoDwarf", 80);
+ 		INVENTORY_MAXIMUM_DWARF = players.getProperty("MaximumSlotsForDwarf", 100);
+ 		INVENTORY_MAXIMUM_PET = players.getProperty("MaximumSlotsForPet", 12);
+diff --git java/net/sf/l2j/gameserver/model/actor/instance/BrancaSMS.java java/net/sf/l2j/gameserver/model/actor/instance/BrancaSMS.java
+new file mode 100644
+index 0000000..d3fe262
+--- /dev/null
++++ java/net/sf/l2j/gameserver/model/actor/instance/BrancaSMS.java
+@@ -0,0 +1,399 @@
++/* This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2, or (at your option)
++ * any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++ * 02111-1307, USA.
++ *
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++package net.sf.l2j.gameserver.model.actor.instance;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.data.cache.HtmCache;
++import net.sf.l2j.gameserver.enums.Paperdoll;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.SystemMessageId;
++import net.sf.l2j.gameserver.network.serverpackets.ItemList;
++import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++
++
++
++/**
++ * @author Terius
++ */
++public class BrancaSMS extends Merchant
++{
++	
++	private static int itemid = Config.SMS_ITEMID;
++	
++
++	
++	@Override
++	public void onBypassFeedback(Player player, String command)
++	{
++
++		switch (command)
++		{
++			case "rhand":
++				EnchantWeapon(player, 16, 8, Paperdoll.RHAND); // Pasar Paperdoll.RHAND como argumento
++				break;
++			case "lhand":
++				Enchant(player, 16, 8, Paperdoll.LHAND);
++				break;
++			case "rear":
++				Enchant(player, 16, 3, Paperdoll.REAR);
++				break;
++			case "lear":
++				Enchant(player, 16, 3, Paperdoll.LEAR);
++				break;
++			case "rf":
++				Enchant(player, 16, 3, Paperdoll.RFINGER);
++				break;
++			case "lf":
++				Enchant(player, 16, 3, Paperdoll.LFINGER);
++				break;
++			case "neck":
++				Enchant(player, 16, 3, Paperdoll.NECK);
++				break;
++			case "head":
++				Enchant(player, 16, 3, Paperdoll.HEAD);
++				break;
++			case "feet":
++				Enchant(player, 16, 3, Paperdoll.FEET);
++				break;
++			case "gloves":
++				Enchant(player, 16, 3, Paperdoll.GLOVES);
++				break;
++			case "chest":
++				Enchant(player, 16, 3, Paperdoll.CHEST);
++				break;
++			case "legs":
++				Enchant(player, 16, 3, Paperdoll.LEGS);
++				break;
++			case "enchant":
++				winds(player, 1);
++				break;
++			case "back":
++				winds(player, 2);
++				break;
++		}
++		
++
++	}
++	
++	@Override
++	public void onInteract(Player player)
++	{
++		showChatWindow(player);
++	}
++	
++	public BrancaSMS(int objectId, NpcTemplate template)
++	{
++		super(objectId, template);
++		
++
++	}
++	
++	@Override
++	public void showChatWindow(Player player)
++	{
++		
++		ItemInstance SMS = player.getInventory().getItemByItemId(Config.SMS_ITEMID);
++		final String Donator_Shop = "data/html/mods/SMS-DONATENPC/10.htm";
++		NpcHtmlMessage msg = new NpcHtmlMessage(this.getObjectId());
++		msg.setFile(Donator_Shop);
++		msg.replace("%objectId%", String.valueOf(this.getObjectId()));
++		msg.replace("%name%", player.getName());
++		if (player.getInventory().getItemByItemId(Config.SMS_ITEMID) == null)
++		{
++			msg.replace("%sms%", "0");
++		}
++		else
++		{
++			msg.replace("%sms%", SMS.getCount());
++		}
++		player.sendPacket(msg);
++		
++	}
++	
++
++	
++	public void Enchant(Player activeChar, int enchant, int amount, Paperdoll paperdoll) {
++	    ItemInstance item = activeChar.getInventory().getItemFrom(paperdoll);
++	    
++		if (activeChar.getInventory().getItemCount(itemid, 0) >= Config.SMS_ENCHANTARMORCOUNT)
++		{
++			if (item == null)
++			{
++				activeChar.sendMessage("No tienes este item en el inventario.");
++				winds(activeChar, 1);
++				return;
++			}
++			else if (item.getEnchantLevel() == Config.SMS_ENCHANTARMOR)
++			{
++				activeChar.sendMessage("Este item " + item.getItemName() + " ya esta a +30 o superior!");
++				winds(activeChar, 1);
++				return;
++			}
++
++			
++			if (item.isEquipped() && item.getEnchantLevel() < Config.SMS_ENCHANTARMOR)
++			{
++				item.setEnchantLevel(Config.SMS_ENCHANTARMOR);
++				item.updateDatabase();
++				activeChar.sendPacket(new ItemList(activeChar, false));
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_S2_SUCCESSFULLY_ENCHANTED).addNumber(item.getEnchantLevel()).addItemName(item.getItemId()));
++				activeChar.destroyItemByItemId("SMS Point", Config.SMS_ITEMID, Config.SMS_ENCHANTARMORCOUNT, null, true);
++				winds(activeChar, 1);
++			}
++			
++		}
++		else if (activeChar.getInventory().getItemCount(itemid, 0) < Config.SMS_ENCHANTARMORCOUNT)
++		{
++			winds(activeChar, 1);
++			activeChar.sendMessage("No tienes suficientes SMS POINTS.");
++		}
++		
++	}
++	
++	public void EnchantWeapon(Player activeChar, int enchant, int amount, Paperdoll paperdoll) {
++	    ItemInstance rhand = activeChar.getInventory().getItemFrom(paperdoll); // Usar el objeto Paperdoll pasado como argumento
++	   
++	
++
++		ItemInstance item = activeChar.getInventory().getItemFrom(paperdoll);
++		if (activeChar.getInventory().getItemCount(itemid, 0) >= Config.SMS_ENCHANTWEAPONCOUNT)
++		{
++			if (item == null)
++			{
++				activeChar.sendMessage("No tienes este item en el inventario.");
++				winds(activeChar, 1);
++				return;
++			}
++			else if (item.getEnchantLevel() == Config.SMS_ENCHANTWEAPON)
++			{
++				activeChar.sendMessage("Este item " + item.getItemName() + " ya esta a +30 o superior!");
++				winds(activeChar, 1);
++				return;
++			}
++			else if (item.getEnchantLevel() == Config.SMS_ENCHANTWEAPON)
++			{
++				activeChar.sendMessage("Este item " + item.getItemName() + " ya esta a +30!");
++				winds(activeChar, 1);
++				return;
++			}
++
++			else if (rhand != null && rhand.getItemId() >= 6611 && rhand.getItemId() <= 6621 && item.getEnchantLevel() < 30 && (activeChar.getInventory().getItemCount(3470, 0) >= Config.SMS_HEROWEAPON_COUNT))
++			{
++				if (item.isEquipped() && item.getEnchantLevel() < Config.SMS_ENCHANTHEROWEAPON && (activeChar.getInventory().getItemCount(3470, 0) >= Config.SMS_HEROWEAPON_COUNT))
++				{
++					item.setEnchantLevel(Config.SMS_ENCHANTHEROWEAPON);
++					item.updateDatabase();
++					activeChar.sendPacket(new ItemList(activeChar, false));
++					activeChar.broadcastUserInfo();
++					activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_S2_SUCCESSFULLY_ENCHANTED).addNumber(item.getEnchantLevel()).addItemName(item.getItemId()));
++					activeChar.destroyItemByItemId("SMS Point", Config.SMS_ITEMID_ENCHANT_HERO_WEAPON, Config.SMS_HEROWEAPON_COUNT, null, true);
++					activeChar.sendMessage("Enhorabuena Has Encantado Tu Arma Hero a +30");
++					winds(activeChar, 1);
++				}
++				else
++				{
++					activeChar.sendMessage("Equipate el arma por favor");
++				}
++				
++			}
++			
++			if (item.isEquipped() && item.getEnchantLevel() < Config.SMS_ENCHANTWEAPON)
++			{
++				item.setEnchantLevel(Config.SMS_ENCHANTWEAPON);
++				item.updateDatabase();
++				activeChar.sendPacket(new ItemList(activeChar, false));
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(SystemMessage.getSystemMessage(SystemMessageId.S1_S2_SUCCESSFULLY_ENCHANTED).addNumber(item.getEnchantLevel()).addItemName(item.getItemId()));
++				activeChar.destroyItemByItemId("SMS Point", Config.SMS_ITEMID, Config.SMS_ENCHANTWEAPONCOUNT, null, true);
++				winds(activeChar, 1);
++			}
++			
++		}
++		else if (activeChar.getInventory().getItemCount(itemid, 0) < Config.SMS_ENCHANTWEAPONCOUNT)
++		{
++			activeChar.sendMessage("No tienes suficientes SMS POINTS.");
++			winds(activeChar, 1);
++		}
++		
++	}
++	
++	private void winds(Player player, int count)
++	{
++		ItemInstance rhand = player.getInventory().getItemFrom(1);
++	
++		NpcHtmlMessage html = new NpcHtmlMessage(1);
++		switch (count)
++		{
++			case 1:
++				String htmContent = HtmCache.getInstance().getHtm("data/html/mods/SMS-DONATENPC/enchant.htm");
++				html.setHtml(htmContent);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 2:
++				ItemInstance SMS = player.getInventory().getItemByItemId(Config.SMS_ITEMID);
++				String htmContent1 = HtmCache.getInstance().getHtm("data/html/mods/SMS-DONATENPC/10.htm");
++				html.setHtml(htmContent1);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%name%", player.getName());
++				if (player.getInventory().getItemByItemId(Config.SMS_ITEMID) == null)
++				{
++					html.replace("%sms%", "0");
++				}
++				else
++				{
++					html.replace("%sms%", SMS.getCount());
++				}
++				player.sendPacket(html);
++				break;
++			case 3:
++				String htmContent2 = HtmCache.getInstance().getHtm("data/html/mods/donate/clan.htm");
++				html.setHtml(htmContent2);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 4:
++				String htmContent3 = HtmCache.getInstance().getHtm("data/html/mods/donate/sex.htm");
++				html.setHtml(htmContent3);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 5:
++				String htmContent4 = HtmCache.getInstance().getHtm("data/html/mods/donate/name.htm");
++				html.setHtml(htmContent4);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 6:
++				String htmContent5 = HtmCache.getInstance().getHtm("data/html/mods/donate/hero.htm");
++				html.setHtml(htmContent5);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 7:
++				String htmContent6 = HtmCache.getInstance().getHtm("data/html/mods/donate/enchant.htm");
++				html.setHtml(htmContent6);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 8:
++				String htmContent8 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/active/page1.htm");
++				html.setHtml(htmContent8);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 9:
++				String htmContent9 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/active/page2.htm");
++				html.setHtml(htmContent9);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 10:
++				String htmContent10 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/active/page3.htm");
++				html.setHtml(htmContent10);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 11:
++				String htmContent11 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/active/page4.htm");
++				html.setHtml(htmContent11);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 12:
++				String htmContent12 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/active/page5.htm");
++				html.setHtml(htmContent12);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 13:
++				String htmContent13 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment.htm");
++				html.setHtml(htmContent13);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				player.sendPacket(html);
++				break;
++			case 14:
++				String htmContent14 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/passive/page1.htm");
++				html.setHtml(htmContent14);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++			case 15:
++				String htmContent15 = HtmCache.getInstance().getHtm("data/html/mods/donate/augment/passive/page2.htm");
++				html.setHtml(htmContent15);
++				html.replace("%objectId%", String.valueOf(this.getObjectId()));
++				html.replace("%charname%", player.getName());
++				if (rhand != null && rhand.isAugmented() && rhand.getAugmentation() != null && rhand.getAugmentation().getSkill() != null && rhand.getAugmentation().getSkill().getLevel() >= 1)
++				{
++					html.replace("%level%", rhand.getAugmentation().getSkill().getLevel());
++				}
++				html.replace("%level%", "None");
++				player.sendPacket(html);
++				break;
++		}
++	}
++	
++
++}
+\ No newline at end of file

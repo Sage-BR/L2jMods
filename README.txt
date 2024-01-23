@@ -1,11 +1,19 @@
-L2JMODS
+L2JMODS - Lineage 2 Mods Project
 
-Project
 You can Add new mods with pull
 You can fix or improve all mods with pull
 You can use in you project
 
 Credits
-Me
+Me (SageBR)
 Tensador
-Sarada(Sir Chirstian)
+Sarada(S.Christian)
+VANPER
+
+
+
+
+
+
+My website: 
+https://top.4teambr.com

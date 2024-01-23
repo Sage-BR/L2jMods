@@ -1,0 +1,807 @@
+### Eclipse Workspace Patch 1.0
+#P Orionwins
+diff --git src/Base/ClanStrongold/ClanStrongholdDeviceSpawner.java src/Base/ClanStrongold/ClanStrongholdDeviceSpawner.java
+new file mode 100644
+index 0000000..e7d149a
+--- /dev/null
++++ src/Base/ClanStrongold/ClanStrongholdDeviceSpawner.java
+@@ -0,0 +1,187 @@
++package Base.ClanStrongold;
++
++import l2jwins.game.datatables.sql.NpcTable;
++import l2jwins.game.datatables.sql.SpawnTable;
++import l2jwins.game.model.actor.instance.L2NpcInstance;
++import l2jwins.game.model.spawn.L2Spawn;
++import l2jwins.game.templates.L2NpcTemplate;
++
++#Author Terius
++public class ClanStrongholdDeviceSpawner
++{
++	
++	private static final int CLAN_STRONGHOLD_DEVICE = 34156;
++	private static final int[][] _mobLoc =
++	{
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			20861,
++			117304,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			23739,
++			119992,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			23741,
++			117379,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			20636,
++			119935,
++			-12089,
++			243
++		},
++		
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			20875,
++			111002,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			14566,
++			111071,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			11739,
++			108219,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			11535,
++			119947,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			89382,
++			106388,
++			-3208,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			82701,
++			109007,
++			-3151,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			91746,
++			112823,
++			-2919,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			87909,
++			120040,
++			-3062,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			52484,
++			-79491,
++			-3117,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			20870,
++			108369,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			23773,
++			108412,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			113302,
++			109838,
++			-2974,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			14557,
++			117285,
++			-12089,
++			243
++		},
++		{
++			CLAN_STRONGHOLD_DEVICE,
++			101689,
++			111892,
++			-3672,
++			243
++		}
++	};
++	
++	private static ClanStrongholdDeviceSpawner _instance;
++	
++	public static ClanStrongholdDeviceSpawner getInstance()
++	{
++		if (_instance == null)
++		{
++			_instance = new ClanStrongholdDeviceSpawner();
++		}
++		return _instance;
++	}
++	
++	public void spawnNpcsOnServerStart()
++	{
++		for (int[] loc : _mobLoc)
++		{
++			spawnNpc(loc[0], loc[1], loc[2], loc[3], loc[4]);
++		}
++	}
++	
++	private static void spawnNpc(int npcId, int x, int y, int z, int heading)
++	{
++		try
++		{
++			final L2NpcTemplate tmpl = NpcTable.getInstance().getTemplate(npcId);
++			L2Spawn spawn = new L2Spawn(tmpl);
++			spawn.setLocx(x);
++			spawn.setLocy(y);
++			spawn.setLocz(z);
++			spawn.setAmount(1);
++			spawn.setRespawnDelay(1);
++			SpawnTable.getInstance().addNewSpawn(spawn, false);
++			spawn.init();
++			L2NpcInstance npc = spawn.getLastSpawn();
++			npc.setIsImobilised(true);
++			npc.setIsInvul(true);
++			npc.decayMe();
++			npc.spawnMe(npc.getX(), npc.getY(), npc.getZ());
++		}
++		catch (Exception e)
++		{
++			e.printStackTrace();
++		}
++	}
++}
+diff --git src/l2jwins/Config.java src/l2jwins/Config.java
+index cafe738..aaaf892 100644
+--- src/l2jwins/Config.java
++++ src/l2jwins/Config.java
+@@ -252,6 +252,12 @@
+ 	public static int LIMITE_CARRO_MASTER;
+ 	public static boolean RANK_SYSTEM_ENABLE;
+ 	
++	public static int CLAN_BUFF_ID;
++	
++	public static boolean CLAN_STRONGHOLD_SPAWN_ENABLED;
++	
+ 	// ===================================================================================================================================//
+ 	
+ 	public static void loadExtraSettingsConfig()
+@@ -275,6 +281,10 @@
+ 			
+ 			AFK_TIMER = Integer.parseInt(ExtraSettings.getProperty("TimerAFK", "10"));
+ 			
++			CLAN_BUFF_ID = Integer.parseInt(ExtraSettings.getProperty("ClanBuffId", "1388"));
++			
+ 			ITEM_SPAWNID = Integer.parseInt(ExtraSettings.getProperty("ItemIdSpawn", "5072"));
+ 			NPC1_SPAWN_MAGIC_GEM = Integer.parseInt(ExtraSettings.getProperty("NpcIdSpawn1", "31228"));
+ 			NPC2_SPAWN_MAGIC_GEM = Integer.parseInt(ExtraSettings.getProperty("NpcIdSpawn2", "7077"));
+@@ -294,6 +304,8 @@
+ 			
+ 			RANK_SYSTEM_ENABLE = Boolean.parseBoolean(ExtraSettings.getProperty("RankSystemEnable", "true"));
+ 			
++			CLAN_STRONGHOLD_SPAWN_ENABLED = Boolean.parseBoolean(ExtraSettings.getProperty("ClanStrongholdSpawnEnable", "true"));
++			
+ 			ALLOW_CUSTOM_CANCEL = Boolean.parseBoolean(ExtraSettings.getProperty("AllowCustomCancelTask", "True"));
+ 			CUSTOM_CANCEL_SECONDS = Integer.parseInt(ExtraSettings.getProperty("CustomCancelSeconds", "10"));
+ 			
+diff --git src/l2jwins/game/GameServer.java src/l2jwins/game/GameServer.java
+index 57ce5d4..345a80d 100644
+--- src/l2jwins/game/GameServer.java
++++ src/l2jwins/game/GameServer.java
+@@ -11,8 +11,9 @@
+ import java.util.Date;
+ import java.util.logging.LogManager;
+ 
++import Base.ClanStrongold.ClanStrongholdDeviceSpawner;
+ import Base.Instance.InstanceManager;
+ import Base.XML.XMLDocumentFactory;
+ import Base.custom.DailyRewardManager;
+
+@@ -532,6 +534,17 @@
+ 			LOG.info("Rank System Desactivado");
+ 		}
+ 		
++		if (Config.CLAN_STRONGHOLD_SPAWN_ENABLED)
++		{
++			Util.printSection("Clan Stronghold");
++			ClanStrongholdDeviceSpawner.getInstance().spawnNpcsOnServerStart();
++			LOG.info("Clan Stronghold Activado");
++		}
++		else
++		{
++			LOG.info("Clan Stronghold Desactivado");
++		}
++		
+ 		HistoriasTable.getInstance();
+ 		
+ 		Util.printSection("Handlers");
+diff --git src/l2jwins/game/model/L2Attackable.java src/l2jwins/game/model/L2Attackable.java
+index 591d05b..e306b59 100644
+--- src/l2jwins/game/model/L2Attackable.java
++++ src/l2jwins/game/model/L2Attackable.java
+@@ -643,6 +643,9 @@
+ 									exp += calculateOverhitExp(exp);
+ 								}
+ 								
++								exp = (long) ((exp * attacker.calcStat(Stats.XP_RATE, 100, null, null)) / 100);
++								sp = (int) ((sp * attacker.calcStat(Stats.SP_RATE, 100, null, null)) / 100);
++								
+ 								if (((L2PcInstance) attacker).getPremiumService() >= 1)
+ 								{
+ 									exp = (long) (exp * Config.PREMIUM_XPSP_RATE);
+@@ -1154,7 +1157,9 @@
+ 				{
+ 					dropChance *= Config.PREMIUM_SPOIL_RATE;
+ 				}
++				
+ 			}
++			dropChance = (int) ((dropChance * lastAttacker.calcStat(Stats.SPOIL_RATE, 100, null, null)) / 100);
+ 		}
+ 		else
+ 		{
+@@ -1229,6 +1234,7 @@
+ 			// Prepare for next iteration if dropChance > L2DropData.MAX_CHANCE
+ 			dropChance -= L2DropData.MAX_CHANCE;
+ 		}
++		itemCount = (int) ((itemCount * lastAttacker.calcStat(Stats.DROP_RATE, 100, null, null)) / 100);
+ 		
+ 		if (Config.L2JMOD_CHAMPION_ENABLE && isChampion())
+ 		{
+@@ -3038,6 +3044,34 @@
+ 		}
+ 	}
+ 	
+
+ 	public void setSeeded()
+ 	{
+ 		if (_seedType != 0 && _seeder != null)
+diff --git src/l2jwins/game/model/L2Character.java src/l2jwins/game/model/L2Character.java
+index 9255274..76cc795 100644
+--- src/l2jwins/game/model/L2Character.java
++++ src/l2jwins/game/model/L2Character.java
+@@ -60,6 +60,7 @@
+ import l2jwins.game.managers.TownManager;
+ import l2jwins.game.model.L2Skill.SkillTargetType;
+ import l2jwins.game.model.L2Skill.SkillType;
++import l2jwins.game.model.actor.instance.L2ClanStrongholdInstance;
+ import l2jwins.game.model.actor.instance.L2ControlTowerInstance;
+ import l2jwins.game.model.actor.instance.L2DoorInstance;
+ import l2jwins.game.model.actor.instance.L2EffectPointInstance;
+
+@@ -814,6 +823,7 @@
+ 						((L2Summon) this).getOwner().updatePvPStatus();
+ 					}
+ 				}
++				
+ 			}
+ 			
+ 			if (Config.GET_PVP_FLAG)
+@@ -831,6 +841,21 @@
+ 				}
+ 			}
+ 			
++			if (Config.GET_PVP_FLAG)
++			{
++				if (target instanceof L2ClanStrongholdInstance)
++				{
++					if (this instanceof L2PcInstance)
++					{
++						((L2PcInstance) this).updatePvPStatus();
++					}
++					else if (this instanceof L2Summon)
++					{
++						((L2Summon) this).getOwner().updatePvPStatus();
++					}
++				}
++			}
++			
+ 			if (Config.GET_PVP_FLAG_FROM_CHAMP)
+ 			{
+ 				if (target.isChampion())
+
+@@ -8580,4 +8631,13 @@
+ 	{
+ 		return this._IsDungeon;
+ 	}
++	
++	/**
++	 * @return
++	 */
++	public int getClanId()
++	{
++		// TODO Auto-generated method stub
++		return 0;
++	}
+ }
+\ No newline at end of file
+diff --git src/l2jwins/game/model/actor/instance/L2ClanStrongholdInstance.java src/l2jwins/game/model/actor/instance/L2ClanStrongholdInstance.java
+new file mode 100644
+index 0000000..63b4b1e
+--- /dev/null
++++ src/l2jwins/game/model/actor/instance/L2ClanStrongholdInstance.java
+@@ -0,0 +1,343 @@
++package l2jwins.game.model.actor.instance;
++
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ScheduledFuture;
++
++import l2jwins.Config;
++import l2jwins.game.ai.CtrlIntention;
++import l2jwins.game.datatables.SkillTable;
++import l2jwins.game.model.L2Character;
++import l2jwins.game.model.L2Clan;
++import l2jwins.game.model.L2Effect;
++import l2jwins.game.model.L2Skill;
++import l2jwins.game.model.L2World;
++import l2jwins.game.model.spawn.L2Spawn;
++import l2jwins.game.network.serverpackets.ActionFailed;
++import l2jwins.game.network.serverpackets.CreatureSay;
++import l2jwins.game.network.serverpackets.MagicSkillUser;
++import l2jwins.game.network.serverpackets.MoveToPawn;
++import l2jwins.game.network.serverpackets.MyTargetSelected;
++import l2jwins.game.network.serverpackets.NpcHtmlMessage;
++import l2jwins.game.network.serverpackets.NpcInfo;
++import l2jwins.game.network.serverpackets.NpcSay;
++import l2jwins.game.network.serverpackets.ValidateLocation;
++import l2jwins.game.skills.SkillHolder;
++import l2jwins.game.templates.L2NpcTemplate;
++import l2jwins.game.thread.ThreadPoolManager;
++
++#Author Terius
++public class L2ClanStrongholdInstance extends L2NpcInstance
++{
++	private static final Map<Integer, Integer> CURRENT_CLAN_ID = new ConcurrentHashMap<>(); // Clan id key - NPC object id value (can be taken from npc.getScriptValue)
++	private static final Map<Integer, Long> LAST_ATTACK = new ConcurrentHashMap<>(); // NPC object id key - Time value
++	
++	private String clanName; // Variable para almacenar el nombre del clan del jugador que lo mató
++	int clanId = 0;
++	int crestId = 0;
++	int messagemax = 0;
++	private ScheduledFuture<?> _aiTask;
++	
++	public static L2Spawn _npcSpawn;
++	
++	public L2ClanStrongholdInstance(final int objectId, final L2NpcTemplate template)
++	{
++		super(objectId, template);
++		if (_aiTask != null)
++		{
++			_aiTask.cancel(true);
++		}
++		
++		_aiTask = ThreadPoolManager.getInstance().scheduleAiAtFixedRate(new TeriusAI(this), 3000, 3000);
++		
++	}
++	
++	@Override
++	public void onAction(L2PcInstance player)
++	{
++		
++		if (this != player.getTarget())
++		{
++			player.setTarget(this);
++			player.sendPacket(new MyTargetSelected(getObjectId(), 0));
++			player.sendPacket(new ValidateLocation(this));
++		}
++		else
++		{
++			if (!canInteract(player))
++			{
++				player.getAI().setIntention(CtrlIntention.AI_INTENTION_INTERACT, this);
++			}
++			else
++			{
++				// Rotate the player to face the instance
++				player.sendPacket(new MoveToPawn(player, this, L2NpcInstance.INTERACTION_DISTANCE));
++				
++				if (hasRandomAnimation())
++				{
++					onRandomAnimation();
++				}
++				
++				showMainWindow(player);
++				
++				// Send ActionFailed to the player in order to avoid he stucks
++				player.sendPacket(ActionFailed.STATIC_PACKET);
++			}
++		}
++	}
++	
++	public void showMainWindow(L2PcInstance player)
++	{
++		
++		// Crear el HTML con la información de la historia
++		NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++		html.setFile("data/html/mods/ClanStronghold.htm");
++		html.replace("%objectId%", String.valueOf(getObjectId()));
++		html.replace("%npcname%", getName());
++		
++		player.sendPacket(html);
++	}
++	
++	@Override
++	public void onBypassFeedback(L2PcInstance player, String command)
++	{
++		if (command.startsWith("capturar"))
++		{
++			if (isAlikeDead())
++			{
++				super.onBypassFeedback(player, command);
++				return;
++			}
++			// Obtén el nombre del clan del jugador que lo mató
++			clanName = player.getClan() != null ? player.getClan().getName() : ""; // Esto asume que la clase Player tiene un método para obtener el Clan al que pertenece
++			
++			if ((player.getClanId() == clanId && player.getClan().getCrestId() == crestId))
++			{
++				player.sendMessage("¡Ya has capturado este NPC!");
++				return;
++			}
++			
++			if (clanId > 0 && crestId > 0)
++			{
++				player.sendMessage("Este Npc Le Pertenece a un clan ahora mismo " + "Si Quieres Capturarme Tendras que matarme");
++				return;
++			}
++			
++			L2Clan playerClan = player.getClan();
++			if (playerClan == null)
++			{
++				player.sendMessage("Debes pertenecer a un clan para capturar este NPC.");
++				return;
++			}
++			
++			int playerClanId = playerClan.getClanId();
++			CURRENT_CLAN_ID.put(player.getClanId(), getObjectId());
++			setNpcValue(playerClanId);
++			setTitle("Clan: " + clanName);
++			
++			clanId = playerClan.getClanId();
++			crestId = playerClan.getCrestId();
++			setCrestId(playerClan.getCrestId());
++			setClanId(player.getClanId());
++			playerClan.setHasCrest(true);
++			broadcastTitleInfo();
++			setIsInvul(false);
++			player.sendMessage("¡Has capturado con exito este NPC!" + " Para Tu Clan " + clanName);
++			return;
++		}
++		
++		super.onBypassFeedback(player, command);
++	}
++	
++	/**
++	 * Sends a chat to all _knowObjects.
++	 * @param chat message to say
++	 */
++	public void broadcastChat(final String chat)
++	{
++		final Map<Integer, L2PcInstance> _knownPlayers = getKnownList().getKnownPlayers();
++		
++		if (_knownPlayers == null)
++		{
++			if (Config.DEVELOPER)
++			{
++				LOG.info("broadcastChat _players == null");
++			}
++			return;
++		}
++		
++		// we send message to known players only!
++		if (_knownPlayers.size() > 0 && messagemax <= 2)
++		{
++			CreatureSay cs = new CreatureSay(getObjectId(), 0, getName(), chat);
++			
++			// we interact and list players here
++			for (final L2PcInstance players : _knownPlayers.values())
++			{
++				
++				// finally send packet :D
++				players.sendPacket(cs);
++				messagemax++;
++				
++			}
++		}
++	}
++	
++	@Override
++	public boolean doDie(L2Character killer)
++	{
++		super.doDie(killer);
++		if (killer instanceof L2PcInstance)
++		{
++			
++			L2PcInstance activeChar = ((L2PcInstance) killer);
++			
++			// Obtén el nombre del clan del jugador que lo mató
++			clanName = activeChar.getClan() != null ? activeChar.getClan().getName() : ""; // Esto asume que la clase Player tiene un método para obtener el Clan al que pertenece
++			
++			L2Clan clan = ((L2PcInstance) killer).getClan();
++			if (clan != null)
++			{
++				clanId = 0;
++				crestId = 0;
++				messagemax--;
++				
++			}
++			else
++			{
++				
++				clanId = 0;
++				crestId = 0;
++				messagemax--;
++				
++				ThreadPoolManager.getInstance().scheduleGeneral(() -> doSpawn(), 1000);
++			}
++			
++		}
++		return true;
++	}
++	
++	public void setCrestId(int crestId)
++	{
++		this.crestId = crestId;
++	}
++	
++	public void doSpawn()
++	{
++		
++		spawnMe(getX(), getY(), getZ());
++		
++		onSpawn();
++	}
++	
++	// Método para enviar la información de título del NPC a los jugadores cercanos
++	@Override
++	void broadcastTitleInfo()
++	{
++		for (L2PcInstance player : L2World.getInstance().getAllPlayers().values())
++		{
++			player.sendPacket(new NpcInfo(this, player));
++		}
++	}
++	
++	// Método para enviar la información de título del NPC a los jugadores cercanos
++	void broadcastTitleInfoRadius()
++	{
++		for (L2PcInstance player : getKnownList().getKnownPlayersInRadius(1800))
++		{
++			player.sendPacket(new NpcInfo(this, player));
++		}
++	}
++	
++	private class TeriusAI implements Runnable
++	{
++		private final L2ClanStrongholdInstance _caster;
++		
++		protected TeriusAI(final L2ClanStrongholdInstance caster)
++		{
++			_caster = caster;
++		}
++		
++		private final SkillHolder[] CLAN_BUFFS =
++		{
++			new SkillHolder(Config.CLAN_BUFF_ID, 1),
++		};
++		
++		@Override
++		public void run()
++		{
++			for (final L2PcInstance player : getKnownList().getKnownPlayers().values())
++			{
++				
++				for (SkillHolder skills : CLAN_BUFFS)
++				{
++					TeriusCast(player, skills.getSkill());
++				}
++				
++			}
++			
++			for (L2PcInstance player : getKnownList().getKnownPlayersInRadius(900))
++			{
++				if (!isInsideRadius(player, 900, false, false) && messagemax >= 1)
++				{
++					messagemax--;
++					messagemax = 0;
++					player.sendMessage("test");
++				}
++			}
++			
++			// for (L2PcInstance player : getKnownList().getKnownPlayersInRadius(900))
++			// {
++			// if (!isInsideRadius(player, 900, false, false) && clanId > 0 && crestId > 0)
++			// {
++			// broadcastTitleInfoRadius();
++			// }
++			// }
++			
++		}
++		
++ //in case of using a buff with stats use this
++       private boolean TeriusCastStats(final L2PcInstance player, L2Skill skill)
++        {
++            if (player.isDead() || !player.isVisible() || !isInsideRadius(player, 900, false, false))
++            {
++                return false;
++            }
++            
++
++			if (clanId > 0 && crestId > 0)
++			{
++				broadcastTitleInfoRadius();
++			}
++			
++			L2Clan playerClan = player.getClan();
++			if (playerClan != null && playerClan.getClanId() == clanId){
++            if (player.getFirstEffect(skill) == null)
++           {
++                SkillTable.getInstance().getInfo(skill.getId(), skill.getLevel()).getEffects(player, player);
++                skill.getEffects(_caster, player, false, false, false);
++                broadcastPacket(new MagicSkillUser(_caster, player, skill.getId(), skill.getLevel(), 1000, 0));
++                
++                return true;
++            }
++            }
++            return false;
++        }
++
++
++
++
++
++		private boolean TeriusCast(final L2PcInstance player, L2Skill skill)
++		{
++			if (player.isDead() || !player.isVisible() || !isInsideRadius(player, 900, false, false))
++			{
++				return false;
++			}
++			
++			if (clanId > 0 && crestId > 0)
++			{
++				broadcastTitleInfoRadius();
++			}
++			
++			L2Clan playerClan = player.getClan();
++			if (playerClan != null && playerClan.getClanId() == clanId)
++			{
++				L2Effect firstEffect = player.getFirstEffect(skill);
++				if (firstEffect == null || firstEffect.getTime() < 180)
++				{
++					// player.stopSkillEffects(skill.getId()); // Detiene el efecto del buff anterior si el tiempo restante es menor a 1 segundo
++					
++					SkillTable.getInstance().getInfo(skill.getId(), skill.getLevel()).getEffects(player, player);
++					skill.getEffects(_caster, player, false, false, false);
++					broadcastPacket(new MagicSkillUser(_caster, player, skill.getId(), skill.getLevel(), 1000, 0));
++					return true;
++				}
++			}
++			
++			return false;
++		}
++		
++	}
++	
++}
+diff --git src/l2jwins/game/model/actor/stat/CharStat.java src/l2jwins/game/model/actor/stat/CharStat.java
+index fa97777..68bc1cb 100644
+--- src/l2jwins/game/model/actor/stat/CharStat.java
++++ src/l2jwins/game/model/actor/stat/CharStat.java
+@@ -92,6 +92,10 @@
+ 				case STAT_MEN:
+ 				case STAT_STR:
+ 				case STAT_WIT:
++				case XP_RATE:
++				case SP_RATE:
++				case DROP_RATE:
++				case SPOIL_RATE:
+ 					env.value = 1.0;
+ 			}
+ 		}
+diff --git src/l2jwins/game/network/serverpackets/NpcInfo.java src/l2jwins/game/network/serverpackets/NpcInfo.java
+index 9af0b29..5c3caea 100644
+--- src/l2jwins/game/network/serverpackets/NpcInfo.java
++++ src/l2jwins/game/network/serverpackets/NpcInfo.java
+@@ -24,6 +24,7 @@
+ import l2jwins.game.model.L2Character;
+ import l2jwins.game.model.L2Clan;
+ import l2jwins.game.model.L2Summon;
++import l2jwins.game.model.actor.instance.L2ClanStrongholdInstance;
+ import l2jwins.game.model.actor.instance.L2MonsterInstance;
+ import l2jwins.game.model.actor.instance.L2NpcInstance;
+ import l2jwins.game.model.actor.instance.L2PetInstance;
+@@ -46,7 +47,6 @@
+ 	private int _collisionHeight, _collisionRadius;
+ 	private String _name = "";
+ 	private String _title = "";
+-	
+ 	private int _clanCrest;
+ 	private int _clanId;
+ 	private int _allyCrest;
+@@ -122,6 +122,32 @@
+ 		_y = _activeChar.getY();
+ 		_z = _activeChar.getZ();
+ 		
++		if (_activeChar instanceof L2ClanStrongholdInstance)
++		{
++			final L2Clan clan = ClanTable.getInstance().getClan(cha.getClanId());
++			if ((clan != null) && ((cha.getTemplate().getNpcId() == 34156 /* ID Npc Clan Stronghold Device */) || (!cha.isMonster())))
++			{
++				_clanCrest = clan.getCrestId();
++				_clanId = clan.getClanId();
++				_allyCrest = clan.getAllyCrestId();
++				_allyId = clan.getAllyId();
++				
++			}
++		}
++		
+ 		if (Config.SHOW_NPC_CREST)
+ 		{
+ 			if (cha.isInsideZone(ZoneId.ZONE_PEACE) && cha.getCastle().getOwnerId() != 0)
+@@ -251,6 +277,7 @@
+ 			writeD(_clanCrest);
+ 			writeD(_allyId);
+ 			writeD(_allyCrest);
++			
+ 		}
+ 		else
+ 		{
+diff --git src/l2jwins/game/skills/Stats.java src/l2jwins/game/skills/Stats.java
+index b5e2fe1..50aff3b 100644
+--- src/l2jwins/game/skills/Stats.java
++++ src/l2jwins/game/skills/Stats.java
+@@ -218,6 +218,11 @@
+ 	HP_CONSUME_RATE("HpConsumeRate"),
+ 	MP_CONSUME("MpConsume"),
+ 	SOULSHOT_COUNT("soulShotCount"),
++	// custom
++	XP_RATE("xpGain"),
++	SP_RATE("spGain"),
++	DROP_RATE("dropRate"),
++	SPOIL_RATE("spoilRate"),
+ 	
+ 	// Skill mastery
+ 	SKILL_MASTERY("skillMastery");

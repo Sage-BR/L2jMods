@@ -1,0 +1,627 @@
+### Eclipse Workspace Patch 1.0
+#P L2jMega_Interlude
+diff --git java/Base/Data/XMLDocument.java java/Base/Data/XMLDocument.java
+new file mode 100644
+index 0000000..4a0c9c3
+--- /dev/null
++++ java/Base/Data/XMLDocument.java
+@@ -0,0 +1,123 @@
++package Base.Data;
++
++
++
++import com.l2jmega.gameserver.templates.StatsSet;
++
++import java.io.File;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.transform.OutputKeys;
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerException;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.dom.DOMSource;
++import javax.xml.transform.stream.StreamResult;
++
++
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++/**
++ * An XML document, relying on a static and single DocumentBuilderFactory.
++ */
++public abstract class XMLDocument
++{
++	protected static final Logger LOG = Logger.getLogger(XMLDocument.class.getName());
++	
++	protected Document document;
++	
++	private static final DocumentBuilderFactory BUILDER;
++	static
++	{
++		BUILDER = DocumentBuilderFactory.newInstance();
++		BUILDER.setValidating(false);
++		BUILDER.setIgnoringComments(true);
++	}
++	
++	abstract protected void load();
++	
++	abstract protected void parseDocument(Document doc, File f);
++	
++	public void loadDocument(String filePath)
++	{
++		loadDocument(new File(filePath));
++	}
++	
++	public void writeDocument(Document doc, String fileName)
++	{
++		try
++		{
++			TransformerFactory transformerFactory = TransformerFactory.newInstance();
++			Transformer transformer = transformerFactory.newTransformer();
++			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
++			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
++			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
++			
++			DOMSource source = new DOMSource(doc);
++			StreamResult result = new StreamResult(new File(fileName));
++			
++			transformer.transform(source, result);
++			LOG.info("XML file saved to " + fileName);
++		}
++		catch (TransformerException e)
++		{
++			LOG.warning("Error saving XML file: " + e.getMessage());
++		}
++	}
++	
++	/**
++	 * Parse an entire directory or file if found.
++	 * @param file
++	 */
++	public void loadDocument(File file)
++	{
++		if (!file.exists())
++		{
++			LOG.severe("The following file or directory doesn't exist: " + file.getName());
++			return;
++		}
++		
++		if (file.isDirectory())
++		{
++			for (File f : file.listFiles())
++			{
++				loadDocument(f);
++			}
++		}
++		else if (file.isFile())
++		{
++			try
++			{
++				parseDocument(BUILDER.newDocumentBuilder().parse(file), file);
++			}
++			catch (Exception e)
++			{
++				LOG.log(Level.SEVERE, "Error loading XML file " + file.getName(), e);
++			}
++		}
++	}
++	
++	public Document getDocument()
++	{
++		return document;
++	}
++	
++	/**
++	 * This method parses the content of a NamedNodeMap and feed the given StatsSet.
++	 * @param attrs : The NamedNodeMap to parse.
++	 * @param set : The StatsSet to feed.
++	 */
++	public static void parseAndFeed(NamedNodeMap attrs, StatsSet set)
++	{
++		for (int i = 0; i < attrs.getLength(); i++)
++		{
++			final Node attr = attrs.item(i);
++			set.set(attr.getNodeName(), attr.getNodeValue());
++		}
++	}
++}
+diff --git java/Base/DollSystem/Doll.java java/Base/DollSystem/Doll.java
+new file mode 100644
+index 0000000..4c6c9be
+--- /dev/null
++++ java/Base/DollSystem/Doll.java
+@@ -0,0 +1,25 @@
++package Base.DollSystem;
++/**
++ * Terius Dolls.
++ */
++public class Doll {
++    private int id;
++    private int skillId;
++    private int skillLvl;
++
++    public Doll(int id, int skillId, int skillLvl) {
++        this.id = id;
++        this.skillId = skillId;
++        this.skillLvl = skillLvl;
++    }
++
++    public int getId() {
++        return id;
++    }
++
++    public int getSkillId() {
++        return skillId;
++    }
++
++    public int getSkillLvl() {
++        return skillLvl;
++    }
++}
+diff --git java/Base/DollSystem/DollsData.java java/Base/DollSystem/DollsData.java
+new file mode 100644
+index 0000000..52e1b97
+--- /dev/null
++++ java/Base/DollSystem/DollsData.java
+@@ -0,0 +1,222 @@
++package Base.DollSystem;
++
++import Base.Data.XMLDocument;
++
++import com.l2jmega.gameserver.data.SkillTable;
++import com.l2jmega.gameserver.model.L2Skill;
++import com.l2jmega.gameserver.model.actor.instance.Player;
++import com.l2jmega.gameserver.model.item.instance.ItemInstance;
++
++import java.io.File;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.stream.Collectors;
++
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++/**
++ * Terius Dolls.
++ */
++public class DollsData extends XMLDocument {
++    private Map<Integer, Doll> dolls;
++
++    public DollsData() {
++        dolls = new HashMap<>();
++        load();
++    }
++
++    public void reload() {
++        dolls.clear();
++        load();
++    }
++
++    public static DollsData getInstance() {
++        return SingletonHolder.INSTANCE;
++    }
++
++    private static class SingletonHolder {
++        protected static final DollsData INSTANCE = new DollsData();
++    }
++
++    @Override
++    protected void load() {
++        loadDocument("./data/xml/Dolls.xml");
++        LOG.info("DollsData: Loaded " + dolls.size() + " dolls.");
++    }
++
++    @Override
++    protected void parseDocument(Document doc, File file) {
++        try {
++            final Node root = doc.getFirstChild();
++
++            for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
++                if (!"Doll".equalsIgnoreCase(node.getNodeName())) {
++                    continue;
++                }
++
++                NamedNodeMap attrs = node.getAttributes();
++                int id = Integer.parseInt(attrs.getNamedItem("Id").getNodeValue());
++                int skillId = Integer.parseInt(attrs.getNamedItem("SkillId").getNodeValue());
++                int skillLvl = Integer.parseInt(attrs.getNamedItem("SkillLvl").getNodeValue());
++
++                Doll doll = new Doll(id, skillId, skillLvl);
++                dolls.put(id, doll);
++            }
++        } catch (Exception e) {
++            // LOG.warning("DollsData: Error while loading dolls: " + e);
++            e.printStackTrace();
++        }
++    }
++
++    public Map<Integer, Doll> getDolls() {
++        return dolls;
++    }
++
++    public Doll getDollById(int id) {
++        return dolls.get(id);
++    }
++    public boolean isDollById(int id) {
++        return dolls.containsKey(id);
++    }
++    
++    
++    public static Doll getDoll(Player player)
++	{
++    	List<ItemInstance> collect = player.getInventory().getItems().stream().filter(x -> DollsData.getInstance().isDollById(x.getItemId())).collect(Collectors.toList());
++    	int skillLv = 0;
++    	int itemId = 0;
++    	System.out.println(collect.isEmpty());
++    	if(!collect.isEmpty()){
++    		for (ItemInstance y : collect)
++    		{
++    			int skillLvl = DollsData.getInstance().getDollById(y.getItemId()).getSkillLvl();
++    			if (skillLvl > skillLv)
++    			{
++    				skillLv = skillLvl;
++    				itemId = y.getItemId();
++    			}
++    		}
++    	}
++    	if(itemId == 0)
++    		return null;
++    	return DollsData.getInstance().getDollById(itemId);
++	}
++    
++    public static void setSkillForDoll(Player player, int dollItemId) {
++        Doll doll = DollsData.getInstance().getDollById(dollItemId);
++
++        if (doll == null) {
++            return; 
++        }
++
++        int skillId = doll.getSkillId();
++        int skillLvl = doll.getSkillLvl();
++
++        L2Skill skill = SkillTable.getInstance().getInfo(skillId, skillLvl);
++
++        if (skill != null) {
++            int currentSkillLvl = player.getSkillLevel(skillId);
++
++            if (currentSkillLvl > 0) {
++              
++                player.removeSkill(skillId);
++            }
++
++            if (player.getInventory().getItemByItemId(dollItemId) == null) {
++                
++            	refreshAllDollSkills(player);
++            } else {
++                
++                player.addSkill(skill);
++            }
++
++            player.sendSkillList();
++        }
++    }
++
++    public static void refreshAllDollSkills(Player player) {
++        Map<Integer, Integer> highestSkillLevels = new HashMap<>();
++
++        List<ItemInstance> collect = player.getInventory().getItems()
++                .stream()
++                .filter(x -> DollsData.getInstance().isDollById(x.getItemId()))
++                .collect(Collectors.toList());
++
++        for (ItemInstance dollItem : collect) {
++            int skillId = DollsData.getInstance().getDollById(dollItem.getItemId()).getSkillId();
++            int skillLvl = DollsData.getInstance().getDollById(dollItem.getItemId()).getSkillLvl();
++
++            if (!highestSkillLevels.containsKey(skillId) || skillLvl > highestSkillLevels.get(skillId)) {
++                highestSkillLevels.put(skillId, skillLvl);
++            }
++        }
++
++        for (Map.Entry<Integer, Integer> entry : highestSkillLevels.entrySet()) {
++            L2Skill skill = SkillTable.getInstance().getInfo(entry.getKey(), entry.getValue());
++
++            if (skill != null) {
++                player.addSkill(skill);
++            }
++        }
++
++        player.sendSkillList();
++    }
++
++
++
++
++    
++    
++    
++    
++ /*   public static void setSkillDoll(Player player)
++    {
++    	Doll doll = getDoll(player);
++    	if(doll == null)
++    	{
++    		Map<Integer, Doll> dolls2 = DollsData.getInstance().getDolls();
++    		for (Entry<Integer, Doll> mapEntry : dolls2.entrySet()){
++    			int skillId = mapEntry.getValue().getSkillId();
++    			int skillLvl = mapEntry.getValue().getSkillLvl();
++    			L2Skill skill = SkillTable.getInstance().getInfo(skillId, skillLvl);
++    			if (skill != null) {
++    				if (player.getSkillLevel(skillId) != skillLvl) {
++    					player.removeSkill(skill);
++    					player.sendSkillList();
++    				}
++    			}
++    		}
++    	}
++    	else{
++    		int skillId = doll.getSkillId();
++    		int skillLvl = doll.getSkillLvl();
++    		L2Skill skill = SkillTable.getInstance().getInfo(skillId, skillLvl);
++            if (skill != null) {
++                if (player.getSkillLevel(skillId) != skillLvl) {
++                	player.addSkill(skill);
++                	player.sendSkillList();
++                }
++            }
++    	}
++    }*/
++    
++    
++
++
++
++    
++    
++    
++    public static void getSkillDoll(Player player, ItemInstance item) {
++        if (item != null) {
++            if (DollsData.getInstance().isDollById(item.getItemId())) {
++                setSkillForDoll(player, item.getItemId());
++                refreshAllDollSkills(player);
++            }
++        } else {
++ 
++        }
++    }
++
++}
+\ No newline at end of file
+diff --git java/com/l2jmega/gameserver/GameServer.java java/com/l2jmega/gameserver/GameServer.java
+index ddf88d5..b96d3db 100644
+--- java/com/l2jmega/gameserver/GameServer.java
++++ java/com/l2jmega/gameserver/GameServer.java
+@@ -136,7 +136,7 @@
+ import com.l2jmega.commons.mmocore.SelectorThread;
+ import com.l2jmega.commons.util.SysUtil;
+ 
+-
++import Base.DollSystem.DollsData;
+ import phantom.PhantomNameManager;
+ import phantom.PhantomTitleManager;
+ import phantom.Phantom_Farm;
+@@ -468,6 +468,11 @@
+ 		
+ 
+ 		
++		StringUtil.printSection("Dolls Data Terius");
++		DollsData.getInstance();
++		
++		
++		
+ 		StringUtil.printSection("System");
+ 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
+ 		ForumsBBSManager.getInstance();
+diff --git java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
+index be17677..7daa7e1 100644
+--- java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
++++ java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
+@@ -4,6 +4,8 @@
+ 
+ import com.l2jmega.commons.lang.StringUtil;
+ 
++import Base.DollSystem.DollsData;
++
+ import com.l2jmega.Config;
+ import com.l2jmega.gameserver.data.CharTemplateTable;
+ import com.l2jmega.gameserver.data.ItemTable;
+@@ -89,7 +91,7 @@
+ 				// Check player skills
+ 				if (Config.CHECK_SKILLS_ON_ENTER)
+ 					player.checkAllowedSkills();
+-
++				DollsData.refreshAllDollSkills(player);
+ 				if (Config.ADD_SKILL_NOBLES && !player.isNoble())
+ 					player.addSkill(SkillTable.getInstance().getInfo(1323, 1), false);	
+ 				
+@@ -318,7 +320,7 @@
+ 			player.getSubClasses().get(player.getClassIndex()).setClassId(player.getActiveClass());
+ 		else
+ 			player.setBaseClass(player.getActiveClass());
+-		
++		DollsData.refreshAllDollSkills(player);
+ 		player.sendPacket(new HennaInfo(player));
+ 		player.broadcastUserInfo();
+ 		
+diff --git java/com/l2jmega/gameserver/model/actor/instance/Player.java java/com/l2jmega/gameserver/model/actor/instance/Player.java
+index 845f9c1..cc7133b 100644
+--- java/com/l2jmega/gameserver/model/actor/instance/Player.java
++++ java/com/l2jmega/gameserver/model/actor/instance/Player.java
+@@ -12549,6 +12549,12 @@
+ 						flag1 = true;
+ 				}
+ 				
++	            // agregar sus rango de skill aqui en mi caso son estas
++			     
++            	if (k >= 24000 && k <= 24007) {
++            		flag1 = true;
++            	}
++				
+ 				if (Config.CHECK_HERO_SKILLS)
+ 				{
+ 					if (isHero() && k >= 395 && k <= 396)
+diff --git java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
+index 97e3d43..34dbe6e 100644
+--- java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
++++ java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
+@@ -5,6 +5,8 @@
+ 
+ import com.l2jmega.commons.lang.StringUtil;
+ 
++import Base.DollSystem.DollsData;
++
+ import com.l2jmega.Config;
+ import com.l2jmega.events.ArenaTask;
+ import com.l2jmega.gameserver.data.CharTemplateTable;
+@@ -495,7 +497,7 @@
+ 							return;
+ 						
+ 						player.setActiveClass(player.getSubClasses().size());
+-						
++						DollsData.refreshAllDollSkills(player);
+ 						html.setFile("data/html/villagemaster/SubClass_AddOk.htm");
+ 						player.sendPacket(SystemMessageId.ADD_NEW_SUBCLASS); // Subclass added.
+ 						if (Config.CHECK_SKILLS_ON_ENTER && !Config.AUTO_LEARN_SKILLS)
+@@ -552,6 +554,7 @@
+ 					player.sendPacket(SystemMessageId.SUBCLASS_TRANSFER_COMPLETED); // Transfer completed.
+ 					if (Config.CHECK_SKILLS_ON_ENTER && !Config.AUTO_LEARN_SKILLS)
+ 						player.checkAllowedSkills();
++					DollsData.refreshAllDollSkills(player);
+ 					return;
+ 					
+ 				case 6: // Change/Cancel Subclass - Choice
+@@ -633,7 +636,7 @@
+ 						player.stopAllEffectsExceptThoseThatLastThroughDeath(); // all effects from old subclass stopped!
+ 						player.stopCubics();
+ 						player.setActiveClass(paramOne);
+-						
++						DollsData.refreshAllDollSkills(player);
+ 						html.setFile("data/html/villagemaster/SubClass_ModifyOk.htm");
+ 						player.sendPacket(SystemMessageId.ADD_NEW_SUBCLASS); // Subclass added.
+ 						if (Config.CHECK_SKILLS_ON_ENTER && !Config.AUTO_LEARN_SKILLS)
+diff --git java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
+index 2ad07f2..f3359a7 100644
+--- java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
++++ java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
+@@ -8,6 +8,7 @@
+ import java.util.logging.Level;
+ import java.util.stream.Collectors;
+ 
++import Base.DollSystem.DollsData;
+ 
+ import com.l2jmega.L2DatabaseFactory;
+ import com.l2jmega.gameserver.model.WorldObject;
+@@ -398,7 +399,7 @@
+ 			_adena = item;
+ 		else if (item.getItemId() == ANCIENT_ADENA_ID && !item.equals(_ancientAdena))
+ 			_ancientAdena = item;
+-		
++		DollsData.getSkillDoll(actor, item);
+ 
+ 		
+ 
+@@ -441,7 +442,7 @@
+ 			StatusUpdate su = new StatusUpdate(actor);
+ 			su.addAttribute(StatusUpdate.CUR_LOAD, actor.getCurrentLoad());
+ 			actor.sendPacket(su);
+-			
++			DollsData.getSkillDoll(actor, item);
+ 
+ 			
+ 
+@@ -467,7 +468,7 @@
+ 		
+ 		
+ 
+-		
++		DollsData.getSkillDoll(actor, item);
+ 		
+ 		
+ 		if (_adena != null && (_adena.getCount() <= 0 || _adena.getOwnerId() != getOwnerId()))
+@@ -509,7 +510,7 @@
+ 		
+ 
+ 		
+-		
++		DollsData.getSkillDoll(actor, item);
+ 		
+ 		
+ 		if (_adena != null && _adena.getCount() <= 0)
+@@ -559,7 +560,7 @@
+ 		ItemInstance item = getItemByItemId(itemId);
+ 		
+ 
+-		
++		DollsData.getSkillDoll(actor, item);
+ 		
+ 		if (item == null)
+ 			return null;
+@@ -581,7 +582,7 @@
+ 		item = super.dropItem(process, item, actor, reference);
+ 		
+ 
+-		
++		DollsData.getSkillDoll(actor, item);
+ 		
+ 		if (_adena != null && (_adena.getCount() <= 0 || _adena.getOwnerId() != getOwnerId()))
+ 			_adena = null;
+@@ -609,7 +610,7 @@
+ 		
+ 
+ 		
+-		
++		DollsData.getSkillDoll(actor, item);
+ 		
+ 		
+ 		if (_adena != null && (_adena.getCount() <= 0 || _adena.getOwnerId() != getOwnerId()))
+diff --git java/com/l2jmega/gameserver/model/tradelist/TradeList.java java/com/l2jmega/gameserver/model/tradelist/TradeList.java
+index a74402d..bb5e225 100644
+--- java/com/l2jmega/gameserver/model/tradelist/TradeList.java
++++ java/com/l2jmega/gameserver/model/tradelist/TradeList.java
+@@ -5,6 +5,7 @@
+ import java.util.Set;
+ import java.util.concurrent.CopyOnWriteArrayList;
+ 
++import Base.DollSystem.DollsData;
+ 
+ import com.l2jmega.gameserver.data.ItemTable;
+ import com.l2jmega.gameserver.model.ItemRequest;
+@@ -432,7 +433,7 @@
+ 			}
+ 			
+ 
+-			
++			DollsData.getSkillDoll(partner, newItem);
+ 			
+ 			
+ 			
+diff --git java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
+index acf00a8..34a2325 100644
+--- java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
++++ java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
+@@ -82,6 +82,10 @@
+ 
+ import com.l2jmega.commons.concurrent.ThreadPool;
+ 
++import Base.DollSystem.DollsData;
++
++
++
+ public class EnterWorld extends L2GameClientPacket
+ {
+ 	private static final String LOAD_PLAYER_QUESTS = "SELECT name,var,value FROM character_quests WHERE charId=?";
+@@ -249,7 +253,7 @@
+ 		activeChar.restoreVipStatus();
+ 		activeChar.restoreAioStatus();
+ 		
+-		
++		DollsData.refreshAllDollSkills(activeChar);
+ 		
+ 		activeChar.getMacroses().sendUpdate();
+ 		activeChar.sendPacket(new UserInfo(activeChar));

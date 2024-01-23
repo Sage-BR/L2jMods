@@ -1,0 +1,203 @@
+diff --git a/config/CustomMods/OfflineShop.ini b/config/CustomMods/OfflineShop.ini
+index 4fd055a..1d329a1 100644
+--- a/config/CustomMods/OfflineShop.ini
++++ b/config/CustomMods/OfflineShop.ini
+@@ -33,4 +33,7 @@
+ OfflineDisconnectFinished = True
+ 
+ #Offline Effect Sleep
+ OfflineSetSleepEffect = True
+
++#Coloque o Id do item abaixo, ele podera se usado sem restrição em privatestore.
++UseItemId = 6392
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 8c4cc43..91fc0f1 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -471,6 +471,7 @@
+ 	public static int OFFLINE_MAX_DAYS;
+ 	public static boolean OFFLINE_DISCONNECT_FINISHED;
+ 	public static boolean OFFLINE_SET_SLEEP;
++	public static int ITEM_PERMITIDO_PARA_USAR_NA_LOJA_ID;
+ 	
+ 	/** Brazil Settings */
+ 	public static boolean ENABLE_ALTERNATIVE_SKILL_DURATION;
+@@ -1253,6 +1254,7 @@
+ 		RESTORE_OFFLINERS = offlineshop.getProperty("RestoreOffliners", false);
+ 		OFFLINE_MAX_DAYS = offlineshop.getProperty("OfflineMaxDays", 10);
+ 		OFFLINE_DISCONNECT_FINISHED = offlineshop.getProperty("OfflineDisconnectFinished", true);
++		ITEM_PERMITIDO_PARA_USAR_NA_LOJA_ID = offlineshop.getProperty("UseItemId", 10);
+ 
+ 	}
+ 	/**
+diff --git a/java/net/sf/l2j/gameserver/handler/ItemHandler.java b/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+index 7add89f..07bb3f7 100644
+--- a/java/net/sf/l2j/gameserver/handler/ItemHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+@@ -17,6 +17,7 @@
+ import net.sf.l2j.gameserver.handler.itemhandlers.Keys;
+ import net.sf.l2j.gameserver.handler.itemhandlers.Maps;
+ import net.sf.l2j.gameserver.handler.itemhandlers.MercTicket;
++import net.sf.l2j.gameserver.handler.itemhandlers.OfflineClick;
+ import net.sf.l2j.gameserver.handler.itemhandlers.PaganKeys;
+ import net.sf.l2j.gameserver.handler.itemhandlers.PetFood;
+ import net.sf.l2j.gameserver.handler.itemhandlers.Recipes;
+@@ -42,6 +43,7 @@
+ 	
+ 	protected ItemHandler()
+ 	{
++		registerItemHandler(new OfflineClick());
+ 		registerItemHandler(new BeastSoulShot());
+ 		registerItemHandler(new BeastSpice());
+ 		registerItemHandler(new BeastSpiritShot());
+diff --git a/java/net/sf/l2j/gameserver/handler/itemhandlers/OfflineClick.java b/java/net/sf/l2j/gameserver/handler/itemhandlers/OfflineClick.java
+new file mode 100644
+index 0000000..baa34ea
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/itemhandlers/OfflineClick.java
+@@ -0,0 +1,114 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import net.sf.l2j.commons.concurrent.ThreadPool;
++
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.actor.Playable;
++import net.sf.l2j.gameserver.model.actor.instance.Player;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.network.serverpackets.ActionFailed;
++import net.sf.l2j.gameserver.network.serverpackets.ExShowScreenMessage;
++
++/**
++ * @author Sarada
++ *
++ */
++public class OfflineClick implements IItemHandler
++{
++	
++	@Override
++	public void useItem(Playable playable, ItemInstance item, boolean forceUse)
++	{
++		if (!(playable instanceof Player))
++			return;
++		
++		final Player activeChar = (Player) playable;
++		if ((!activeChar.isInStoreMode() && (!activeChar.isCrafting())) || !activeChar.isSitting())
++		{
++			activeChar.sendMessage("You are not running a private store or private work shop.");
++			activeChar.sendPacket(ActionFailed.STATIC_PACKET);
++			return;
++		}
++		if (activeChar.isInCombat() && !activeChar.isGM())
++		{
++			activeChar.sendMessage("You cannot Logout while is in Combat mode.");
++			activeChar.sendPacket(ActionFailed.STATIC_PACKET);
++			return;
++		}
++		if (activeChar.isFestivalParticipant())
++		{
++			activeChar.sendMessage("You can't use this item while participating in the Festival!");
++			return;
++		}
++		if (activeChar.isInOlympiadMode())
++		{
++			activeChar.sendMessage("You can't teleport while you are in olympiad");
++			return;
++		}
++		if (activeChar.isInObserverMode())
++		{
++			activeChar.sendMessage("You can't teleport while you are in observer mode");
++			return;
++		}
++		activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false);
++		this.initCountdown(activeChar, 5);
++		ThreadPool.schedule(new Runnable() {
++			@Override
++			public void run() {
++			activeChar.logout();
++			}
++		}, 5000L);
++	}
++	
++	class Countdown implements Runnable
++	{
++		private final Player _player;
++		private int _time;
++
++		public Countdown(final Player player, final int time) {
++			this._time = time;
++			this._player = player;
++		}
++
++		/* (non-Javadoc)
++		 * @see java.lang.Runnable#run()
++		 */
++		@Override
++		public void run() {
++			if (this._player.isOnline()) {
++				switch (this._time) {
++				case 5: {
++					this._player.sendPacket(new ExShowScreenMessage(this._time + " second(s) to discoonect in!", 950));
++					break;
++				}
++				case 4: {
++					this._player.sendPacket(new ExShowScreenMessage(this._time + " second(s) to discoonect in!", 950));
++					break;
++				}
++				case 3: {
++					this._player.sendPacket(new ExShowScreenMessage(this._time + " second(s) to discoonect in!", 950));
++					break;
++				}
++				case 2: {
++					this._player.sendPacket(new ExShowScreenMessage(this._time + " second(s) to discoonect in!", 950));
++					break;
++				}
++				case 1: {
++					this._player.sendPacket(new ExShowScreenMessage(this._time + " second(s) to discoonect in!", 950));
++					break;
++				}
++				}
++				if (this._time > 1) {
++					ThreadPool.schedule(new Countdown(this._player, this._time - 1), 1000L);
++				}
++			}
++		}
++	
++
++	}
++	public void initCountdown(final Player activeChar, final int duration) {
++		if (activeChar != null && activeChar.isOnline()) {
++			ThreadPool.schedule(new Countdown(activeChar, duration), 0L);
++		}
++	}
++}
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java b/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
+index 9faf624..5c482ad 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
+@@ -41,11 +41,6 @@
+ 		final Player activeChar = getClient().getActiveChar();
+ 		if (activeChar == null)
+ 			return;
+-		if (activeChar.isInStoreMode())
+-		{
+-			activeChar.sendPacket(SystemMessageId.ITEMS_UNAVAILABLE_FOR_STORE_MANUFACTURE);
+-			return;
+-		}
+ 		if (activeChar.getActiveTradeList() != null)
+ 		{
+ 			activeChar.sendPacket(SystemMessageId.CANNOT_PICKUP_OR_USE_ITEM_WHILE_TRADING);
+@@ -55,7 +50,11 @@
+ 		final ItemInstance item = activeChar.getInventory().getItemByObjectId(_objectId);
+ 		if (item == null)
+ 			return;
+-		
++		if (activeChar.isInStoreMode() && !(item.getItemId() == Config.ITEM_PERMITIDO_PARA_USAR_NA_LOJA_ID))
++		{
++			activeChar.sendPacket(SystemMessageId.ITEMS_UNAVAILABLE_FOR_STORE_MANUFACTURE);
++			return;
++		}
+ 		if (item.getItem().getType2() == Item.TYPE2_QUEST)
+ 		{
+ 			activeChar.sendPacket(SystemMessageId.CANNOT_USE_QUEST_ITEMS);

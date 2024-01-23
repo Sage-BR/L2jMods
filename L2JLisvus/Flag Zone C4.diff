@@ -1,0 +1,117 @@
+diff --git a/java/net/sf/l2j/gameserver/model/L2Character.java b/java/net/sf/l2j/gameserver/model/L2Character.java
+index 34ad07f..1a207fd 100644
+--- a/java/net/sf/l2j/gameserver/model/L2Character.java
++++ b/java/net/sf/l2j/gameserver/model/L2Character.java
+@@ -178,8 +178,8 @@
+ 	public static final byte ZONE_BOSS = 12;
+ 	public static final byte ZONE_DANGER_AREA = 13;
+ 	public static final byte ZONE_NO_STORE = 14;
+-
+-	private final byte[] _zones = new byte[15];
++	public static final byte ZONE_FLAG = 15;
++	private final byte[] _zones = new byte[16];
+ 
+ 	protected byte _zoneValidateCounter = 4;
+ 
+diff --git a/java/net/sf/l2j/gameserver/model/zone/type/L2FlagZone.java b/java/net/sf/l2j/gameserver/model/zone/type/L2FlagZone.java
+new file mode 100644
+index 0000000..5148fb1
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/model/zone/type/L2FlagZone.java
+@@ -0,0 +1,46 @@
++package net.sf.l2j.gameserver.model.zone.type;
++
++import net.sf.l2j.gameserver.model.L2Character;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.model.zone.L2ZoneType;
++import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++
++/**
++ * An arena
++ * @author Sarada
++ */
++public class L2FlagZone extends L2ZoneType
++{
++	public L2FlagZone(int id)
++	{
++		super(id);
++	}
++	
++	@Override
++	protected void onEnter(L2Character character)
++	{
++		if (character instanceof L2PcInstance)
++		{
++			final L2PcInstance player = (L2PcInstance) character;
++			
++			character.setInsideZone(L2Character.ZONE_FLAG, true);
++			player.sendPacket(new SystemMessage(SystemMessage.ENTERED_COMBAT_ZONE));
++			player.updatePvPFlag(1);
++			return;
++		}
++	}
++	@Override
++	protected void onExit(L2Character character)
++	{
++		if (character instanceof L2PcInstance)
++		{
++			final L2PcInstance activeChar = (L2PcInstance) character;
++			character.setInsideZone(L2Character.ZONE_FLAG, false);
++			activeChar.updatePvPFlag(0);
++			activeChar.sendPacket(new SystemMessage(SystemMessage.LEFT_COMBAT_ZONE));
++			return;
++		}
++	}
++
++}
++	
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/Logout.java b/java/net/sf/l2j/gameserver/network/clientpackets/Logout.java
+index 760bb25..438831f 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/Logout.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/Logout.java
+@@ -19,6 +19,7 @@
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.SevenSignsFestival;
+ import net.sf.l2j.gameserver.datatables.SkillTable;
++import net.sf.l2j.gameserver.model.L2Character;
+ import net.sf.l2j.gameserver.model.L2Party;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance.PrivateStoreType;
+@@ -63,7 +64,11 @@
+ 			player.sendPacket(new ActionFailed());
+ 			return;
+ 		}
+-		
++		if(player.isInsideZone(L2Character.ZONE_FLAG))
++		{
++			player.sendMessage("Cannot exit while in combat zone.");
++			return;
++		}
+ 		// Don't allow leaving if player is fighting
+ 		if (AttackStanceTaskManager.getInstance().getAttackStanceTask(player))
+ 		{
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/RequestRestart.java b/java/net/sf/l2j/gameserver/network/clientpackets/RequestRestart.java
+index b854bbd..64e31a3 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/RequestRestart.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/RequestRestart.java
+@@ -19,6 +19,7 @@
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.SevenSignsFestival;
+ import net.sf.l2j.gameserver.datatables.SkillTable;
++import net.sf.l2j.gameserver.model.L2Character;
+ import net.sf.l2j.gameserver.model.L2Party;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ import net.sf.l2j.gameserver.network.L2GameClient;
+@@ -64,7 +65,11 @@
+ 			player.sendPacket(new ActionFailed());
+ 			return;
+ 		}
+-
++		if(player.isInsideZone(L2Character.ZONE_FLAG))
++		{
++			player.sendMessage("Cannot restart while in combat zone.");
++			return;
++		}
+ 		if (player.isInStoreMode())
+ 		{
+ 			player.sendMessage("Cannot restart while trading.");

@@ -1,0 +1,1038 @@
+el sql 
+
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : localhost
+Source Server Version : 50740
+Source Host           : localhost:3306
+Source Database       : l2j
+
+Target Server Type    : MYSQL
+Target Server Version : 50740
+File Encoding         : 65001
+
+Date: 2023-06-19 14:40:34
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for item_recover
+-- ----------------------------
+DROP TABLE IF EXISTS `item_recover`;
+CREATE TABLE `item_recover` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `object_id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL,
+  `item_name` varchar(255) DEFAULT NULL,
+  `enchant_level` int(11) NOT NULL,
+  `item_type` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `object_id_index` (`object_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=latin1;
+
+
+
+### Eclipse Workspace Patch 1.0
+#P OrionRev28
+
+diff --git src/l2jorion/game/handler/ItemHandler.java src/l2jorion/game/handler/ItemHandler.java
+index d009bbf..8eec4e5 100644
+--- src/l2jorion/game/handler/ItemHandler.java
++++ src/l2jorion/game/handler/ItemHandler.java
+@@ -23,7 +23,6 @@
+ import l2jorion.game.handler.item.ClanSkillsCustomItem;
+ import l2jorion.game.handler.item.CrystalCarol;
+ import l2jorion.game.handler.item.Crystals;
+-import l2jorion.game.handler.item.CustomAugmentationSystem;
+ import l2jorion.game.handler.item.CustomItemForFighter;
+ import l2jorion.game.handler.item.CustomItemForMage;
+ import l2jorion.game.handler.item.CustomPotions;
+@@ -40,6 +39,7 @@
+ import l2jorion.game.handler.item.HeroCustom365DaysItem;
+ import l2jorion.game.handler.item.HeroCustom7DaysItem;
+ import l2jorion.game.handler.item.HsItems;
++import l2jorion.game.handler.item.Item_Recover;
+ import l2jorion.game.handler.item.JackpotSeed;
+ import l2jorion.game.handler.item.MOSKey;
+ import l2jorion.game.handler.item.MapForestOfTheDead;
+@@ -133,6 +133,7 @@
+ 		registerItemHandler(new BreakingArrow());
+ 		registerItemHandler(new ChristmasTree());
+ 		registerItemHandler(new Crystals());
++		registerItemHandler(new Item_Recover());
+ 		registerItemHandler(new HsItems());
+ 		registerItemHandler(new ClanPointCustomItem());
+ 		registerItemHandler(new ClanSkillsCustomItem());
+
+
+diff --git files/game/config/main/L2jOrion.ini files/game/config/main/L2jOrion.ini
+index 32991a0..97ef069 100644
+--- files/game/config/main/L2jOrion.ini
++++ files/game/config/main/L2jOrion.ini
+@@ -503,3 +503,11 @@
+ # ItemId
+ # Format: Id,min,max,chance;Id,min,max,chance
+ GlobalDropItem = 3470,10,15,100
++
++
++#==========================================================================
++#   BLACK COUPON RECOVERY 1 ITEM ENCHANT FAILED
++#==========================================================================
++
++BlackCouponId = 6392
++
+diff --git src/Base/Data/IconTable.java src/Base/Data/IconTable.java
+new file mode 100644
+index 0000000..fdce5d7
+--- /dev/null
++++ src/Base/Data/IconTable.java
+@@ -0,0 +1,62 @@
++package Base.Data;
++
++import java.io.File;
++import java.util.HashMap;
++import java.util.Map;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++public class IconTable extends XMLDocument
++{
++	private static final Map<Integer, String> itemIcons = new HashMap<>();
++	
++	public IconTable()
++	{
++		load();
++	}
++	
++	@Override
++	protected void load()
++	{
++		loadDocument("./data/xml/icons.xml");
++		LOG.info("Loaded " + itemIcons.size() + " icons.");
++	}
++	
++	@Override
++	protected void parseDocument(Document doc, File f)
++	{
++		// First element is never read.
++		final Node n = doc.getFirstChild();
++		
++		for (Node o = n.getFirstChild(); o != null; o = o.getNextSibling())
++		{
++			if (!"icon".equalsIgnoreCase(o.getNodeName()))
++			{
++				continue;
++			}
++			
++			final NamedNodeMap attrs = o.getAttributes();
++			final int itemId = Integer.valueOf(attrs.getNamedItem("Id").getNodeValue());
++			final String value = String.valueOf(attrs.getNamedItem("value").getNodeValue());
++			
++			itemIcons.put(itemId, value);
++		}
++	}
++	
++	public String getIcon(int id)
++	{
++		return itemIcons.get(id) == null ? "icon.noimage" : itemIcons.get(id);
++	}
++	
++	public static IconTable getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final IconTable _instance = new IconTable();
++	}
++}
+diff --git src/Base/Data/XMLDocument.java src/Base/Data/XMLDocument.java
+new file mode 100644
+index 0000000..476a41d
+--- /dev/null
++++ src/Base/Data/XMLDocument.java
+@@ -0,0 +1,119 @@
++package Base.Data;
++
++import java.io.File;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import javax.xml.parsers.DocumentBuilderFactory;
++import javax.xml.transform.OutputKeys;
++import javax.xml.transform.Transformer;
++import javax.xml.transform.TransformerException;
++import javax.xml.transform.TransformerFactory;
++import javax.xml.transform.dom.DOMSource;
++import javax.xml.transform.stream.StreamResult;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++import l2jorion.game.templates.StatsSet;
++
++/**
++ * An XML document, relying on a static and single DocumentBuilderFactory.
++ */
++public abstract class XMLDocument
++{
++	protected static final Logger LOG = Logger.getLogger(XMLDocument.class.getName());
++	
++	protected Document document;
++	
++	private static final DocumentBuilderFactory BUILDER;
++	static
++	{
++		BUILDER = DocumentBuilderFactory.newInstance();
++		BUILDER.setValidating(false);
++		BUILDER.setIgnoringComments(true);
++	}
++	
++	abstract protected void load();
++	
++	abstract protected void parseDocument(Document doc, File f);
++	
++	public void loadDocument(String filePath)
++	{
++		loadDocument(new File(filePath));
++	}
++	
++	public void writeDocument(Document doc, String fileName)
++	{
++		try
++		{
++			TransformerFactory transformerFactory = TransformerFactory.newInstance();
++			Transformer transformer = transformerFactory.newTransformer();
++			transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
++			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
++			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
++			
++			DOMSource source = new DOMSource(doc);
++			StreamResult result = new StreamResult(new File(fileName));
++			
++			transformer.transform(source, result);
++			LOG.info("XML file saved to " + fileName);
++		}
++		catch (TransformerException e)
++		{
++			LOG.warning("Error saving XML file: " + e.getMessage());
++		}
++	}
++	
++	/**
++	 * Parse an entire directory or file if found.
++	 * @param file
++	 */
++	public void loadDocument(File file)
++	{
++		if (!file.exists())
++		{
++			LOG.severe("The following file or directory doesn't exist: " + file.getName());
++			return;
++		}
++		
++		if (file.isDirectory())
++		{
++			for (File f : file.listFiles())
++			{
++				loadDocument(f);
++			}
++		}
++		else if (file.isFile())
++		{
++			try
++			{
++				parseDocument(BUILDER.newDocumentBuilder().parse(file), file);
++			}
++			catch (Exception e)
++			{
++				LOG.log(Level.SEVERE, "Error loading XML file " + file.getName(), e);
++			}
++		}
++	}
++	
++	public Document getDocument()
++	{
++		return document;
++	}
++	
++	/**
++	 * This method parses the content of a NamedNodeMap and feed the given StatsSet.
++	 * @param attrs : The NamedNodeMap to parse.
++	 * @param set : The StatsSet to feed.
++	 */
++	public static void parseAndFeed(NamedNodeMap attrs, StatsSet set)
++	{
++		for (int i = 0; i < attrs.getLength(); i++)
++		{
++			final Node attr = attrs.item(i);
++			set.set(attr.getNodeName(), attr.getNodeValue());
++		}
++	}
++}
+diff --git src/Base/RecoverySystem/ItemRecoveryManager.java src/Base/RecoverySystem/ItemRecoveryManager.java
+new file mode 100644
+index 0000000..d6448d1
+--- /dev/null
++++ src/Base/RecoverySystem/ItemRecoveryManager.java
+@@ -0,0 +1,271 @@
++package Base.RecoverySystem;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.util.HashMap;
++import java.util.Map;
++
++import l2jorion.Config;
++import l2jorion.game.datatables.sql.ItemTable;
++import l2jorion.game.model.actor.instance.L2ItemInstance;
++import l2jorion.game.model.actor.instance.L2PcInstance;
++import l2jorion.game.network.serverpackets.ItemList;
++import l2jorion.util.database.L2DatabaseFactory;
++
++public class ItemRecoveryManager
++{
++	private Map<Integer, Integer> validEnchantLevels; // Almacena los niveles de enchant válidos para cada artículo recuperable
++	
++	public ItemRecoveryManager()
++	{
++		validEnchantLevels = new HashMap<>();
++		loadValidEnchantLevels(); // Carga los niveles de enchant válidos desde la base de datos o cualquier otra fuente de datos
++	}
++	
++	public void recoverSelectedItem(L2PcInstance player, int itemId, int enchantLevel)
++	{
++		// Comprueba si el jugador tiene suficientes items del ID 6392
++		L2ItemInstance recoveryItem = player.getInventory().getItemByItemId(Config.BLACK_COUPON_ID);
++		if (recoveryItem == null || recoveryItem.getCount() < 1)
++		{
++			player.sendMessage("No tienes suficientes items para recuperar este item.");
++			return;
++		}
++		
++		// Verifica el nivel de enchant del item recuperable en la base de datos
++		if (!isValidEnchantLevel(itemId, enchantLevel, player.getObjectId()))
++		{
++			player.sendMessage("No puedes recuperar este item con ese nivel de enchant.");
++			return;
++		}
++		
++		// Verifica que el artículo que se está recuperando coincide con el artículo original
++		if (!isValidRecoveryItem(itemId, player.getObjectId()))
++		{
++			player.sendMessage("No puedes recuperar este item.");
++			return;
++		}
++		
++		// Crea el item a recuperar con el ID y enchantLevel proporcionados
++		L2ItemInstance recoveredItem = ItemTable.getInstance().createItem("RecoverItem", itemId, 1, player);
++		recoveredItem.setEnchantLevel(enchantLevel);
++		
++		// Agrega el item recuperado al inventario del jugador
++		player.getInventory().addItem("RecoverItem", recoveredItem, player, player);
++		
++		// Cobra 1 item del ID 6392
++		player.getInventory().destroyItemByItemId("RecoveryCost", Config.BLACK_COUPON_ID, 1, player, player);
++		
++		// Elimina el item recuperado de la base de datos
++		removeRecoverableItem(itemId, player.getObjectId());
++		
++		// Actualiza el inventario del jugador para que aparezca el item recuperado
++		player.sendPacket(new ItemList(player, true));
++		
++		// Envía un mensaje al jugador con el nombre del item y su nivel de enchant
++		String itemName = recoveredItem.getItemName();
++		String message = "Has recuperado el item " + itemName;
++		if (enchantLevel > 0)
++		{
++			message += " +" + enchantLevel;
++		}
++		player.sendMessage(message);
++	}
++	
++	public boolean isValidRecoveryItem(int itemId, int objectId)
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		ResultSet resultSet = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "SELECT item_id FROM item_recover WHERE object_id = ? AND item_id = ?";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, objectId);
++			statement.setInt(2, itemId);
++			resultSet = statement.executeQuery();
++			
++			return resultSet.next(); // Si hay un resultado, el artículo es válido
++			
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al obtener el artículo recuperable de la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (resultSet != null)
++				{
++					resultSet.close();
++				}
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión a la base de datos
++				e.printStackTrace();
++			}
++		}
++		
++		return false; // Si ocurre alguna excepción o no se encuentra el artículo, se considera inválido
++	}
++	
++	public boolean isValidEnchantLevel(int itemId, int enchantLevel, int objectId)
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		ResultSet resultSet = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "SELECT enchant_level FROM item_recover WHERE object_id = ? AND item_id = ?";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, objectId);
++			statement.setInt(2, itemId);
++			resultSet = statement.executeQuery();
++			
++			if (resultSet.next())
++			{
++				int validEnchantLevel = resultSet.getInt("enchant_level");
++				return enchantLevel == validEnchantLevel;
++			}
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al obtener el nivel de enchant válido de la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (resultSet != null)
++				{
++					resultSet.close();
++				}
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión a la base de datos
++				e.printStackTrace();
++			}
++		}
++		
++		return false;
++	}
++	
++	public void removeRecoverableItem(int itemId, int objectId)
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "DELETE FROM item_recover WHERE item_id = ? AND object_id = ?";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, itemId);
++			statement.setInt(2, objectId);
++			statement.executeUpdate();
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al eliminar el item recuperable de la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión a la base de datos
++				e.printStackTrace();
++			}
++		}
++	}
++	
++	private void loadValidEnchantLevels()
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		ResultSet resultSet = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "SELECT item_id, enchant_level FROM item_recover";
++			statement = con.prepareStatement(sql);
++			resultSet = statement.executeQuery();
++			
++			while (resultSet.next())
++			{
++				int itemId = resultSet.getInt("item_id");
++				int enchantLevel = resultSet.getInt("enchant_level");
++				
++				validEnchantLevels.put(itemId, enchantLevel);
++			}
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al obtener los niveles de enchant válidos de la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (resultSet != null)
++				{
++					resultSet.close();
++				}
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión a la base de datos
++				e.printStackTrace();
++			}
++		}
++	}
++	
++}
+diff --git src/Base/RecoverySystem/RecoverableItem.java src/Base/RecoverySystem/RecoverableItem.java
+new file mode 100644
+index 0000000..22182f7
+--- /dev/null
++++ src/Base/RecoverySystem/RecoverableItem.java
+@@ -0,0 +1,111 @@
++package Base.RecoverySystem;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.SQLException;
++
++import l2jorion.game.datatables.sql.ItemTable;
++import l2jorion.game.templates.L2Item;
++import l2jorion.util.database.L2DatabaseFactory;
++
++public class RecoverableItem
++{
++	private int objectId;
++	private int itemId;
++	private String itemName;
++	private int enchantLevel;
++	private boolean selected; // New field for selection status
++	
++	public RecoverableItem(int objectId, int itemId, String itemName, int enchantLevel)
++	{
++		this.objectId = objectId;
++		this.itemId = itemId;
++		this.itemName = itemName;
++		this.enchantLevel = enchantLevel;
++		this.selected = false; // Default selection status is false
++	}
++	
++	public int getObjectId()
++	{
++		return objectId;
++	}
++	
++	public int getItemId()
++	{
++		return itemId;
++	}
++	
++	public String getItemName()
++	{
++		return itemName;
++	}
++	
++	public int getEnchantLevel()
++	{
++		return enchantLevel;
++	}
++	
++	public void saveBrokenItemInfo()
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "INSERT INTO item_recover (object_id, item_id, item_name, enchant_level) VALUES (?, ?, ?, ?)";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, objectId);
++			statement.setInt(2, itemId);
++			statement.setString(3, itemName);
++			statement.setInt(4, enchantLevel);
++			statement.execute();
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al guardar en la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			// Cierra la conexión y el statement
++			try
++			{
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión
++				e.printStackTrace();
++			}
++		}
++	}
++	
++	public boolean isSelected()
++	{
++		return selected;
++	}
++	
++	public void setSelected(boolean selected)
++	{
++		this.selected = selected;
++	}
++	
++	public String getIcon()
++	{
++		return getItem().getIcon();
++	}
++	
++	public L2Item getItem()
++	{
++		return ItemTable.getInstance().getTemplate(itemId);
++	}
++	
++}
+diff --git src/l2jorion/Config.java src/l2jorion/Config.java
+index 922ad04..06bdba7 100644
+--- src/l2jorion/Config.java
++++ src/l2jorion/Config.java
+@@ -2528,6 +2528,8 @@
+ 	public static List<Integer> GLOBAL_DROP_NPC_ID;
+ 	public static List<RewardHolder> GLOBAL_REWARD_ITEM;
+ 	
++	public static int BLACK_COUPON_ID;
++	
+ 	public static void loadL2jOrionConfig()
+ 	{
+ 		final String L2jOrion = ConfigLoader.L2jOrion_CONFIG_FILE;
+@@ -2546,6 +2548,9 @@
+ 			RED_SKY = Boolean.parseBoolean(L2jOrionSettings.getProperty("RedSky", "False"));
+ 			FREE_TELEPORT_UNTIL = Integer.parseInt(L2jOrionSettings.getProperty("FreeTeleportUntil", "1"));
+ 			REMOVAL_AUGMENTATION_FREE = Boolean.parseBoolean(L2jOrionSettings.getProperty("RemovalAugmentationFree", "False"));
++			
++			BLACK_COUPON_ID = Integer.parseInt(L2jOrionSettings.getProperty("BlackCouponId", "6392"));
++			
+ 			ALLOW_FREIGHT_AUGMENTED = Boolean.parseBoolean(L2jOrionSettings.getProperty("AllowFreightAugmentedItem", "False"));
+ 			ANNOUNCE_BOSS_UNDER_ATTACK = Boolean.parseBoolean(L2jOrionSettings.getProperty("AnnounceBossUnderAttack", "False"));
+ 			LIVE_CASTING_CHECK = Boolean.parseBoolean(L2jOrionSettings.getProperty("LiveCastingCheck", "False"));
+diff --git src/l2jorion/game/GameServer.java src/l2jorion/game/GameServer.java
+index 52faa7e..543cccd 100644
+--- src/l2jorion/game/GameServer.java
++++ src/l2jorion/game/GameServer.java
+@@ -11,6 +11,7 @@
+ import java.util.Date;
+ import java.util.logging.LogManager;
+ 
++import Base.Data.IconTable;
+ import l2jorion.Config;
+ import l2jorion.ConfigLoader;
+ import l2jorion.ServerType;
+@@ -495,6 +496,8 @@
+ 		VoicedCommandHandler.getInstance();
+ 		CommunityBoardManager.getInstance();
+ 		
++		IconTable.getInstance();
++		
+ 		LOG.info("AutoChatHandler: Loaded " + AutoChatHandler.getInstance().size() + " handlers");
+ 		LOG.info("AutoSpawnHandler: Loaded " + AutoSpawn.getInstance().size() + " handlers");
+ 		
+diff --git src/l2jorion/game/handler/item/Item_Recover.java src/l2jorion/game/handler/item/Item_Recover.java
+new file mode 100644
+index 0000000..2398bb3
+--- /dev/null
++++ src/l2jorion/game/handler/item/Item_Recover.java
+@@ -0,0 +1,175 @@
++package l2jorion.game.handler.item;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.sql.SQLException;
++import java.util.ArrayList;
++import java.util.List;
++
++import Base.RecoverySystem.RecoverableItem;
++import l2jorion.Config;
++import l2jorion.game.handler.IItemHandler;
++import l2jorion.game.model.actor.instance.L2ItemInstance;
++import l2jorion.game.model.actor.instance.L2PcInstance;
++import l2jorion.game.model.actor.instance.L2PlayableInstance;
++import l2jorion.game.network.serverpackets.ActionFailed;
++import l2jorion.game.network.serverpackets.NpcHtmlMessage;
++import l2jorion.util.database.L2DatabaseFactory;
++
++/**
++ * @author Terius
++ */
++public class Item_Recover implements IItemHandler
++{
++	private static final int[] ITEM_IDS = new int[]
++	{
++		Config.BLACK_COUPON_ID
++	};
++	
++	@Override
++	public void useItem(L2PlayableInstance playable, L2ItemInstance item)
++	{
++		if (!(playable instanceof L2PcInstance))
++		{
++			return;
++		}
++		
++		L2PcInstance activeChar = (L2PcInstance) playable;
++		
++		// Abre la ventana de recuperación y muestra los últimos 10 items recuperables
++		openRecoveryWindow(activeChar);
++	}
++	
++	private static void openRecoveryWindow(L2PcInstance player)
++	{
++		// Obtén los últimos 10 items recuperables de la base de datos para el object_id del jugador
++		List<RecoverableItem> recoverableItems = getRecoverableItems(player.getObjectId());
++		
++		// Verifica si hay items recuperables
++		if (recoverableItems.isEmpty())
++		{
++			// No hay items recuperables, muestra un mensaje al jugador
++			player.sendMessage("No hay items recuperables disponibles.");
++			return;
++		}
++		
++		// Crea una instancia de NpcHtmlMessage para mostrar la ventana
++		NpcHtmlMessage html = new NpcHtmlMessage(1);
++		
++		// Genera el contenido HTML de la ventana con la lista de los últimos 10 items recuperables
++		String content = generateRecoveryList(recoverableItems);
++		html.setHtml(content);
++		
++		// Envía la ventana al jugador
++		player.sendPacket(html);
++		player.sendPacket(ActionFailed.STATIC_PACKET);
++	}
++	
++	@Override
++	public int[] getItemIds()
++	{
++		return ITEM_IDS;
++	}
++	
++	private static String generateRecoveryList(List<RecoverableItem> recoverableItems)
++	{
++		
++		// Genera el contenido HTML de la ventana con la lista de los últimos 10 items recuperables
++		StringBuilder sb = new StringBuilder();
++		sb.append("<html><body><center><font color=\"LEVEL\">Items Recuperables</font><br><br>");
++		
++		// Mensaje de advertencia sobre la recuperación de solo 1 item a la vez
++		sb.append("<font color=\"FF0000\">Solo puedes recuperar 1 item a la vez.</font><br>");
++		
++		// Itera sobre los items recuperables
++		for (RecoverableItem item : recoverableItems)
++		{
++			sb.append("<img src=\"L2UI.SquareGray\" width=295 height=1>");
++			sb.append("<table>");
++			
++			sb.append("<tr>");
++			sb.append("<td>");
++			sb.append("<img src=\"").append(item.getIcon()).append("\" width=32 height=32>");
++			sb.append("</td>");
++			sb.append("<td width=210><font color=\"FFFFFF\">").append(item.getItemName()).append("</font>");
++			
++			int enchantLevel = item.getEnchantLevel();
++			if (enchantLevel > 0)
++			{
++				sb.append(" <font color=\"00FF00\">+").append(enchantLevel).append("</font>");
++			}
++			
++			sb.append("</td>");
++			
++			int itemId = item.getItemId();
++			sb.append("<td><button value=\"Recuperar\" action=\"bypass -h recoverSelectedItem ").append(itemId).append(" ").append(enchantLevel).append("\" width=75 height=21 back=\"L2UI.DefaultButton_click\" fore=\"L2UI.DefaultButton\"></td>");
++			
++			sb.append("</tr>");
++			
++			sb.append("</table>");
++			sb.append("<img src=\"L2UI.SquareGray\" width=295 height=1>");
++			sb.append("<br>"); // Agrega un espacio después de cada tabla
++		}
++		
++		sb.append("</center></body></html>");
++		return sb.toString();
++	}
++	
++	private static List<RecoverableItem> getRecoverableItems(int objectId)
++	{
++		List<RecoverableItem> recoverableItems = new ArrayList<>();
++		Connection con = null;
++		PreparedStatement statement = null;
++		ResultSet resultSet = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "SELECT item_id, item_name, enchant_level FROM item_recover WHERE object_id = ? ORDER BY id DESC LIMIT 10";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, objectId);
++			resultSet = statement.executeQuery();
++			
++			while (resultSet.next())
++			{
++				int itemId = resultSet.getInt("item_id");
++				String itemName = resultSet.getString("item_name");
++				int enchantLevel = resultSet.getInt("enchant_level");
++				
++				RecoverableItem item = new RecoverableItem(objectId, itemId, itemName, enchantLevel);
++				recoverableItems.add(item);
++			}
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al obtener los items recuperables de la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			try
++			{
++				if (resultSet != null)
++				{
++					resultSet.close();
++				}
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión a la base de datos
++				e.printStackTrace();
++			}
++		}
++		
++		return recoverableItems;
++	}
++}
+diff --git src/l2jorion/game/network/clientpackets/RequestBypassToServer.java src/l2jorion/game/network/clientpackets/RequestBypassToServer.java
+index d48c078..88e85e4 100644
+--- src/l2jorion/game/network/clientpackets/RequestBypassToServer.java
++++ src/l2jorion/game/network/clientpackets/RequestBypassToServer.java
+@@ -26,6 +26,7 @@
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ 
++import Base.RecoverySystem.ItemRecoveryManager;
+ import javolution.text.TextBuilder;
+ import l2jorion.Config;
+ import l2jorion.game.cache.HtmCache;
+@@ -592,6 +593,20 @@
+ 					LOG.info(this.getClass().getSimpleName() + ": (" + activeChar.getName() + ") error: " + e);
+ 				}
+ 			}
++			
++			else if (bp.bypass.startsWith("recoverSelectedItem"))
++			{
++				String[] bypassParts = bp.bypass.split(" ");
++				if (bypassParts.length >= 3)
++				{
++					int itemId = Integer.parseInt(bypassParts[1]);
++					int enchantLevel = Integer.parseInt(bypassParts[2]);
++					
++					ItemRecoveryManager itemRecoveryManager = new ItemRecoveryManager();
++					itemRecoveryManager.recoverSelectedItem(activeChar, itemId, enchantLevel);
++				}
++			}
++			
+ 			else if (bp.bypass.equals("Draw"))
+ 			{
+ 				L2Object object = activeChar.getTarget();
+diff --git src/l2jorion/game/network/clientpackets/RequestEnchantItem.java src/l2jorion/game/network/clientpackets/RequestEnchantItem.java
+index fb6a5cb..e775287 100644
+--- src/l2jorion/game/network/clientpackets/RequestEnchantItem.java
++++ src/l2jorion/game/network/clientpackets/RequestEnchantItem.java
+@@ -17,6 +17,10 @@
+  */
+ package l2jorion.game.network.clientpackets;
+ 
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.SQLException;
++
+ import l2jorion.Config;
+ import l2jorion.game.datatables.xml.AugmentationData;
+ import l2jorion.game.datatables.xml.AugmentationScrollData;
+@@ -43,6 +47,7 @@
+ import l2jorion.game.util.Util;
+ import l2jorion.logger.Logger;
+ import l2jorion.logger.LoggerFactory;
++import l2jorion.util.database.L2DatabaseFactory;
+ import l2jorion.util.random.Rnd;
+ 
+ public final class RequestEnchantItem extends PacketClient
+@@ -826,6 +831,10 @@
+ 						activeChar.sendPacket(sm);
+ 					}
+ 					activeChar.getAchievement().increase(AchType.ENCHANT_FAILED);
++					
++					// Agrega el código para guardar la información del item roto en la tabla de la base de datos
++					saveBrokenItemInfo(activeChar.getObjectId(), item.getItemId(), item.getItemName(), item.getEnchantLevel(), item.getItem().getItemType().name());
++					
+ 				}
+ 				
+ 				if (!blessedScroll && !crystalScroll)
+@@ -1077,6 +1086,50 @@
+ 		}
+ 	}
+ 	
++	private void saveBrokenItemInfo(int objectId, int itemId, String itemName, int enchantLevel, String itemType)
++	{
++		Connection con = null;
++		PreparedStatement statement = null;
++		
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			String sql = "INSERT INTO item_recover (object_id, item_id, item_name, enchant_level, item_type) VALUES (?, ?, ?, ?, ?)";
++			statement = con.prepareStatement(sql);
++			statement.setInt(1, objectId);
++			statement.setInt(2, itemId);
++			statement.setString(3, itemName);
++			statement.setInt(4, enchantLevel);
++			statement.setString(5, itemType);
++			statement.execute();
++		}
++		catch (SQLException e)
++		{
++			// Manejo de excepciones en caso de error al guardar en la base de datos
++			e.printStackTrace();
++		}
++		finally
++		{
++			// Cierra la conexión y el statement
++			try
++			{
++				if (statement != null)
++				{
++					statement.close();
++				}
++				if (con != null)
++				{
++					con.close();
++				}
++			}
++			catch (SQLException e)
++			{
++				// Manejo de excepciones en caso de error al cerrar la conexión
++				e.printStackTrace();
++			}
++		}
++	}
++	
+ 	@Override
+ 	public String getType()
+ 	{
+diff --git src/l2jorion/game/templates/L2Item.java src/l2jorion/game/templates/L2Item.java
+index 5a2ada5..2656f9b 100644
+--- src/l2jorion/game/templates/L2Item.java
++++ src/l2jorion/game/templates/L2Item.java
+@@ -27,6 +27,7 @@
+ import java.util.List;
+ import java.util.Map;
+ 
++import Base.Data.IconTable;
+ import javolution.util.FastList;
+ import l2jorion.Config;
+ import l2jorion.game.datatables.sql.ItemTable;
+@@ -591,4 +592,9 @@
+ 			CloseUtil.close(con);
+ 		}
+ 	}
++	
++	public String getIcon()
++	{
++		return IconTable.getInstance().getIcon(getItemId());
++	}
+ }
+

@@ -1,0 +1,990 @@
+### Eclipse Workspace Patch 1.0
+#P aCis_gameserverv2
+diff --git java/Base/ClanSiegeReward/ClanSiegeRewardSkillData.java java/Base/ClanSiegeReward/ClanSiegeRewardSkillData.java
+new file mode 100644
+index 0000000..e9022b9
+--- /dev/null
++++ java/Base/ClanSiegeReward/ClanSiegeRewardSkillData.java
+@@ -0,0 +1,180 @@
++package Base.ClanSiegeReward;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.List;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++import Base.Data.XMLDocument;
++
++public class ClanSiegeRewardSkillData extends XMLDocument
++{
++	private List<ClanSkillReward> clanSkillRewards;
++	
++	public ClanSiegeRewardSkillData()
++	{
++		clanSkillRewards = new ArrayList<>();
++		load();
++	}
++	
++	public void reload()
++	{
++		clanSkillRewards.clear();
++		load();
++	}
++	
++	public static ClanSiegeRewardSkillData getInstance()
++	{
++		return SingletonHolder.INSTANCE;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final ClanSiegeRewardSkillData INSTANCE = new ClanSiegeRewardSkillData();
++	}
++	
++	@Override
++	protected void load()
++	{
++		loadDocument("./data/xml/ClanSiegeRewardSkillData.xml");
++		LOG.info("ClanSiegeRewardSkillData: Loaded " + clanSkillRewards.size() + " rewards.");
++	}
++	
++	@Override
++	protected void parseDocument(Document doc, File file)
++	{
++		try
++		{
++			final Node root = doc.getFirstChild();
++			
++			for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling())
++			{
++				if (!"reward".equalsIgnoreCase(node.getNodeName()))
++				{
++					continue;
++				}
++				
++				NamedNodeMap attrs = node.getAttributes();
++				String castleName = attrs.getNamedItem("castle").getNodeValue().toLowerCase();
++				int castleId = convertCastleNameToId(castleName);
++				
++				if (castleId == -1)
++				{
++					// Invalid castle name, skip this reward
++					continue;
++				}
++				
++				List<ClanSkill> skills = new ArrayList<>();
++				
++				for (Node skillNode = node.getFirstChild(); skillNode != null; skillNode = skillNode.getNextSibling())
++				{
++					if (!"clan".equalsIgnoreCase(skillNode.getNodeName()))
++					{
++						continue;
++					}
++					
++					attrs = skillNode.getAttributes();
++					int skillId = Integer.parseInt(attrs.getNamedItem("skillid").getNodeValue());
++					int skillLevel = Integer.parseInt(attrs.getNamedItem("level").getNodeValue());
++					boolean onlyLeader = Boolean.parseBoolean(attrs.getNamedItem("onlyleader").getNodeValue());
++					
++					ClanSkill clanSkill = new ClanSkill(skillId, skillLevel, onlyLeader);
++					skills.add(clanSkill);
++				}
++				
++				ClanSkillReward reward = new ClanSkillReward(skills, castleId);
++				clanSkillRewards.add(reward);
++			}
++		}
++		catch (Exception e)
++		{
++			// Handle error
++		}
++	}
++	
++	public List<ClanSkillReward> getClanSkillRewards()
++	{
++		return clanSkillRewards;
++	}
++	
++	static int convertCastleNameToId(String castle)
++	{
++		switch (castle)
++		{
++			case "gludio":
++				return 1;
++			case "dion":
++				return 2;
++			case "giran":
++				return 3;
++			case "oren":
++				return 4;
++			case "aden":
++				return 5;
++			case "innadril":
++				return 6;
++			case "goddard":
++				return 7;
++			case "rune":
++				return 8;
++			case "schuttgart":
++				return 9;
++			default:
++				return -1;
++		}
++	}
++	
++	public static class ClanSkill
++	{
++		private int skillId;
++		private int level;
++		private boolean onlyLeader;
++		
++		public ClanSkill(int skillId, int level, boolean onlyLeader)
++		{
++			this.skillId = skillId;
++			this.level = level;
++			this.onlyLeader = onlyLeader;
++		}
++		
++		public int getSkillId()
++		{
++			return skillId;
++		}
++		
++		public int getLevel()
++		{
++			return level;
++		}
++		
++		public boolean isOnlyLeader()
++		{
++			return onlyLeader;
++		}
++	}
++	
++	public static class ClanSkillReward
++	{
++		private List<ClanSkill> skills;
++		private int castleId;
++		
++		public ClanSkillReward(List<ClanSkill> skills, int castleId)
++		{
++			this.skills = skills;
++			this.castleId = castleId;
++		}
++		
++		public List<ClanSkill> getSkills()
++		{
++			return skills;
++		}
++		
++		public int getCastleId()
++		{
++			return castleId;
++		}
++	}
++}
+diff --git java/Base/Data/XMLDocument.java java/Base/Data/XMLDocument.java
+new file mode 100644
+index 0000000..e999d85
+--- /dev/null
++++ java/Base/Data/XMLDocument.java
+@@ -0,0 +1,93 @@
++package Base.Data;
++
++import java.io.File;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import javax.xml.parsers.DocumentBuilderFactory;
++
++import net.sf.l2j.commons.data.StatSet;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++/**
++ * An XML document, relying on a static and single DocumentBuilderFactory.
++ */
++public abstract class XMLDocument
++{
++	protected static final Logger LOG = Logger.getLogger(XMLDocument.class.getName());
++	
++	private static final DocumentBuilderFactory BUILDER;
++	static
++	{
++		BUILDER = DocumentBuilderFactory.newInstance();
++		BUILDER.setValidating(false);
++		BUILDER.setIgnoringComments(true);
++	}
++	
++	abstract protected void load();
++	
++	abstract protected void parseDocument(Document doc, File f);
++	
++	public void loadDocument(String filePath)
++	{
++		loadDocument(new File(filePath));
++	}
++	
++	public void loadDocument(String filePath, boolean skipWarning)
++	{
++		loadDocument(new File(filePath), skipWarning);
++	}
++	
++	public void loadDocument(File file)
++	{
++		loadDocument(file, false);
++	}
++	
++	/**
++	 * Parse an entire directory or file if found.
++	 * @param file
++	 * @param skipWarning
++	 */
++	public void loadDocument(File file, boolean skipWarning)
++	{
++		if (!file.exists() && !skipWarning)
++		{
++			LOG.severe("The following file or directory doesn't exist: " + file.getName());
++			return;
++		}
++		
++		if (file.isDirectory())
++		{
++			for (File f : file.listFiles())
++				loadDocument(f);
++		}
++		else if (file.isFile())
++		{
++			try
++			{
++				parseDocument(BUILDER.newDocumentBuilder().parse(file), file);
++			}
++			catch (Exception e)
++			{
++				LOG.log(Level.SEVERE, "Error loading XML file " + file.getName(), e);
++			}
++		}
++	}
++	
++	/**
++	 * This method parses the content of a NamedNodeMap and feed the given StatsSet.
++	 * @param attrs : The NamedNodeMap to parse.
++	 * @param set : The StatsSet to feed.
++	 */
++	public static void parseAndFeed(NamedNodeMap attrs, StatSet set)
++	{
++		for (int i = 0; i < attrs.getLength(); i++)
++		{
++			final Node attr = attrs.item(i);
++			set.set(attr.getNodeName(), attr.getNodeValue());
++		}
++	}
++}
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/GameServer.java java/net/sf/l2j/gameserver/GameServer.java
+index c14408f..78e3293 100644
+--- java/net/sf/l2j/gameserver/GameServer.java
++++ java/net/sf/l2j/gameserver/GameServer.java
+@@ -108,6 +108,8 @@
+ import net.sf.l2j.util.DeadLockDetector;
+ import net.sf.l2j.util.IPv4Filter;
+ 
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData;
++
+ public class GameServer
+ {
+ 	private static final CLogger LOGGER = new CLogger(GameServer.class.getName());
+@@ -290,6 +292,9 @@
+ 		LOGGER.info("Loaded {} user command handlers.", UserCommandHandler.getInstance().size());
+ 		LOGGER.info("Loaded {} voiced command handlers.", VoicedCommandHandler.getInstance().size());
+ 		
++		StringUtil.printSection("Clan Siege Skill Reward");
++		ClanSiegeRewardSkillData.getInstance();
++		
+ 		StringUtil.printSection("System");
+ 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
+ 		
+diff --git java/net/sf/l2j/gameserver/model/pledge/Clan.java java/net/sf/l2j/gameserver/model/pledge/Clan.java
+index 027cc9b..62ee232 100644
+--- java/net/sf/l2j/gameserver/model/pledge/Clan.java
++++ java/net/sf/l2j/gameserver/model/pledge/Clan.java
+@@ -48,6 +48,10 @@
+ import net.sf.l2j.gameserver.network.serverpackets.UserInfo;
+ import net.sf.l2j.gameserver.skills.L2Skill;
+ 
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkill;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkillReward;
++
+ /**
+  * Clan system is one of the major features of the game. Clans unite players and let them influence the world of Lineage 2.<br>
+  * <br>
+@@ -633,6 +637,56 @@
+ 			else if (siege.checkSides(this, SiegeSide.DEFENDER, SiegeSide.OWNER))
+ 				player.setSiegeState((byte) 2);
+ 		}
++		Clan clan = player.getClan();
++		
++		if (clan != null && clan.getCastleId() > 0)
++		{
++			// Verificar si el jugador es el líder del clan
++			if (clan.getLeaderId() == player.getObjectId())
++			{
++				// Otorgar habilidades al líder del clan según las condiciones del XML
++				for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++				{
++					if (skillReward.getCastleId() == clan.getCastleId())
++					{
++						for (ClanSkill skill : skillReward.getSkills())
++						{
++							if (skill.isOnlyLeader())
++							{
++								if (!clanLeaderHasSkill(player, skill.getSkillId()))
++								{
++									player.addSkill(SkillTable.getInstance().getInfo(skill.getSkillId(), skill.getLevel()), true);
++									player.sendSkillList();
++									player.sendMessage("¡Has obtenido una habilidad de Siege como líder!");
++								}
++							}
++						}
++					}
++				}
++			}
++			else // Si el jugador es un miembro del clan
++			{
++				// Otorgar habilidades a los miembros del clan según las condiciones del XML
++				for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++				{
++					if (skillReward.getCastleId() == clan.getCastleId())
++					{
++						for (ClanSkill skill : skillReward.getSkills())
++						{
++							if (!skill.isOnlyLeader())
++							{
++								if (!playerHasSkill(player, skill.getSkillId()))
++								{
++									player.addSkill(SkillTable.getInstance().getInfo(skill.getSkillId(), skill.getLevel()), true);
++									player.sendSkillList();
++									player.sendMessage("¡Has obtenido una habilidad de Siege como miembro!");
++								}
++							}
++						}
++					}
++				}
++			}
++		}
+ 		
+ 		player.sendPacket(new PledgeShowMemberListUpdate(player));
+ 		player.sendPacket(new UserInfo(player));
+@@ -719,6 +773,26 @@
+ 				player.setClanCreateExpiryTime(System.currentTimeMillis() + Config.CLAN_CREATE_DAYS * 86400000L);
+ 			}
+ 			
++			// Agregar la lógica para eliminar habilidades de Siege Reward según castleId
++			for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++			{
++				for (ClanSkill skill : skillReward.getSkills())
++				{
++					int skillId = skill.getSkillId();
++					
++					if (playerHasSkill(player, skillId))
++					{
++						// Verificar si el skill debe eliminarse según el castleId
++						if (skillReward.getCastleId() == getCastleId())
++						{
++							player.removeSkill(skillId, false);
++							player.sendSkillList();
++							player.sendMessage("Tus habilidades de Siege han sido eliminadas debido a que has salido del clan.");
++						}
++					}
++				}
++			}
++			
+ 			// Remove clan skills.
+ 			for (L2Skill skill : _skills.values())
+ 				player.removeSkill(skill.getId(), false);
+@@ -768,6 +842,32 @@
+ 		}
+ 	}
+ 	
++	// Método para verificar si el líder del clan ya tiene la habilidad
++	private boolean clanLeaderHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
++	// Método para verificar si el jugador ya tiene la habilidad
++	private boolean playerHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
+ 	public Collection<ClanMember> getMembers()
+ 	{
+ 		return _members.values();
+diff --git java/net/sf/l2j/gameserver/model/residence/castle/Castle.java java/net/sf/l2j/gameserver/model/residence/castle/Castle.java
+index b6a8cd2..56cb5e7 100644
+--- java/net/sf/l2j/gameserver/model/residence/castle/Castle.java
++++ java/net/sf/l2j/gameserver/model/residence/castle/Castle.java
+@@ -16,6 +16,7 @@
+ import net.sf.l2j.commons.pool.ThreadPool;
+ import net.sf.l2j.commons.random.Rnd;
+ 
++import net.sf.l2j.gameserver.data.SkillTable;
+ import net.sf.l2j.gameserver.data.manager.CastleManager;
+ import net.sf.l2j.gameserver.data.manager.CastleManorManager;
+ import net.sf.l2j.gameserver.data.manager.SevenSignsManager;
+@@ -46,6 +47,11 @@
+ import net.sf.l2j.gameserver.network.serverpackets.PlaySound;
+ import net.sf.l2j.gameserver.network.serverpackets.PledgeShowInfoUpdate;
+ import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
++import net.sf.l2j.gameserver.skills.L2Skill;
++
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkill;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkillReward;
+ 
+ public class Castle
+ {
+@@ -329,67 +335,94 @@
+ 		}
+ 	}
+ 	
+-	/**
+-	 * This method setup the castle owner.
+-	 * @param clan The clan who will own the castle.
+-	 */
+ 	public void setOwner(Clan clan)
+ 	{
+-		// Act only if castle owner is different of NPC, or if old owner is different of new owner.
+ 		if (_ownerId > 0 && (clan == null || clan.getClanId() != _ownerId))
+ 		{
+-			// Try to find clan instance of the old owner.
+ 			Clan oldOwner = ClanTable.getInstance().getClan(_ownerId);
+ 			if (oldOwner != null)
+ 			{
+-				// Dismount the old leader if he was riding a wyvern.
+ 				Player oldLeader = oldOwner.getLeader().getPlayerInstance();
+ 				if (oldLeader != null && oldLeader.getMountType() == 2)
+ 					oldLeader.dismount();
+ 				
+-				// Unset castle flag for old owner clan.
++				removeSiegeSkillsFromPlayer(oldLeader, oldOwner.getLeader().isOnline());
++				
+ 				oldOwner.setCastle(0);
++				
++				for (ClanMember member : oldOwner.getMembers())
++				{
++					Player memberPlayer = member.getPlayerInstance();
++					if (memberPlayer != null)
++					{
++						removeSiegeSkillsFromPlayer(memberPlayer, true);
++					}
++				}
+ 			}
+ 		}
+ 		
+-		// Update database.
++		// Otorgar habilidades al nuevo líder y miembros del clan dueño del castillo
++		if (clan != null && clan.getLeader() != null)
++		{
++			Player newLeaderPlayer = clan.getLeader().getPlayerInstance();
++			if (newLeaderPlayer != null)
++			{
++				grantSiegeSkillsToPlayer(newLeaderPlayer, true, clan.getClanId());
++				
++				for (ClanMember member : clan.getMembers())
++				{
++					Player memberPlayer = member.getPlayerInstance();
++					if (memberPlayer != null)
++					{
++						grantSiegeSkillsToPlayer(memberPlayer, false, clan.getClanId());
++					}
++				}
++			}
++		}
++		
+ 		updateOwnerInDB(clan);
+ 		
+-		// If siege is in progress, mid victory phase of siege.
+ 		if (getSiege().isInProgress())
+ 			getSiege().midVictory();
+ 	}
+ 	
+-	/**
+-	 * Remove the castle owner. This method is only used by admin command.
+-	 **/
+ 	public void removeOwner()
+ 	{
+ 		if (_ownerId <= 0)
+ 			return;
+ 		
+-		final Clan clan = ClanTable.getInstance().getClan(_ownerId);
++		Clan clan = ClanTable.getInstance().getClan(_ownerId);
+ 		if (clan == null)
+ 			return;
+ 		
++		Player leaderPlayer = clan.getLeader().getPlayerInstance();
++		if (leaderPlayer != null)
++		{
++			removeSiegeSkillsFromPlayer(leaderPlayer, true);
++		}
++		
+ 		clan.setCastle(0);
+ 		clan.broadcastToMembers(new PledgeShowInfoUpdate(clan));
+ 		
+-		// Remove clan from siege registered clans (as owners are automatically added).
++		for (ClanMember member : clan.getMembers())
++		{
++			Player memberPlayer = member.getPlayerInstance();
++			if (memberPlayer != null)
++			{
++				removeSiegeSkillsFromPlayer(memberPlayer, true);
++			}
++		}
++		
+ 		getSiege().getRegisteredClans().remove(clan);
+ 		
+-		// Delete all spawned tickets.
+ 		for (ItemInstance item : _droppedTickets)
+ 			item.decayMe();
+ 		
+-		// Clear the List.
+ 		_droppedTickets.clear();
+ 		
+-		// Unspawn Mercenaries, if any.
+ 		for (Npc npc : _siegeGuards)
+ 			npc.doDie(npc);
+ 		
+-		// Clear the List.
+ 		_siegeGuards.clear();
+ 		
+ 		updateOwnerInDB(null);
+@@ -400,6 +433,63 @@
+ 			checkItemsForClan(clan);
+ 	}
+ 	
++	private void grantSiegeSkillsToPlayer(Player player, boolean isLeader, int clanId)
++	{
++		for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++		{
++			if (skillReward.getCastleId() == _castleId)
++			{
++				for (ClanSkill skill : skillReward.getSkills())
++				{
++					if ((isLeader && skill.isOnlyLeader()) || (!isLeader && !skill.isOnlyLeader()))
++					{
++						if (!playerHasSkill(player, skill.getSkillId()))
++						{
++							player.addSkill(SkillTable.getInstance().getInfo(skill.getSkillId(), skill.getLevel()), true);
++							player.sendSkillList();
++							player.sendMessage("¡Felicitaciones! Has ganado una habilidad de Siege como " + (isLeader ? "líder" : "miembro") + ".");
++						}
++					}
++				}
++			}
++		}
++	}
++	
++	private void removeSiegeSkillsFromPlayer(Player player, boolean sendMessage)
++	{
++		for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++		{
++			if (skillReward.getCastleId() == _castleId)
++			{
++				for (ClanSkill skill : skillReward.getSkills())
++				{
++					if (playerHasSkill(player, skill.getSkillId()))
++					{
++						player.removeSkill(skill.getSkillId(), false);
++						player.sendSkillList();
++						if (sendMessage)
++						{
++							player.sendMessage("Tus habilidades de Siege han sido eliminadas debido a que " + (sendMessage ? "ya no eres parte de un clan con castillo." : "el clan no tiene castillo."));
++						}
++					}
++				}
++			}
++		}
++	}
++	
++	// Método para verificar si el jugador ya tiene la habilidad
++	private boolean playerHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
+ 	/**
+ 	 * This method updates the castle tax rate.
+ 	 * @param player : Sends informative messages to that character (success or fail).
+diff --git java/net/sf/l2j/gameserver/model/residence/castle/Siege.java java/net/sf/l2j/gameserver/model/residence/castle/Siege.java
+index d5c321e..0f6f93c 100644
+--- java/net/sf/l2j/gameserver/model/residence/castle/Siege.java
++++ java/net/sf/l2j/gameserver/model/residence/castle/Siege.java
+@@ -18,6 +18,7 @@
+ import net.sf.l2j.commons.util.ArraysUtil;
+ 
+ import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.data.SkillTable;
+ import net.sf.l2j.gameserver.data.manager.CastleManager;
+ import net.sf.l2j.gameserver.data.manager.HeroManager;
+ import net.sf.l2j.gameserver.data.sql.ClanTable;
+@@ -40,6 +41,11 @@
+ import net.sf.l2j.gameserver.network.serverpackets.SystemMessage;
+ import net.sf.l2j.gameserver.network.serverpackets.UserInfo;
+ import net.sf.l2j.gameserver.scripting.Quest;
++import net.sf.l2j.gameserver.skills.L2Skill;
++
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkill;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkillReward;
+ 
+ public class Siege implements Siegable
+ {
+@@ -179,8 +185,40 @@
+ 					
+ 					if (!playerIps.contains(pIp))
+ 					{
++						
+ 						playerIps.add(pIp);
+ 						
++						if (clan.equals(player.getClan()))
++						{
++							for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++							{
++								if (skillReward.getCastleId() == _castle.getCastleId())
++								{
++									for (ClanSkill skill : skillReward.getSkills())
++									{
++										if (skill.isOnlyLeader() && clan.getLeaderId() == player.getObjectId())
++										{
++											if (!clanLeaderHasSkill(player, skill.getSkillId()))
++											{
++												player.addSkill(SkillTable.getInstance().getInfo(skill.getSkillId(), skill.getLevel()), true);
++												player.sendSkillList();
++												player.sendMessage("¡Felicitaciones! Has ganado una habilidad de Siege como líder.");
++											}
++										}
++										else if (!skill.isOnlyLeader())
++										{
++											if (!playerHasSkill(player, skill.getSkillId()))
++											{
++												player.addSkill(SkillTable.getInstance().getInfo(skill.getSkillId(), skill.getLevel()), true);
++												player.sendSkillList();
++												player.sendMessage("¡Felicitaciones! Has ganado una habilidad de Siege como miembro.");
++											}
++										}
++									}
++								}
++							}
++						}
++						
+ 						if (player.isClanLeader())
+ 						{
+ 							for (IntIntHolder reward : Config.LEADER_REWARD_WINNER_SIEGE_CLAN)
+@@ -196,15 +234,19 @@
+ 								if (reward.getId() > 0)
+ 									player.addItem("", reward.getId(), reward.getValue(), player, true);
+ 							}
++							
+ 						}
++						
+ 					}
++					
+ 				}
++				
+ 			}
+ 			
+-			// An initial clan was holding the castle and is different of current owner.
++			// An initial clan was holding the castle and is different from the current owner.
+ 			if (_formerOwner != null && clan != _formerOwner)
+ 			{
+-				// Delete circlets and crown's leader for initial castle's owner (if one was existing)
++				// Delete circlets and crown's leader for the initial castle's owner (if one was existing)
+ 				_castle.checkItemsForClan(_formerOwner);
+ 				
+ 				// Refresh hero diaries.
+@@ -219,6 +261,32 @@
+ 		else
+ 			World.toAllOnlinePlayers(SystemMessage.getSystemMessage(SystemMessageId.SIEGE_S1_DRAW).addFortId(_castle.getCastleId()));
+ 		
++		// Eliminar las habilidades de Siege al jugador si las tiene
++		for (Player player : World.getInstance().getPlayers())
++		{
++			// Eliminar las habilidades de Siege al jugador si las tiene, solo si no es parte del clan ganador
++			if (_castle.getOwnerId() != player.getClanId())
++			{
++				for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++				{
++					if (skillReward.getCastleId() == _castle.getCastleId())
++					{
++						for (ClanSkill skill : skillReward.getSkills())
++						{
++							int skillId = skill.getSkillId();
++							
++							if (playerHasSkill(player, skillId))
++							{
++								player.removeSkill(skillId, false);
++								player.sendSkillList();
++								player.sendMessage("Tus habilidades de Siege han sido eliminadas debido a que no tienes un castillo.");
++							}
++						}
++					}
++				}
++			}
++		}
++		
+ 		// Cleanup clans kills/deaths counters, cleanup flag.
+ 		for (Clan clan : _registeredClans.keySet())
+ 		{
+@@ -254,6 +322,32 @@
+ 		_castle.getSiegeZone().setActive(false);
+ 	}
+ 	
++	// Método para verificar si el líder del clan ya tiene la habilidad
++	private boolean clanLeaderHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
++	// Método para verificar si el jugador ya tiene la habilidad
++	private boolean playerHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
+ 	@Override
+ 	public final List<Clan> getAttackerClans()
+ 	{
+diff --git java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+index b6ebcb7..9520188 100644
+--- java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
++++ java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+@@ -64,6 +64,10 @@
+ import net.sf.l2j.gameserver.taskmanager.GameTimeTaskManager;
+ import net.sf.l2j.util.CustomMessage;
+ 
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkill;
++import Base.ClanSiegeReward.ClanSiegeRewardSkillData.ClanSkillReward;
++
+ public class EnterWorld extends L2GameClientPacket
+ {
+ 	@Override
+@@ -133,6 +137,67 @@
+ 			final SystemMessage sm = SystemMessage.getSystemMessage(SystemMessageId.CLAN_MEMBER_S1_LOGGED_IN).addCharName(player);
+ 			final PledgeShowMemberListUpdate psmlu = new PledgeShowMemberListUpdate(player);
+ 			
++			int playerCastleId = player.getClan().getCastleId();
++			boolean hasCastle = false;
++			
++			for (Castle castle : CastleManager.getInstance().getCastles())
++			{
++				final Siege siege = castle.getSiege();
++				if (!siege.isInProgress())
++					continue;
++				
++				final SiegeSide type = siege.getSide(clan);
++				
++				if (type == SiegeSide.ATTACKER || type == SiegeSide.DEFENDER || type == SiegeSide.OWNER)
++				{
++					playerCastleId = castle.getCastleId();
++					hasCastle = true;
++					break;
++				}
++			}
++			
++			if (hasCastle)
++			{
++				for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++				{
++					if (skillReward.getCastleId() == playerCastleId)
++					{
++						for (ClanSkill skill : skillReward.getSkills())
++						{
++							int skillId = skill.getSkillId();
++							
++							if (playerHasSkill(player, skillId))
++							{
++								player.removeSkill(skillId, false);
++								player.sendSkillList();
++								player.sendMessage("La habilidad de Siege que has perdido es para el CastleId " + playerCastleId + " y tu CastleId actual es " + playerCastleId + ".");
++							}
++						}
++						break; // No hay necesidad de seguir buscando
++					}
++				}
++			}
++			else
++			{
++				for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++				{
++					for (ClanSkill skill : skillReward.getSkills())
++					{
++						if (skillReward.getCastleId() != playerCastleId)
++						{
++							int skillId = skill.getSkillId();
++							if (playerHasSkill(player, skillId))
++							{
++								player.removeSkill(skillId, false);
++								player.sendSkillList();
++								// player.sendMessage("Tus habilidades de Siege han sido eliminadas debido a que no tienes un castillo.");
++							}
++						}
++						
++					}
++				}
++			}
++			
+ 			// Send packets to others members.
+ 			for (Player member : clan.getOnlineMembers())
+ 			{
+@@ -189,6 +254,29 @@
+ 			
+ 			player.sendPacket(new UserInfo(player));
+ 		}
++		else
++		{
++			// Eliminar habilidades del jugador si no tiene clan.
++			for (ClanSkillReward skillReward : ClanSiegeRewardSkillData.getInstance().getClanSkillRewards())
++			{
++				for (ClanSkill skill : skillReward.getSkills())
++				{
++					int skillId = skill.getSkillId();
++					if (playerHasSkill(player, skillId))
++					{
++						player.removeSkill(skillId, false);
++						player.sendSkillList();
++						player.sendMessage("Has perdido una habilidad de Siege porque no estás en un clan.");
++					}
++					if (clanLeaderHasSkill(player, skillId))
++					{
++						player.removeSkill(skillId, false);
++						player.sendSkillList();
++						player.sendMessage("Has perdido una habilidad de Siege porque no estás en un clan.");
++					}
++				}
++			}
++		}
+ 		
+ 		// Updating Seal of Strife Buff/Debuff
+ 		if (SevenSignsManager.getInstance().isSealValidationPeriod() && SevenSignsManager.getInstance().getSealOwner(SealType.STRIFE) != CabalType.NORMAL)
+@@ -345,6 +433,32 @@
+ 		player.sendMessage(new CustomMessage("PREMIUM", df.format(dt)));
+ 	}
+ 	
++	// Método para verificar si el líder del clan ya tiene la habilidad
++	private boolean clanLeaderHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
++	// Método para verificar si el jugador ya tiene la habilidad
++	private boolean playerHasSkill(Player player, int skillId)
++	{
++		for (L2Skill skill : player.getSkills().values())
++		{
++			if (skill.getId() == skillId)
++			{
++				return true;
++			}
++		}
++		return false;
++	}
++	
+ 	@Override
+ 	protected boolean triggersOnActionRequest()
+ 	{
+diff --git serverfariarusacis/gameserver/data/xml/ClanSiegeRewardSkillData.xml serverfariarusacis/gameserver/data/xml/ClanSiegeRewardSkillData.xml
+new file mode 100644
+index 0000000..a54b561
+--- /dev/null
++++ serverfariarusacis/gameserver/data/xml/ClanSiegeRewardSkillData.xml
+@@ -0,0 +1,39 @@
++<list>
++	<reward castle="gludio">
++		<clan skillid="1388" level="1" onlyleader="true"/> 
++		<clan skillid="1389" level="1" onlyleader="false"/> 
++	</reward>
++	<reward castle="dion">
++        		<clan skillid="1045" level="1" onlyleader="true"/> 
++		<clan skillid="1048" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="giran">
++        		<clan skillid="1413" level="1" onlyleader="true"/> 
++		<clan skillid="1397" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="oren">
++                		<clan skillid="273" level="1" onlyleader="true"/> 
++		<clan skillid="274" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="aden">
++                		<clan skillid="275" level="1" onlyleader="true"/> 
++		<clan skillid="276" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="innadril">
++                		<clan skillid="277" level="1" onlyleader="true"/> 
++		<clan skillid="307" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="goddard">
++                		<clan skillid="309" level="1" onlyleader="true"/> 
++		<clan skillid="310" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="rune">
++                		<clan skillid="311" level="1" onlyleader="true"/> 
++		<clan skillid="365" level="1" onlyleader="false"/> 
++	</reward>
++		<reward castle="schuttgart">
++                		<clan skillid="363" level="1" onlyleader="true"/> 
++		<clan skillid="364" level="1" onlyleader="false"/> 
++	</reward>
++	
++	</list>
+\ No newline at end of file

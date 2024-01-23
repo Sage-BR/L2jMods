@@ -1,0 +1,332 @@
+### Eclipse Workspace Patch 1.0
+#P L2jMega_Interlude
++data/xml/CapsuleBox.xml
++<?xml version="1.0" encoding="utf-8"?>
++<CapsuleBox>
++	<capsuled_items ID="6393"  PlayerLevel="1"> <!-- Mage Starter Pack LVL 1-->
++		<item itemId="177" min="1" max="1" enchantLevel="0"  chance="100"/> 
++		<item itemId="1101" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="1104" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="908" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="115" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="115" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="877" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="877" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="3948" min="1" max="10" enchantLevel="0" chance="100"/> 
++	</capsuled_items>
++	<capsuled_items ID="6388"  PlayerLevel="1"> <!-- Fighter Starter Pack LVL 1-->
++		<item itemId="68" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="711" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="715" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="908" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="115" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="115" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="877" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="877" min="1" max="1" enchantLevel="0" chance="100"/> 
++		<item itemId="1463" min="1" max="5" enchantLevel="0" chance="100"/> 
++	</capsuled_items>
++</CapsuleBox>
+diff --git java/Base/CapsuleBox/CapsuleBoxData.java java/Base/CapsuleBox/CapsuleBoxData.java
+new file mode 100644
+index 0000000..2e76b8f
+--- /dev/null
++++ java/Base/CapsuleBox/CapsuleBoxData.java
+@@ -0,0 +1,97 @@
++package Base.CapsuleBox;
++
++import java.io.File;
++import java.util.HashMap;
++import java.util.Map;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++
++import Base.Data.XMLDocument;
++
++public class CapsuleBoxData extends XMLDocument {
++    private Map<Integer, CapsuleBoxItem> capsuleBoxItems;
++
++    public CapsuleBoxData() {
++        capsuleBoxItems = new HashMap<>();
++        load();
++    }
++
++	public void reload()
++	{
++		capsuleBoxItems.clear();
++		load();
++	}  
++    
++    
++    public static CapsuleBoxData getInstance() {
++        return SingletonHolder.INSTANCE;
++    }
++
++    private static class SingletonHolder {
++        protected static final CapsuleBoxData INSTANCE = new CapsuleBoxData();
++    }
++
++    @Override
++    protected void load() {
++        loadDocument("./data/xml/CapsuleBox.xml");
++        LOG.info("CapsuleBoxData: Loaded " + capsuleBoxItems.size() + " items.");
++    }
++
++    @Override
++    protected void parseDocument(Document doc, File file) {
++        try {
++            final Node root = doc.getFirstChild();
++
++            for (Node node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
++                if (!"capsuled_items".equalsIgnoreCase(node.getNodeName())) {
++                    continue;
++                }
++
++                NamedNodeMap attrs = node.getAttributes();
++                int id = Integer.parseInt(attrs.getNamedItem("ID").getNodeValue());
++                int playerLevel = Integer.parseInt(attrs.getNamedItem("PlayerLevel").getNodeValue());
++
++                CapsuleBoxItem capsuleBoxItem = new CapsuleBoxItem(id, playerLevel);
++
++                for (Node itemNode = node.getFirstChild(); itemNode != null; itemNode = itemNode.getNextSibling()) {
++                    if (!"item".equalsIgnoreCase(itemNode.getNodeName())) {
++                        continue;
++                    }
++
++                    NamedNodeMap itemAttrs = itemNode.getAttributes();
++                    int itemId = Integer.parseInt(itemAttrs.getNamedItem("itemId").getNodeValue());
++                    int amount = 1; // Default amount is 1
++                    if (itemAttrs.getNamedItem("min") != null && itemAttrs.getNamedItem("max") != null) {
++                        int min = Integer.parseInt(itemAttrs.getNamedItem("min").getNodeValue());
++                        int max = Integer.parseInt(itemAttrs.getNamedItem("max").getNodeValue());
++                        amount = getRandomAmount(min, max);
++                    }
++                    int enchantLevel = Integer.parseInt(itemAttrs.getNamedItem("enchantLevel").getNodeValue());
++                    int chance = Integer.parseInt(itemAttrs.getNamedItem("chance").getNodeValue());
++
++                    CapsuleBoxItem.Item item = new CapsuleBoxItem.Item(itemId, amount, enchantLevel, chance);
++                    capsuleBoxItem.addItem(item);
++                }
++
++                capsuleBoxItems.put(id, capsuleBoxItem);
++            }
++        } catch (Exception e) {
++            // LOG.warning("CapsuleBoxData: Error while loading items: " + e);
++            e.printStackTrace();
++        }
++    }
++
++    public Map<Integer, CapsuleBoxItem> getCapsuleBoxItems() {
++        return capsuleBoxItems;
++    }
++
++    public CapsuleBoxItem getCapsuleBoxItemById(int id) {
++        return capsuleBoxItems.get(id);
++    }
++
++    private static int getRandomAmount(int min, int max) {
++        return min + (int) (Math.random() * ((max - min) + 1));
++    }
++}
+diff --git java/Base/CapsuleBox/CapsuleBoxItem.java java/Base/CapsuleBox/CapsuleBoxItem.java
+new file mode 100644
+index 0000000..93c0cc6
+--- /dev/null
++++ java/Base/CapsuleBox/CapsuleBoxItem.java
+@@ -0,0 +1,64 @@
++package Base.CapsuleBox;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class CapsuleBoxItem {
++    private int id;
++    private int playerLevel;
++    private List<Item> items;
++
++    public CapsuleBoxItem(int id, int playerLevel) {
++        this.id = id;
++        this.playerLevel = playerLevel;
++        items = new ArrayList<>();
++    }
++
++    public int getId() {
++        return id;
++    }
++
++    public int getPlayerLevel() {
++        return playerLevel;
++    }
++
++    public List<Item> getItems() {
++        return items;
++    }
++
++    public void addItem(Item item) {
++        items.add(item);
++    }
++
++    public static class Item {
++        private int itemId;
++        private int amount;
++        private int enchantLevel;
++        private int chance;
++
++        public Item(int itemId, int amount, int enchantLevel, int chance) {
++            this.itemId = itemId;
++            this.amount = amount;
++            this.enchantLevel = enchantLevel;
++            this.chance = chance;
++        }
++
++        public int getItemId() {
++            return itemId;
++        }
++
++        public int getAmount() {
++            return amount;
++        }
++
++        public int getEnchantLevel() {
++            return enchantLevel;
++        }
++
++        public int getChance() {
++            return chance;
++        }
++
++ 
++    }
++}
+diff --git java/com/l2jmega/gameserver/GameServer.java java/com/l2jmega/gameserver/GameServer.java
+index 948d4e4..12b0956 100644
+--- java/com/l2jmega/gameserver/GameServer.java
++++ java/com/l2jmega/gameserver/GameServer.java
+@@ -133,6 +133,7 @@
+ import com.l2jmega.commons.mmocore.SelectorThread;
+ import com.l2jmega.commons.util.SysUtil;
+ 
++import Base.CapsuleBox.CapsuleBoxData;
+ import Base.RandomCraft.RandomCraftXML;
+ import Base.Skin.DressMeData;
+ import hwid.Hwid;
+@@ -489,6 +490,10 @@
+ 			DressMeData.getInstance();
+ 		}
+ 		
++		StringUtil.printSection("CapsuleBox - Terius");
++		CapsuleBoxData.getInstance();
++		
++		
+ 		StringUtil.printSection("RandomCraft - Terius");
+ 		RandomCraftXML.getInstance();
+ 		
+diff --git java/com/l2jmega/gameserver/handler/ItemHandler.java java/com/l2jmega/gameserver/handler/ItemHandler.java
+index 8f41315..862cf95 100644
+--- java/com/l2jmega/gameserver/handler/ItemHandler.java
++++ java/com/l2jmega/gameserver/handler/ItemHandler.java
+@@ -58,6 +58,7 @@
+ import com.l2jmega.gameserver.handler.itemhandlers.clan.SkillVitality;
+ import com.l2jmega.gameserver.handler.itemhandlers.clan.SkillWithstandAttack;
+ import com.l2jmega.gameserver.handler.itemhandlers.custom.AllyNameChange;
++import com.l2jmega.gameserver.handler.itemhandlers.custom.CapsuleBox_System;
+ import com.l2jmega.gameserver.handler.itemhandlers.custom.ClanFull;
+ import com.l2jmega.gameserver.handler.itemhandlers.custom.ClanNameChange;
+ import com.l2jmega.gameserver.handler.itemhandlers.custom.ClassItem;
+@@ -131,6 +132,7 @@
+ 		registerItemHandler(new Aio30days());
+ 		registerItemHandler(new AioEterno());
+ 		registerItemHandler(new LuckBox());
++		registerItemHandler(new CapsuleBox_System());
+ 		registerItemHandler(new ClanFull());
+ 		registerItemHandler(new NoblesItem());
+ 		registerItemHandler(new Vip24h());
+diff --git java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
+index 9bf868d..1d0907c 100644
+--- java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
++++ java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
+@@ -4,6 +4,7 @@
+ 
+ import com.l2jmega.commons.lang.StringUtil;
+ 
++import Base.CapsuleBox.CapsuleBoxData;
+ import Base.RandomCraft.RandomCraftXML;
+ import Base.Skin.DressMeData;
+ 
+@@ -210,6 +211,11 @@
+ 						RandomCraftXML.getInstance().reload();
+ 						activeChar.sendMessage("Random Craft have been reloaded.");
+ 					}
++					else if (type.startsWith("capsule")) 
++					{
++						CapsuleBoxData.getInstance().reload();
++						activeChar.sendMessage("Capsule Box have been reloaded.");
++					}
+ 					else if (type.startsWith("olly"))
+ 					{
+ 						OlyClassDamageManager.loadConfig();
+diff --git java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
+new file mode 100644
+index 0000000..ebe42bf
+--- /dev/null
++++ java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
+@@ -0,0 +1,58 @@
++package com.l2jmega.gameserver.handler.itemhandlers.custom;
++
++import com.l2jmega.gameserver.handler.IItemHandler;
++import com.l2jmega.gameserver.idfactory.IdFactory;
++import com.l2jmega.gameserver.model.actor.Playable;
++import com.l2jmega.gameserver.model.actor.instance.Player;
++import com.l2jmega.gameserver.model.item.instance.ItemInstance;
++import com.l2jmega.gameserver.network.serverpackets.MagicSkillUse;
++
++import com.l2jmega.commons.random.Rnd;
++
++import Base.CapsuleBox.CapsuleBoxData;
++import Base.CapsuleBox.CapsuleBoxItem;
++import Base.CapsuleBox.CapsuleBoxItem.Item;
++
++public class CapsuleBox_System implements IItemHandler {
++
++    @Override
++    public void useItem(Playable playable, ItemInstance item, boolean forceUse) {
++        if (!(playable instanceof Player))
++            return;
++
++        final Player activeChar = (Player) playable;
++        final int itemId = item.getItemId();
++
++        CapsuleBoxItem capsuleBoxItem = CapsuleBoxData.getInstance().getCapsuleBoxItemById(itemId);
++        if (capsuleBoxItem != null) {
++            if (activeChar.getLevel() < capsuleBoxItem.getPlayerLevel()) {
++                activeChar.sendMessage("Para Usar Esta Capsule Box Necesitas El LvL." + capsuleBoxItem.getPlayerLevel());
++                return;
++            }
++
++            ItemInstance toGive = null;
++            for (Item boxItem : capsuleBoxItem.getItems()) {
++                toGive = new ItemInstance(IdFactory.getInstance().getNextId(), boxItem.getItemId());
++                int random = Rnd.get(100);
++                if (random < boxItem.getChance()) {
++                    if (!toGive.isStackable()) {
++                        toGive.setEnchantLevel(boxItem.getEnchantLevel());
++                        activeChar.addItem("CapsuleBox", toGive, activeChar, true);
++                    } else {
++                        activeChar.addItem("CapsuleBox", boxItem.getItemId(), boxItem.getAmount(), activeChar, true);
++                    }
++                } else {
++                    
++                }
++                MagicSkillUse MSU = new MagicSkillUse(activeChar, activeChar, 2024, 1, 1, 0);
++                activeChar.broadcastPacket(MSU);
++               
++            }
++           
++        } else {
++            activeChar.sendMessage("This Capsule box expired or is invalid!");
++        }
++
++        playable.destroyItem("Consume", item.getObjectId(), 1, null, false);
++    }
++}
