@@ -1,6 +1,6 @@
 ### Eclipse Workspace Patch 1.0
-#P L2jMega_Interlude
-+data/xml/CapsuleBox.xml
+#P L2J_4Team_Classic_Interlude
++dist/game/data/xml/CapsuleBox.xml
 +<?xml version="1.0" encoding="utf-8"?>
 +<CapsuleBox>
 +	<capsuled_items ID="6393"  PlayerLevel="1"> <!-- Mage Starter Pack LVL 1-->
@@ -14,7 +14,7 @@
 +		<item itemId="877" min="1" max="1" enchantLevel="0" chance="100"/> 
 +		<item itemId="3948" min="1" max="10" enchantLevel="0" chance="100"/> 
 +	</capsuled_items>
-+	<capsuled_items ID="6388"  PlayerLevel="1"> <!-- Fighter Starter Pack LVL 1-->
++	<capsuled_items ID="6392"  PlayerLevel="1"> <!-- Fighter Starter Pack LVL 1-->
 +		<item itemId="68" min="1" max="1" enchantLevel="0" chance="100"/> 
 +		<item itemId="711" min="1" max="1" enchantLevel="0" chance="100"/> 
 +		<item itemId="715" min="1" max="1" enchantLevel="0" chance="100"/> 
@@ -199,13 +199,13 @@ index 0000000..93c0cc6
 + 
 +    }
 +}
-diff --git java/com/l2jmega/gameserver/GameServer.java java/com/l2jmega/gameserver/GameServer.java
+diff --git java/com/l2j4team/gameserver/GameServer.java java/com/l2j4team/gameserver/GameServer.java
 index 948d4e4..12b0956 100644
---- java/com/l2jmega/gameserver/GameServer.java
-+++ java/com/l2jmega/gameserver/GameServer.java
+--- java/com/l2j4team/gameserver/GameServer.java
++++ java/com/l2j4team/gameserver/GameServer.java
 @@ -133,6 +133,7 @@
- import com.l2jmega.commons.mmocore.SelectorThread;
- import com.l2jmega.commons.util.SysUtil;
+ import com.l2j4team.commons.mmocore.SelectorThread;
+ import com.l2j4team.commons.util.SysUtil;
  
 +import Base.CapsuleBox.CapsuleBoxData;
  import Base.RandomCraft.RandomCraftXML;
@@ -222,18 +222,18 @@ index 948d4e4..12b0956 100644
  		StringUtil.printSection("RandomCraft - Terius");
  		RandomCraftXML.getInstance();
  		
-diff --git java/com/l2jmega/gameserver/handler/ItemHandler.java java/com/l2jmega/gameserver/handler/ItemHandler.java
+diff --git java/com/l2j4team/gameserver/handler/ItemHandler.java java/com/l2j4team/gameserver/handler/ItemHandler.java
 index 8f41315..862cf95 100644
---- java/com/l2jmega/gameserver/handler/ItemHandler.java
-+++ java/com/l2jmega/gameserver/handler/ItemHandler.java
+--- java/com/l2j4team/gameserver/handler/ItemHandler.java
++++ java/com/l2j4team/gameserver/handler/ItemHandler.java
 @@ -58,6 +58,7 @@
- import com.l2jmega.gameserver.handler.itemhandlers.clan.SkillVitality;
- import com.l2jmega.gameserver.handler.itemhandlers.clan.SkillWithstandAttack;
- import com.l2jmega.gameserver.handler.itemhandlers.custom.AllyNameChange;
-+import com.l2jmega.gameserver.handler.itemhandlers.custom.CapsuleBox_System;
- import com.l2jmega.gameserver.handler.itemhandlers.custom.ClanFull;
- import com.l2jmega.gameserver.handler.itemhandlers.custom.ClanNameChange;
- import com.l2jmega.gameserver.handler.itemhandlers.custom.ClassItem;
+ import com.l2j4team.gameserver.handler.itemhandlers.clan.SkillVitality;
+ import com.l2j4team.gameserver.handler.itemhandlers.clan.SkillWithstandAttack;
+ import com.l2j4team.gameserver.handler.itemhandlers.custom.AllyNameChange;
++import com.l2j4team.gameserver.handler.itemhandlers.custom.CapsuleBox_System;
+ import com.l2j4team.gameserver.handler.itemhandlers.custom.ClanFull;
+ import com.l2j4team.gameserver.handler.itemhandlers.custom.ClanNameChange;
+ import com.l2j4team.gameserver.handler.itemhandlers.custom.ClassItem;
 @@ -131,6 +132,7 @@
  		registerItemHandler(new Aio30days());
  		registerItemHandler(new AioEterno());
@@ -242,13 +242,13 @@ index 8f41315..862cf95 100644
  		registerItemHandler(new ClanFull());
  		registerItemHandler(new NoblesItem());
  		registerItemHandler(new Vip24h());
-diff --git java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
+diff --git java/com/l2j4team/gameserver/handler/admincommandhandlers/AdminAdmin.java java/com/l2j4team/gameserver/handler/admincommandhandlers/AdminAdmin.java
 index 9bf868d..1d0907c 100644
---- java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
-+++ java/com/l2jmega/gameserver/handler/admincommandhandlers/AdminAdmin.java
+--- java/com/l2j4team/gameserver/handler/admincommandhandlers/AdminAdmin.java
++++ java/com/l2j4team/gameserver/handler/admincommandhandlers/AdminAdmin.java
 @@ -4,6 +4,7 @@
  
- import com.l2jmega.commons.lang.StringUtil;
+ import com.l2j4team.commons.lang.StringUtil;
  
 +import Base.CapsuleBox.CapsuleBoxData;
  import Base.RandomCraft.RandomCraftXML;
@@ -266,22 +266,22 @@ index 9bf868d..1d0907c 100644
  					else if (type.startsWith("olly"))
  					{
  						OlyClassDamageManager.loadConfig();
-diff --git java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
+diff --git java/com/l2j4team/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java java/com/l2j4team/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
 new file mode 100644
 index 0000000..ebe42bf
 --- /dev/null
-+++ java/com/l2jmega/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
++++ java/com/l2j4team/gameserver/handler/itemhandlers/custom/CapsuleBox_System.java
 @@ -0,0 +1,58 @@
-+package com.l2jmega.gameserver.handler.itemhandlers.custom;
++package com.l2j4team.gameserver.handler.itemhandlers.custom;
 +
-+import com.l2jmega.gameserver.handler.IItemHandler;
-+import com.l2jmega.gameserver.idfactory.IdFactory;
-+import com.l2jmega.gameserver.model.actor.Playable;
-+import com.l2jmega.gameserver.model.actor.instance.Player;
-+import com.l2jmega.gameserver.model.item.instance.ItemInstance;
-+import com.l2jmega.gameserver.network.serverpackets.MagicSkillUse;
++import com.l2j4team.gameserver.handler.IItemHandler;
++import com.l2j4team.gameserver.idfactory.IdFactory;
++import com.l2j4team.gameserver.model.actor.Playable;
++import com.l2j4team.gameserver.model.actor.instance.Player;
++import com.l2j4team.gameserver.model.item.instance.ItemInstance;
++import com.l2j4team.gameserver.network.serverpackets.MagicSkillUse;
 +
-+import com.l2jmega.commons.random.Rnd;
++import com.l2j4team.commons.random.Rnd;
 +
 +import Base.CapsuleBox.CapsuleBoxData;
 +import Base.CapsuleBox.CapsuleBoxItem;

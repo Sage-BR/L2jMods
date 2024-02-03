@@ -1,5 +1,5 @@
 ### Eclipse Workspace Patch 1.0
-#P L2jMega_Interlude
+#P l2j4team_Interlude
 diff --git java/Base/Data/XMLDocument.java java/Base/Data/XMLDocument.java
 new file mode 100644
 index 0000000..4a0c9c3
@@ -10,7 +10,7 @@ index 0000000..4a0c9c3
 +
 +
 +
-+import com.l2jmega.gameserver.templates.StatsSet;
++import com.l2j4team.gameserver.templates.StatsSet;
 +
 +import java.io.File;
 +import java.util.logging.Level;
@@ -172,10 +172,10 @@ index 0000000..52e1b97
 +
 +import Base.Data.XMLDocument;
 +
-+import com.l2jmega.gameserver.data.SkillTable;
-+import com.l2jmega.gameserver.model.L2Skill;
-+import com.l2jmega.gameserver.model.actor.instance.Player;
-+import com.l2jmega.gameserver.model.item.instance.ItemInstance;
++import com.l2j4team.gameserver.data.SkillTable;
++import com.l2j4team.gameserver.model.L2Skill;
++import com.l2j4team.gameserver.model.actor.instance.Player;
++import com.l2j4team.gameserver.model.item.instance.ItemInstance;
 +
 +import java.io.File;
 +import java.util.HashMap;
@@ -393,13 +393,13 @@ index 0000000..52e1b97
 +
 +}
 \ No newline at end of file
-diff --git java/com/l2jmega/gameserver/GameServer.java java/com/l2jmega/gameserver/GameServer.java
+diff --git java/com/l2j4team/gameserver/GameServer.java java/com/l2j4team/gameserver/GameServer.java
 index ddf88d5..b96d3db 100644
---- java/com/l2jmega/gameserver/GameServer.java
-+++ java/com/l2jmega/gameserver/GameServer.java
+--- java/com/l2j4team/gameserver/GameServer.java
++++ java/com/l2j4team/gameserver/GameServer.java
 @@ -136,7 +136,7 @@
- import com.l2jmega.commons.mmocore.SelectorThread;
- import com.l2jmega.commons.util.SysUtil;
+ import com.l2j4team.commons.mmocore.SelectorThread;
+ import com.l2j4team.commons.util.SysUtil;
  
 -
 +import Base.DollSystem.DollsData;
@@ -418,19 +418,19 @@ index ddf88d5..b96d3db 100644
  		StringUtil.printSection("System");
  		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
  		ForumsBBSManager.getInstance();
-diff --git java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
+diff --git java/com/l2j4team/gameserver/model/actor/instance/ClassMaster.java java/com/l2j4team/gameserver/model/actor/instance/ClassMaster.java
 index be17677..7daa7e1 100644
---- java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
-+++ java/com/l2jmega/gameserver/model/actor/instance/ClassMaster.java
+--- java/com/l2j4team/gameserver/model/actor/instance/ClassMaster.java
++++ java/com/l2j4team/gameserver/model/actor/instance/ClassMaster.java
 @@ -4,6 +4,8 @@
  
- import com.l2jmega.commons.lang.StringUtil;
+ import com.l2j4team.commons.lang.StringUtil;
  
 +import Base.DollSystem.DollsData;
 +
- import com.l2jmega.Config;
- import com.l2jmega.gameserver.data.CharTemplateTable;
- import com.l2jmega.gameserver.data.ItemTable;
+ import com.l2j4team.Config;
+ import com.l2j4team.gameserver.data.CharTemplateTable;
+ import com.l2j4team.gameserver.data.ItemTable;
 @@ -89,7 +91,7 @@
  				// Check player skills
  				if (Config.CHECK_SKILLS_ON_ENTER)
@@ -449,10 +449,10 @@ index be17677..7daa7e1 100644
  		player.sendPacket(new HennaInfo(player));
  		player.broadcastUserInfo();
  		
-diff --git java/com/l2jmega/gameserver/model/actor/instance/Player.java java/com/l2jmega/gameserver/model/actor/instance/Player.java
+diff --git java/com/l2j4team/gameserver/model/actor/instance/Player.java java/com/l2j4team/gameserver/model/actor/instance/Player.java
 index 845f9c1..cc7133b 100644
---- java/com/l2jmega/gameserver/model/actor/instance/Player.java
-+++ java/com/l2jmega/gameserver/model/actor/instance/Player.java
+--- java/com/l2j4team/gameserver/model/actor/instance/Player.java
++++ java/com/l2j4team/gameserver/model/actor/instance/Player.java
 @@ -12549,6 +12549,12 @@
  						flag1 = true;
  				}
@@ -466,19 +466,19 @@ index 845f9c1..cc7133b 100644
  				if (Config.CHECK_HERO_SKILLS)
  				{
  					if (isHero() && k >= 395 && k <= 396)
-diff --git java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
+diff --git java/com/l2j4team/gameserver/model/actor/instance/VillageMaster.java java/com/l2j4team/gameserver/model/actor/instance/VillageMaster.java
 index 97e3d43..34dbe6e 100644
---- java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
-+++ java/com/l2jmega/gameserver/model/actor/instance/VillageMaster.java
+--- java/com/l2j4team/gameserver/model/actor/instance/VillageMaster.java
++++ java/com/l2j4team/gameserver/model/actor/instance/VillageMaster.java
 @@ -5,6 +5,8 @@
  
- import com.l2jmega.commons.lang.StringUtil;
+ import com.l2j4team.commons.lang.StringUtil;
  
 +import Base.DollSystem.DollsData;
 +
- import com.l2jmega.Config;
- import com.l2jmega.events.ArenaTask;
- import com.l2jmega.gameserver.data.CharTemplateTable;
+ import com.l2j4team.Config;
+ import com.l2j4team.events.ArenaTask;
+ import com.l2j4team.gameserver.data.CharTemplateTable;
 @@ -495,7 +497,7 @@
  							return;
  						
@@ -505,18 +505,18 @@ index 97e3d43..34dbe6e 100644
  						html.setFile("data/html/villagemaster/SubClass_ModifyOk.htm");
  						player.sendPacket(SystemMessageId.ADD_NEW_SUBCLASS); // Subclass added.
  						if (Config.CHECK_SKILLS_ON_ENTER && !Config.AUTO_LEARN_SKILLS)
-diff --git java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
+diff --git java/com/l2j4team/gameserver/model/itemcontainer/PcInventory.java java/com/l2j4team/gameserver/model/itemcontainer/PcInventory.java
 index 2ad07f2..f3359a7 100644
---- java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
-+++ java/com/l2jmega/gameserver/model/itemcontainer/PcInventory.java
+--- java/com/l2j4team/gameserver/model/itemcontainer/PcInventory.java
++++ java/com/l2j4team/gameserver/model/itemcontainer/PcInventory.java
 @@ -8,6 +8,7 @@
  import java.util.logging.Level;
  import java.util.stream.Collectors;
  
 +import Base.DollSystem.DollsData;
  
- import com.l2jmega.L2DatabaseFactory;
- import com.l2jmega.gameserver.model.WorldObject;
+ import com.l2j4team.L2DatabaseFactory;
+ import com.l2j4team.gameserver.model.WorldObject;
 @@ -398,7 +399,7 @@
  			_adena = item;
  		else if (item.getItemId() == ANCIENT_ADENA_ID && !item.equals(_ancientAdena))
@@ -580,18 +580,18 @@ index 2ad07f2..f3359a7 100644
  		
  		
  		if (_adena != null && (_adena.getCount() <= 0 || _adena.getOwnerId() != getOwnerId()))
-diff --git java/com/l2jmega/gameserver/model/tradelist/TradeList.java java/com/l2jmega/gameserver/model/tradelist/TradeList.java
+diff --git java/com/l2j4team/gameserver/model/tradelist/TradeList.java java/com/l2j4team/gameserver/model/tradelist/TradeList.java
 index a74402d..bb5e225 100644
---- java/com/l2jmega/gameserver/model/tradelist/TradeList.java
-+++ java/com/l2jmega/gameserver/model/tradelist/TradeList.java
+--- java/com/l2j4team/gameserver/model/tradelist/TradeList.java
++++ java/com/l2j4team/gameserver/model/tradelist/TradeList.java
 @@ -5,6 +5,7 @@
  import java.util.Set;
  import java.util.concurrent.CopyOnWriteArrayList;
  
 +import Base.DollSystem.DollsData;
  
- import com.l2jmega.gameserver.data.ItemTable;
- import com.l2jmega.gameserver.model.ItemRequest;
+ import com.l2j4team.gameserver.data.ItemTable;
+ import com.l2j4team.gameserver.model.ItemRequest;
 @@ -432,7 +433,7 @@
  			}
  			
@@ -601,13 +601,13 @@ index a74402d..bb5e225 100644
  			
  			
  			
-diff --git java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
+diff --git java/com/l2j4team/gameserver/network/clientpackets/EnterWorld.java java/com/l2j4team/gameserver/network/clientpackets/EnterWorld.java
 index acf00a8..34a2325 100644
---- java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
-+++ java/com/l2jmega/gameserver/network/clientpackets/EnterWorld.java
+--- java/com/l2j4team/gameserver/network/clientpackets/EnterWorld.java
++++ java/com/l2j4team/gameserver/network/clientpackets/EnterWorld.java
 @@ -82,6 +82,10 @@
  
- import com.l2jmega.commons.concurrent.ThreadPool;
+ import com.l2j4team.commons.concurrent.ThreadPool;
  
 +import Base.DollSystem.DollsData;
 +

@@ -5,11 +5,11 @@
  /com/
 -/hwid/
 +/hopzone/
-diff --git a/java/com/l2j4team/commons/data/StatSet.java b/java/com/l2j4team/commons/data/StatSet.java
+diff --git /java/com/l2j4team/commons/data/StatSet.java b/java/com/l2j4team/commons/data/StatSet.java
 new file mode 100644
 index 0000000..2cb1396
 --- /dev/null
-+++ b/java/com/l2j4team/commons/data/StatSet.java
++++ /java/com/l2j4team/commons/data/StatSet.java
 @@ -0,0 +1,536 @@
 +package com.l2j4team.commons.data;
 +
@@ -556,18 +556,15 @@ index 5bc4240..5aa087b 100644
  import com.l2j4team.gameserver.data.SpawnTable;
  import com.l2j4team.gameserver.data.cache.CrestCache;
  import com.l2j4team.gameserver.data.cache.HtmCache;
--import com.l2j4team.gameserver.data.manager.BuyListManager;
+ import com.l2j4team.gameserver.data.manager.BuyListManager;
  import com.l2j4team.gameserver.data.manager.BossEvent;
-+import com.l2j4team.gameserver.data.manager.BuyListManager;
  import com.l2j4team.gameserver.data.sql.BookmarkTable;
  import com.l2j4team.gameserver.data.sql.ClanTable;
  import com.l2j4team.gameserver.data.sql.ServerMemoTable;
 @@ -116,8 +116,6 @@
  import com.l2j4team.util.DeadLockDetector;
  import com.l2j4team.util.IPv4Filter;
- 
--import Base.datatables.AuctionTable;
--
+
  import java.io.File;
  import java.io.FileInputStream;
  import java.io.InputStream;
@@ -579,292 +576,7 @@ index 5bc4240..5aa087b 100644
 +import hopzone.eu.VDSystemManager;
  import hwid.Hwid;
  
- public class GameServer
- {
- 	private static final CLogger LOGGER = new CLogger(GameServer.class.getName());
--
-+	
- 	private final SelectorThread<L2GameClient> _selectorThread;
--
-+	
- 	private static GameServer _gameServer;
--
-+	
- 	public static void main(String[] args) throws Exception
- 	{
- 		_gameServer = new GameServer();
- 	}
--
-+	
- 	public GameServer() throws Exception
- 	{
- 		final long serverLoadStart = System.currentTimeMillis();
--
-+		
- 		// Create log folder
- 		new File("./log").mkdir();
- 		new File("./log/chat").mkdir();
-@@ -161,7 +161,7 @@
- 		new File("./log/gmaudit").mkdir();
- 		new File("./log/item").mkdir();
- 		new File("./data/crests").mkdirs();
--
-+		
- 		// Create input stream for log file -- or store file data into memory
- 		try (InputStream is = new FileInputStream(new File(Config.LOGGING)))
- 		{
-@@ -170,30 +170,30 @@
- 		StringUtil.printSection("L2J-4Team");
- 		l2j4team.info();
- 		StringUtil.printSection("Base aCis");
--
-+		
- 		// Initialize config
- 		Config.loadGameServer();
--
-+		
- 		// Factories
- 		XMLDocumentFactory.getInstance();
- 		L2DatabaseFactory.getInstance();
--
-+		
- 		ThreadPool.init();
--
-+		
- 		StringUtil.printSection("IdFactory");
- 		IdFactory.getInstance();
--
-+		
- 		StringUtil.printSection("World");
- 		GameTimeController.getInstance();
- 		World.getInstance();
- 		MapRegionTable.getInstance();
- 		AnnouncementData.getInstance();
- 		ServerMemoTable.getInstance();
--
-+		
- 		StringUtil.printSection("Skills");
- 		SkillTable.getInstance();
- 		SkillTreeTable.getInstance();
--
-+		
- 		StringUtil.printSection("Items");
- 		ItemTable.getInstance();
- 		SummonItemData.getInstance();
-@@ -210,13 +210,13 @@
- 		AuctionTable.getInstance();
- 		IconTable.getInstance();
- 		// Siege Reward Manager - Seth
--
-+		
- 		StringUtil.printSection("Admins");
- 		AdminData.getInstance();
- 		BookmarkTable.getInstance();
- 		MovieMakerManager.getInstance();
- 		PetitionManager.getInstance();
--
-+		
- 		StringUtil.printSection("Characters");
- 		CharTemplateTable.getInstance();
- 		PlayerNameTable.getInstance();
-@@ -226,25 +226,25 @@
- 		PartyMatchWaitingList.getInstance();
- 		PartyMatchRoomList.getInstance();
- 		RaidBossPointsManager.getInstance();
--
-+		
- 		StringUtil.printSection("Community server");
- 		if (Config.ENABLE_COMMUNITY_BOARD) // Forums has to be loaded before clan data
- 			ForumsBBSManager.getInstance().initRoot();
- 		else
- 			LOGGER.info("Community server is disabled.");
--
-+		
- 		StringUtil.printSection("Clans");
- 		CrestCache.getInstance();
- 		ClanTable.getInstance();
- 		AuctionManager.getInstance();
- 		ClanHallManager.getInstance();
--
-+		
- 		StringUtil.printSection("Geodata & Pathfinding");
- 		GeoEngine.getInstance();
--
-+		
- 		StringUtil.printSection("Zones");
- 		ZoneManager.getInstance();
--
-+		
- 		StringUtil.printSection("Task Managers");
- 		AttackStanceTaskManager.getInstance();
- 		DecayTaskManager.getInstance();
-@@ -263,18 +263,18 @@
- 		AioManager.getInstance();
- 		ChatGlobalManager.getInstance();
- 		ChatHeroManager.getInstance();
--
-+		
- 		StringUtil.printSection("Castles");
- 		CastleManager.getInstance();
--
-+		
- 		StringUtil.printSection("Seven Signs");
- 		SevenSigns.getInstance().spawnSevenSignsNPC();
- 		SevenSignsFestival.getInstance();
- 		BossEvent.getInstance();
--
-+		
- 		StringUtil.printSection("Manor Manager");
- 		CastleManorManager.getInstance();
--
-+		
- 		StringUtil.printSection("NPCs");
- 		RaidBossInfoManager.getInstance();
- 		BufferTable.getInstance();
-@@ -288,18 +288,18 @@
- 		GrandBossManager.getInstance();
- 		DayNightSpawnManager.getInstance();
- 		DimensionalRiftManager.getInstance();
--
-+		
- 		StringUtil.printSection("Olympiads & Heroes");
- 		OlympiadGameManager.getInstance();
- 		Olympiad.getInstance();
- 		Hero.getInstance();
--
-+		
- 		StringUtil.printSection("Four Sepulchers");
- 		FourSepulchersManager.getInstance().init();
--
-+		
- 		StringUtil.printSection("Quests & Scripts");
- 		ScriptManager.getInstance();
--
-+		
- 		if (Config.ALLOW_BOAT)
- 		{
- 			BoatManager.getInstance();
-@@ -309,31 +309,31 @@
- 			BoatRunePrimeval.load();
- 			BoatTalkingGludin.load();
- 		}
--
-+		
- 		StringUtil.printSection("Events");
--
-+		
- 		if (Config.ALLOW_WEDDING)
- 			CoupleManager.getInstance();
--
-+		
- 		if (Config.ALT_FISH_CHAMPIONSHIP_ENABLED)
- 			FishingChampionshipManager.getInstance();
--
-+		
- 		MonsterRace.getInstance();
--
-+		
- 		if (Config.PCB_ENABLE)
- 			ThreadPool.scheduleAtFixedRate(PcPoint.getInstance(), Config.PCB_INTERVAL * 1000, Config.PCB_INTERVAL * 1000);
--
-+		
- 		if (Config.TVT_EVENT_ENABLED)
- 		{
- 			TvTEventManager.getInstance().startTvTEventRegistration();
- 			TvTEventManager.getInstance().StartCalculationOfNextEventTime();
--
-+			
- 			if (Config.TVT_EVENT_ENABLED)
- 				LOGGER.info("TVT Event is enabled.");
- 		}
- 		else
- 			LOGGER.info("TvT Event is disabled.");
--
-+		
- 		if (Config.CTF_EVENT_ENABLED)
- 		{
- 			CTFEventManager.getInstance().startCTFEventRegistration();
-@@ -343,13 +343,13 @@
- 		}
- 		else
- 			LOGGER.info("CTF Event is disabled.");
--
-+		
- 		if (Config.START_AUTO_PARTY)
- 		{
- 			LOGGER.info("" + Config.NAME_EVENT + " Auto Event is enabled.");
- 			PartyFarmEvent.getInstance().StartCalculationOfNextEventTime();
- 		}
--
-+		
- 		if (Config.ACTIVE_MISSION)
- 		{
- 			MissionReset.getInstance().StartNextEventTime();
-@@ -358,7 +358,7 @@
- 		{
- 			LOGGER.info("Mission Reset: desativado...");
- 		}
--
-+		
- 		if (Config.TOURNAMENT_EVENT_TIME)
- 		{
- 			LOGGER.info("Tournament Event is enabled.");
-@@ -372,21 +372,21 @@
- 		}
- 		else
- 			LOGGER.info("Tournament Event is disabled");
--
-+		
- 		if (Config.CKM_ENABLED)
- 			CharacterKillingManager.getInstance().init();
--
-+		
- 		if (Config.START_PARTY)
- 		{
- 			LOGGER.info("Start Spawn " + Config.NAME_EVENT + ": Enabled");
- 			ThreadPool.schedule(new SpawnMonsters(), 3000);
- 		}
--
-+		
- 		StringUtil.printSection("Vote Zone");
--
-+		
- 		VoteZone.getInstance();
- 		PvPEventManager.getInstance();
--
-+		
- 		if (Config.VOTE_PVPZONE_ENABLED)
- 		{
- 			try (Connection con = L2DatabaseFactory.getInstance().getConnection())
-@@ -415,38 +415,40 @@
- 		{
- 			LOGGER.info("VoteZone: desativado...");
- 		}
--
-+		
- 		StringUtil.printSection("Others");
--
-+		
- 		if (Config.ENABLE_PVP_COLOR)
- 			PvpColorTable.getInstance();
--
-+		
- 		if (Config.ENABLE_PK_COLOR)
- 			PkColorTable.getInstance();
--
-+		
- 		if (Config.RESET_DAILY_ENABLED)
- 			ResetDaily.getInstance().StartReset();
- 		else
- 			LOGGER.info("Reset Daily: desativado.");
--
-+		
- 		if (Config.RESTART_BY_TIME_OF_DAY)
- 			Restart.getInstance().StartCalculationOfNextRestartTime();
- 		else
- 			LOGGER.info("Restart System: disabled...");
--
-+		
+
  		StringUtil.printSection("Balance System");
  		OlyClassDamageManager.loadConfig();
  		BalanceLoad.LoadEm();
@@ -877,95 +589,8 @@ index 5bc4240..5aa087b 100644
  		RaidZoneManager.getInstance();
  		SoloZoneManager.getInstance();
  		IPManager.getInstance();
--
-+		
- 		StringUtil.printSection("Hwid Manager");
- 		Hwid.Init();
--
-+		
- 		StringUtil.printSection("Handlers");
- 		LOGGER.info("AutoSpawnHandler: Loaded {} handlers.", AutoSpawnManager.getInstance().size());
- 		LOGGER.info("Loaded {} admin command handlers.", AdminCommandHandler.getInstance().size());
 @@ -459,39 +461,39 @@
- 		StringUtil.printSection("System");
- 		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
- 		ForumsBBSManager.getInstance();
--
-+		
- 		if (Config.DEADLOCK_DETECTOR)
- 		{
- 			LOGGER.info("Deadlock detector is enabled. Timer: {}s.", Config.DEADLOCK_CHECK_INTERVAL);
--
-+			
- 			final DeadLockDetector deadDetectThread = new DeadLockDetector();
- 			deadDetectThread.setDaemon(true);
- 			deadDetectThread.start();
- 		}
- 		else
- 			LOGGER.info("Deadlock detector is disabled.");
--
-+		
- 		System.gc();
--
-+		
- 		LOGGER.info("Gameserver has started, used memory: {} / {} Mo.", SysUtil.getUsedMemory(), SysUtil.getMaxMemory());
- 		LOGGER.info("Maximum allowed players: {}.", Config.MAXIMUM_ONLINE_USERS);
--
-+		
- 		LOGGER.info("Server Loaded in " + (System.currentTimeMillis() - serverLoadStart) / 1000 + " seconds");
--
-+		
- 		ServerStatus.getInstance();
--
-+		
- 		StringUtil.printSection("Login");
- 		LoginServerThread.getInstance().start();
--
-+		
- 		final SelectorConfig sc = new SelectorConfig();
- 		sc.MAX_READ_PER_PASS = Config.MMO_MAX_READ_PER_PASS;
- 		sc.MAX_SEND_PER_PASS = Config.MMO_MAX_SEND_PER_PASS;
- 		sc.SLEEP_TIME = Config.MMO_SELECTOR_SLEEP_TIME;
- 		sc.HELPER_BUFFER_COUNT = Config.MMO_HELPER_BUFFER_COUNT;
--
-+		
- 		final L2GamePacketHandler handler = new L2GamePacketHandler();
- 		_selectorThread = new SelectorThread<>(sc, handler, handler, handler, new IPv4Filter());
--
-+		
- 		InetAddress bindAddress = null;
- 		if (!Config.GAMESERVER_HOSTNAME.equals("*"))
- 		{
-@@ -504,7 +506,7 @@
- 				LOGGER.error("The GameServer bind address is invalid, using all available IPs.", e);
- 			}
- 		}
--
-+		
- 		try
- 		{
- 			_selectorThread.openServerSocket(bindAddress, Config.PORT_GAME);
-@@ -516,17 +518,17 @@
- 		}
- 		_selectorThread.start();
- 	}
--
-+	
- 	public static GameServer getInstance()
- 	{
- 		return _gameServer;
- 	}
--
-+	
- 	public SelectorThread<L2GameClient> getSelectorThread()
- 	{
- 		return _selectorThread;
- 	}
--
-+	
- 	public class SpawnMonsters implements Runnable
- 	{
- 		@Override
+
 diff --git a/java/com/l2j4team/gameserver/handler/VoicedCommandHandler.java b/java/com/l2j4team/gameserver/handler/VoicedCommandHandler.java
 index 3be0c83..3057e52 100644
 --- a/java/com/l2j4team/gameserver/handler/VoicedCommandHandler.java
@@ -1043,11 +668,11 @@ index d5243e0..5c85935 100644
 +	
  }
 \ No newline at end of file
-diff --git a/java/com/l2j4team/gameserver/network/NpcStringId.java b/java/com/l2j4team/gameserver/network/NpcStringId.java
+diff --git /java/com/l2j4team/gameserver/network/NpcStringId.java /java/com/l2j4team/gameserver/network/NpcStringId.java
 new file mode 100644
 index 0000000..089424b
 --- /dev/null
-+++ b/java/com/l2j4team/gameserver/network/NpcStringId.java
++++ /java/com/l2j4team/gameserver/network/NpcStringId.java
 @@ -0,0 +1,12241 @@
 +package com.l2j4team.gameserver.network;
 +
@@ -13291,11 +12916,11 @@ index 0000000..089424b
 +	}
 +}
 \ No newline at end of file
-diff --git a/server/game/config/custom/VDSystem.properties b/server/game/config/custom/VDSystem.properties
+diff --git /server/game/config/custom/VDSystem.properties /server/game/config/custom/VDSystem.properties
 new file mode 100644
 index 0000000..a5562cb
 --- /dev/null
-+++ b/server/game/config/custom/VDSystem.properties
++++ /server/game/config/custom/VDSystem.properties
 @@ -0,0 +1,502 @@
 +# Installation and setup information:
 +# 1) To use this system you need account/server on each topsite
@@ -13304,7 +12929,7 @@ index 0000000..a5562cb
 +# 4) Global are automatically working if all information is setup correctly.
 +# Show debug messages (developers only)
 +# Default: False
-+VDS_DEBUG = False
++VDS_DEBUG = True
 +
 +
 +# ================================================================== #
@@ -13495,11 +13120,11 @@ index 0000000..a5562cb
 +
 +# Api key
 +# Can be obtained at https://top.4teambr.com/ after adding a server.
-+Top4TeamBRApiKey = DEMO
++Top4TeamBRApiKey = 
 +
 +# User Name (server name)
 +# Can be obtained at https://top.4teambr.com/ after adding a server.
-+Top4TeamBRUserName = l2j4team
++Top4TeamBRUserName = 4teambr
 +
 +# Check Votes delay in seconds
 +# Default: 1800 (30 minutes)

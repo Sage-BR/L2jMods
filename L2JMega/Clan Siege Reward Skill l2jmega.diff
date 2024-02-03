@@ -1,5 +1,5 @@
 ### Eclipse Workspace Patch 1.0
-#P L2jMega_gameserver2
+#P l2j4team_gameserver2
 diff --git dist/game/data/xml/ClanSiegeRewardSkillData.xml dist/game/data/xml/ClanSiegeRewardSkillData.xml
 new file mode 100644
 index 0000000..4e7b149

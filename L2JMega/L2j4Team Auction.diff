@@ -1,8 +1,8 @@
-diff --git a/java/Base/auction/AuctionItem.java b/java/Base/auction/AuctionItem.java
+diff --git /java/Base/auction/AuctionItem.java /java/Base/auction/AuctionItem.java
 new file mode 100644
 index 0000000..a3faa58
 --- /dev/null
-+++ b/java/Base/auction/AuctionItem.java
++++ /java/Base/auction/AuctionItem.java
 @@ -0,0 +1,76 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify it under
@@ -81,11 +81,11 @@ index 0000000..a3faa58
 +	}
 +}
 \ No newline at end of file
-diff --git a/java/Base/datatables/AuctionTable.java b/java/Base/datatables/AuctionTable.java
+diff --git /java/Base/datatables/AuctionTable.java /java/Base/datatables/AuctionTable.java
 new file mode 100644
 index 0000000..3a7e27e
 --- /dev/null
-+++ b/java/Base/datatables/AuctionTable.java
++++ /java/Base/datatables/AuctionTable.java
 @@ -0,0 +1,199 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify it under
@@ -286,10 +286,10 @@ index 0000000..3a7e27e
 +		protected static final AuctionTable _instance = new AuctionTable();
 +	}
 +}
-diff --git a/java/com/l2j4team/gameserver/GameServer.java b/java/com/l2j4team/gameserver/GameServer.java
+diff --git /java/com/l2j4team/gameserver/GameServer.java /java/com/l2j4team/gameserver/GameServer.java
 index 11ceed3..6e1d51c 100644
---- a/java/com/l2j4team/gameserver/GameServer.java
-+++ b/java/com/l2j4team/gameserver/GameServer.java
+--- /java/com/l2j4team/gameserver/GameServer.java
++++ /java/com/l2j4team/gameserver/GameServer.java
 @@ -113,6 +113,7 @@
  import com.l2j4team.gameserver.xmlfactory.XMLDocumentFactory;
  import com.l2j4team.util.DeadLockDetector;
@@ -308,11 +308,11 @@ index 11ceed3..6e1d51c 100644
  		StringUtil.printSection("System");
  		Runtime.getRuntime().addShutdownHook(Shutdown.getInstance());
  		ForumsBBSManager.getInstance();
-diff --git a/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java b/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
+diff --git /java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java /java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
 new file mode 100644
 index 0000000..fac57f2
 --- /dev/null
-+++ b/java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
++++ /java/com/l2j4team/gameserver/model/actor/instance/AuctionManager.java
 @@ -0,0 +1,513 @@
 +/*
 + * This program is free software: you can redistribute it and/or modify it under
@@ -828,11 +828,11 @@ index 0000000..fac57f2
 +    }
 +}
 \ No newline at end of file
-diff --git a/server/game/data/html/mods/auction/65529.htm b/server/game/data/html/mods/auction/65529.htm
+diff --git /server/game/data/html/mods/auction/65529.htm /server/game/data/html/mods/auction/65529.htm
 new file mode 100644
 index 0000000..c3117f8
 --- /dev/null
-+++ b/server/game/data/html/mods/auction/65529.htm
++++ /server/game/data/html/mods/auction/65529.htm
 @@ -0,0 +1,23 @@
 +<html>
 +<title>
@@ -858,8 +858,3 @@ index 0000000..c3117f8
 +</body>
 +</html>
 \ No newline at end of file
-diff --git a/server/game/libs/l2j4team.jar b/server/game/libs/l2j4team.jar
-index 63f16e3..58b527b 100644
---- a/server/game/libs/l2j4team.jar
-+++ b/server/game/libs/l2j4team.jar
-Binary files differ

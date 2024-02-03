@@ -8,5 +8,5 @@ Copy the hopzone folder into the java folder in your project.
 Change the imports.
 And finally, add the lines to the patch.
 
-For it: https://www.l2jbrasil.com/topic/144162-l2jmegapack-source-pack
-Para isso: https://www.l2jbrasil.com/topic/144162-l2jmegapack-source-pack
+For it: https://www.l2jbrasil.com/topic/144162-l2j4teampack-source-pack
+Para isso: https://www.l2jbrasil.com/topic/144162-l2j4teampack-source-pack

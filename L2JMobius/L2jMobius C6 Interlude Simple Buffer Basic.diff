@@ -1,0 +1,404 @@
+diff --git a/L2J_Mobius_C6_Interlude/.gitignore b/L2J_Mobius_C6_Interlude/.gitignore
+new file mode 100644
+index 0000000..ae3c172
+--- /dev/null
++++ b/L2J_Mobius_C6_Interlude/.gitignore
+@@ -0,0 +1 @@
++/bin/
+diff --git a/L2J_Mobius_C6_Interlude/dist/game/data/html/mods/Buffer/50009.htm b/L2J_Mobius_C6_Interlude/dist/game/data/html/mods/Buffer/50009.htm
+new file mode 100644
+index 0000000..64cf0a0
+--- /dev/null
++++ b/L2J_Mobius_C6_Interlude/dist/game/data/html/mods/Buffer/50009.htm
+@@ -0,0 +1,270 @@
++<html>
++<body>
++<table width="300">
++		<tr>
++			<td align="center">
++				<font color="FF9900">
++					Simple Buffer Basic
++				</font>
++				<img src="L2UI.SquareWhite" width="300" height="1">
++			</td>
++		</tr>
++		<tr>
++			<td align="center">
++				<table width="300">
++					<tr>
++						<td>
++							<font color="FF9900">
++								Buffs
++							</font>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1204 1">
++								Wind Walk
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1040 1">
++								Shield
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1068 1">
++								Might
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1036 1">
++								Magic Barrier
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1035 1">
++								Mental Shield
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1045 1">
++								Bless the Body
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1048 1">
++								Bless the Soul
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1062 1">
++								Berserker Spirit
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1086 1">
++								Haste
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1240 1">
++								Guidance
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1242 1">
++								Death Whisper
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1077 1">
++								Focus
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1268 1">
++								Vampiric Rage
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1087 1">
++								Agility
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1085 1">
++								Acumen
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1059 1">
++								Empower
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1303 1">
++								Wild Magic
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1078 1">
++								Concentration
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1243 1">
++								Bless Shield
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1259 1">
++								Resist Shock
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 1304 1">
++								Advanced Block
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_restore">
++								Heal
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_cancel">
++								Cancel
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<font color="FF9900">
++							Dances
++							</font>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 271 1">
++								Warrior
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 274 1">
++								Fire
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 275 1">
++								Fury
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 272 1">
++								Inspiration
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 310 1">
++								Vampire
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 273 1">
++								Mystic
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 276 1">
++								Concentration
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 277 1">
++								Light
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<font color="FF9900">
++							Songs
++							</font>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 264 1">
++								Earth
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 304 1">
++								Vitality
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 268 1">
++								Wind
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 267 1">
++								Warding
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 266 1">
++								Water
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 269 1">
++								Hunter
++							</a>
++						</td>
++					</tr>
++					<tr>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 265 1">
++								Life
++							</a>
++						</td>
++						<td>
++							<a action="bypass -h npc_%objectId%_getbuff 270 1">
++							Invocation
++							</a>
++						</td>
++					</tr>
++				</table>
++			</td>
++		</tr>
++	</table>
++</body>
++</html>
+\ No newline at end of file
+diff --git a/L2J_Mobius_C6_Interlude/java/org/l2jmobius/gameserver/model/actor/instance/Buffer.java b/L2J_Mobius_C6_Interlude/java/org/l2jmobius/gameserver/model/actor/instance/Buffer.java
+new file mode 100644
+index 0000000..2c6b1bf
+--- /dev/null
++++ b/L2J_Mobius_C6_Interlude/java/org/l2jmobius/gameserver/model/actor/instance/Buffer.java
+@@ -0,0 +1,103 @@
++/*
++ * This file is part of the L2J Mobius project.
++ * 
++ * This program is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ * 
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ * 
++ * You should have received a copy of the GNU General Public License
++ * along with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package org.l2jmobius.gameserver.model.actor.instance;
++
++import java.util.StringTokenizer;
++
++import org.l2jmobius.gameserver.data.SkillTable;
++import org.l2jmobius.gameserver.model.actor.Player;
++import org.l2jmobius.gameserver.model.actor.templates.NpcTemplate;
++import org.l2jmobius.gameserver.network.serverpackets.MagicSkillUse;
++import org.l2jmobius.gameserver.network.serverpackets.NpcHtmlMessage;
++
++/**
++ * @author Trance, Bluur
++ * @adapted for L2jmobius Reanimation
++ */
++public final class Buffer extends Folk
++{
++	public Buffer(int objectId, NpcTemplate template)
++	{
++		super(objectId, template);
++	}
++	
++	@Override
++	public void onBypassFeedback(Player player, String command)
++	{
++		StringTokenizer st = new StringTokenizer(command, " ");
++		String actualCommand = st.nextToken();
++		
++		int buffid = 0, bufflevel = 1;
++		if (st.countTokens() == 2)
++		{
++			buffid = Integer.valueOf(st.nextToken());
++			bufflevel = Integer.valueOf(st.nextToken());
++		}
++		else if (st.countTokens() == 1)
++		{
++			buffid = Integer.valueOf(st.nextToken());
++		}
++		
++		if (actualCommand.equalsIgnoreCase("getbuff"))
++		{
++			SkillTable.getInstance().getSkill(buffid, bufflevel).applyEffects(this, player);
++			broadcastPacket(new MagicSkillUse(this, player, buffid, bufflevel, 500, 0));
++			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++			html.setFile(getHtmlPath(getNpcId(), 0));
++			html.replace("%objectId%", getObjectId());
++			player.sendPacket(html);
++		}
++		else if (actualCommand.equalsIgnoreCase("restore"))
++		{
++			player.setCurrentHpMp(player.getMaxHp(), player.getMaxMp());
++			player.setCurrentCp(player.getMaxCp());
++			
++			broadcastPacket(new MagicSkillUse(this, player, 1258, 4, 500, 0));
++			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++			html.setFile(getHtmlPath(getNpcId(), 0));
++			html.replace("%objectId%", getObjectId());
++			player.sendPacket(html);
++		}
++		else if (actualCommand.equalsIgnoreCase("cancel"))
++		{
++			player.stopAllEffects();
++			broadcastPacket(new MagicSkillUse(this, player, 1056, 12, 500, 0));
++			final NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++			html.setFile(getHtmlPath(getNpcId(), 0));
++			html.replace("%objectId%", getObjectId());
++			player.sendPacket(html);
++		}
++		else
++		{
++			super.onBypassFeedback(player, command);
++		}
++	}
++	
++	@Override
++	public String getHtmlPath(int npcId, int value)
++	{
++		String filename = "";
++		if (value == 0)
++		{
++			filename = Integer.toString(npcId);
++		}
++		else
++		{
++			filename = npcId + "-" + value;
++		}
++		return "data/html/mods/Buffer/" + filename + ".htm";
++	}
++}
+\ No newline at end of file
+
+
+
+
+=================================================
+SQL
+=================================================
+
+INSERT INTO `custom_npc` (`id`, `displayId`, `name`, `serverSideName`, `title`, `serverSideTitle`, `class`, `collision_radius`, `collision_height`, `level`, `sex`, `type`, `attackrange`, `hp`, `mp`, `hpreg`, `mpreg`, `str`, `con`, `dex`, `int`, `wit`, `men`, `exp`, `sp`, `patk`, `pdef`, `matk`, `mdef`, `atkspd`, `aggro`, `matkspd`, `rhand`, `lhand`, `armor`, `walkspd`, `runspd`, `faction_id`, `faction_range`, `isUndead`, `absorb_level`, `absorb_type`) VALUES ('50009', '31228', 'The Cat', '1', 'Buffer', '1', 'Monster.cat_the_cat', '9', '16', '70', 'male', 'Buffer', '40', '3862', '1493', '11.85', '2.78', '40', '43', '30', '21', '20', '10', '490', '10', '1335', '470', '780', '382', '278', '0', '333', '0', '0', '0', '88', '132', '', '0', '0', '0', 'LAST_HIT')

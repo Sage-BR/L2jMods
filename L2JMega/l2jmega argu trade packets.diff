@@ -1,5 +1,5 @@
 ### Eclipse Workspace Patch 1.0
-#P L2jMega_gameserver2
+#P l2j4team_gameserver2
 diff --git java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java
 index 4b25019..ae2240e 100644
 --- java/net/sf/l2j/gameserver/model/tradelist/TradeItem.java

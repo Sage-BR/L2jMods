@@ -1,0 +1,245 @@
+diff --git a/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/Config.java b/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/Config.java
+index f984695..4fb5cc2 100644
+--- a/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/Config.java
++++ b/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/Config.java
+@@ -147,6 +147,8 @@
+ 	private static final String CUSTOM_WAREHOUSE_SORTING_CONFIG_FILE = "./config/Custom/WarehouseSorting.ini";
+ 	private static final String CUSTOM_WEDDING_CONFIG_FILE = "./config/Custom/Wedding.ini";
+ 	private static final String CUSTOM_WALKER_BOT_PROTECTION_CONFIG_FILE = "./config/Custom/WalkerBotProtection.ini";
++	private static final String CUSTOM_SUB_STUCK_CONFIG_FILE = "./config/Custom/SubStuck.ini";
+
+
+
+@@ -1351,6 +1394,12 @@
+ 	public static long SELLBUFF_MAX_PRICE;
+ 	public static int SELLBUFF_MAX_BUFFS;
+ 	
++	/** SUBSTUCK MOD **/
++	public static boolean ACUMULATIVE_SUBCLASS_SKILLS;
++	public static boolean ACUMULATIVE_SUBCLASS_PASIVE;
++	public static boolean ACUMULATIVE_SUBCLASS_DONT_SKILLS;
++	public static String[] ACUMULATIVE_SUBCLASS_DONT_SKILLS_ID;
++	
+ 	public static boolean ENABLE_GUI;
+ 	public static boolean DARK_THEME;
+
+
+@@ -3125,6 +3217,13 @@
+ 			SELLBUFF_MAX_PRICE = sellBuffConfig.getLong("MaximumPrice", 100000000);
+ 			SELLBUFF_MAX_BUFFS = sellBuffConfig.getInt("MaxBuffs", 15);
+ 			
++			// Load substuck config file (if exists)
++			final PropertiesParser substuckConfig = new PropertiesParser(CUSTOM_SUB_STUCK_CONFIG_FILE);
++			ACUMULATIVE_SUBCLASS_SKILLS = substuckConfig.getBoolean("AcumulativeSkills", false);
++			ACUMULATIVE_SUBCLASS_PASIVE = substuckConfig.getBoolean("AcumulativeSkillsPasive", false);
++			ACUMULATIVE_SUBCLASS_DONT_SKILLS = substuckConfig.getBoolean("DontAcumulativeSkills", true);
++			ACUMULATIVE_SUBCLASS_DONT_SKILLS_ID = substuckConfig.getString("DontAcumulativeSkillsId", "351").split(";");
++			
+ 			// Load ServerTime config file (if exists)
+ 			final PropertiesParser serverTimeConfig = new PropertiesParser(CUSTOM_SERVER_TIME_CONFIG_FILE);
+ 			DISPLAY_SERVER_TIME = serverTimeConfig.getBoolean("DisplayServerTime", false);
+diff --git a/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/gameserver/model/actor/Player.java b/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/gameserver/model/actor/Player.java
+index ec575d7..13be6d8 100644
+--- a/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/gameserver/model/actor/Player.java
++++ b/L2J_Mobius_CT_2.6_HighFive/java/org/l2jmobius/gameserver/model/actor/Player.java
+@@ -345,6 +345,8 @@
+  */
+ public class Player extends Playable
+ {
++	// SubAcu mod
++	private static final String ACUMULATE_SKILLS_FOR_CHAR_SUB = "SELECT skill_id,skill_level,class_index FROM character_skills WHERE charId=? ORDER BY skill_id,skill_level ASC";
+ 	// Character Skill SQL String Definitions:
+ 	private static final String RESTORE_SKILLS_FOR_CHAR = "SELECT skill_id,skill_level FROM character_skills WHERE charId=? AND class_index=?";
+ 	private static final String UPDATE_CHARACTER_SKILL_LEVEL = "UPDATE character_skills SET skill_level=? WHERE skill_id=? AND charId=? AND class_index=?";
+@@ -7729,44 +7731,142 @@
+ 	 */
+ 	private void restoreSkills()
+ 	{
+-		try (Connection con = DatabaseFactory.getConnection();
+-			PreparedStatement ps = con.prepareStatement(RESTORE_SKILLS_FOR_CHAR))
++		if (Config.ACUMULATIVE_SUBCLASS_SKILLS)
+ 		{
+-			// Retrieve all skills of this Player from the database
+-			ps.setInt(1, getObjectId());
+-			ps.setInt(2, _classIndex);
+-			try (ResultSet rs = ps.executeQuery())
++			try (Connection con = DatabaseFactory.getConnection();
++				PreparedStatement statement = con.prepareStatement(ACUMULATE_SKILLS_FOR_CHAR_SUB))
+ 			{
+-				while (rs.next())
++				statement.setInt(1, getObjectId());
++				// statement.setInt(2, getClassIndex());
++				try (ResultSet rset = statement.executeQuery())
+ 				{
+-					final int id = rs.getInt("skill_id");
+-					final int level = rs.getInt("skill_level");
+ 					
+-					// Create a Skill object for each record
+-					final Skill skill = SkillData.getInstance().getSkill(id, level);
+-					if (skill == null)
++					// Go though the recordset of this SQL query
++					while (rset.next())
+ 					{
+-						LOGGER.warning("Skipped null skill Id: " + id + " Level: " + level + " while restoring player skills for playerObjId: " + getObjectId());
+-						continue;
+-					}
+-					
+-					// Add the Skill object to the Creature _skills and its Func objects to the calculator set of the Creature
+-					addSkill(skill);
+-					
+-					if (Config.SKILL_CHECK_ENABLE && (!canOverrideCond(PlayerCondOverride.SKILL_CONDITIONS) || Config.SKILL_CHECK_GM) && !SkillTreeData.getInstance().isSkillAllowed(this, skill))
+-					{
+-						Util.handleIllegalPlayerAction(this, "Player " + getName() + " has invalid skill " + skill.getName() + " (" + skill.getId() + "/" + skill.getLevel() + "), class:" + ClassListData.getInstance().getClass(getClassId()).getClassName(), IllegalActionPunishmentType.BROADCAST);
+-						if (Config.SKILL_CHECK_REMOVE)
++						final int id = rset.getInt("skill_id");
++						final int level = rset.getInt("skill_level");
++						final int class_index = rset.getInt("class_index");
++						
++						// Create a L2Skill object for each record
++						final Skill skill = SkillData.getInstance().getSkill(id, level);
++						
++						if (skill == null)
+ 						{
+-							removeSkill(skill);
++							LOGGER.warning("Skipped null skill Id: " + id + " Level: " + level + " while restoring player skills for playerObjId: " + getObjectId());
++							continue;
++						}
++						
++						if (getClassIndex() != class_index)
++						{
++							// solo acumulamos activos.
++							if (Config.ACUMULATIVE_SUBCLASS_PASIVE && skill.isPassive())
++							{
++								continue;
++							}
++							
++							// no acumulamos algunos skills especificos.
++							if (Config.ACUMULATIVE_SUBCLASS_DONT_SKILLS)
++							{
++								List<String> dontAcumulativeSkillsIdList = Arrays.asList(Config.ACUMULATIVE_SUBCLASS_DONT_SKILLS_ID);
++								boolean isSkillInDontList = false;
++								
++								for (String skillId : dontAcumulativeSkillsIdList)
++								{
++									try
++									{
++										int skillIdInt = Integer.parseInt(skillId);
++										if (skillIdInt == id)
++										{
++											isSkillInDontList = true;
++											break; // Salir del bucle si se encuentra una coincidencia
++										}
++									}
++									catch (NumberFormatException e)
++									{
++										LOGGER.warning("Los skill IDs en DontAcumulativeSkillsId no están bien escritos ¬¬");
++									}
++								}
++								
++								// Si el skill está en la lista de exclusión, no agregarlo
++								if (isSkillInDontList)
++								{
++									continue;
++								}
++							}
++							
++						}
++						
++						// Add the L2Skill object to the L2Character _skills and its Func objects to the calculator set of the L2Character
++						addSkill(skill);
++						
++						if (Config.SKILL_CHECK_ENABLE && (!canOverrideCond(PlayerCondOverride.SKILL_CONDITIONS) || Config.SKILL_CHECK_GM))
++						{
++							if (!SkillTreeData.getInstance().isSkillAllowed(this, skill))
++							{
++								Util.handleIllegalPlayerAction(this, "Player " + getName() + " has invalid skill " + skill.getName() + " (" + skill.getId() + "/" + skill.getLevel() + "), class:" + ClassListData.getInstance().getClass(getClassId()).getClassName(), IllegalActionPunishmentType.BROADCAST);
++								if (Config.SKILL_CHECK_REMOVE)
++								{
++									removeSkill(skill);
++								}
++							}
+ 						}
+ 					}
+ 				}
+ 			}
++			catch (Exception e)
++			{
++				LOGGER.log(Level.WARNING, "Could not restore character " + this + " skills: " + e.getMessage(), e);
++			}
+ 		}
+-		catch (Exception e)
++		else
+ 		{
+-			LOGGER.log(Level.WARNING, "Could not restore character " + this + " skills: " + e.getMessage(), e);
++			try (Connection con = DatabaseFactory.getConnection();
++				PreparedStatement statement = con.prepareStatement(RESTORE_SKILLS_FOR_CHAR))
++			{
++				// Retrieve all skills of this L2PcInstance from the database
++				statement.setInt(1, getObjectId());
++				statement.setInt(2, getClassIndex());
++				try (ResultSet rset = statement.executeQuery())
++				{
++					
++					// Go though the recordset of this SQL query
++					while (rset.next())
++					{
++						final int id = rset.getInt("skill_id");
++						final int level = rset.getInt("skill_level");
++						
++						// Create a L2Skill object for each record
++						final Skill skill = SkillData.getInstance().getSkill(id, level);
++						
++						if (skill == null)
++						{
++							LOGGER.warning("Skipped null skill Id: " + id + " Level: " + level + " while restoring player skills for playerObjId: " + getObjectId());
++							continue;
++						}
++						
++						// Add the L2Skill object to the L2Character _skills and its Func objects to the calculator set of the L2Character
++						addSkill(skill);
++						
++						if (Config.SKILL_CHECK_ENABLE && (!canOverrideCond(PlayerCondOverride.SKILL_CONDITIONS) || Config.SKILL_CHECK_GM))
++						{
++							if (!SkillTreeData.getInstance().isSkillAllowed(this, skill))
++							{
++								Util.handleIllegalPlayerAction(this, "Player " + getName() + " has invalid skill " + skill.getName() + " (" + skill.getId() + "/" + skill.getLevel() + "), class:" + ClassListData.getInstance().getClass(getClassId()).getClassName(), IllegalActionPunishmentType.BROADCAST);
++								if (Config.SKILL_CHECK_REMOVE)
++								{
++									removeSkill(skill);
++								}
++							}
++						}
++					}
++				}
++			}
++			
++			catch (Exception e)
++			{
++				LOGGER.log(Level.WARNING, "Could not restore character " + this + " skills: " + e.getMessage(), e);
++			}
+ 		}
+ 	}
+diff --git a/L2J_Mobius_CT_2.6_HighFive/dist/game/config/Custom/SubStuck.ini b/L2J_Mobius_CT_2.6_HighFive/dist/game/config/Custom/SubStuck.ini
+new file mode 100644
+index 0000000..e943557
+--- /dev/null
++++ b/L2J_Mobius_CT_2.6_HighFive/dist/game/config/Custom/SubStuck.ini
+@@ -0,0 +1,17 @@
++# ---------------------------------------------------------------------------
++# Subclass Acu mod
++# ---------------------------------------------------------------------------
++
++# Aqui activamos el sistema de subclass Acu
++# default false
++AcumulativeSkills = True
++
++# Aqui activamos para que no se acumulen los skills pasivos
++AcumulativeSkillsPasive = False
++
++# Aqui activamos por si solo queremos q cierto skills no se acumulen, como por ejemplo los
++# skills de 3ra y bien los pasivos de armas y armaduras
++DontAcumulativeSkills = True
++
++# Aqui definimos los skills q no se acumularan
++DontAcumulativeSkillsId = 141;249;250;463;227;236;252;258;465;234;235;251;231;232;253;259;118;233
++
