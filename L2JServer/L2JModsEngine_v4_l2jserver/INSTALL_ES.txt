@@ -1,0 +1,25 @@
+﻿Simple y eficiente!
+
+La instanciación del motor mod consiste en dos partes, la primera es hacer que el motor mod sea cargado en el servidor y finalmente, incorporar los mods deseados. Los mods son totalmente configurables desde su configuración personal.
+
+# Instalación del Mods Engine:
+
+- Descargar el L2JModsEngine.7z de (ESTO).
+- Dentro del .7z, ve a L2JModsEngine/libs, copia L2JModsEngine.jar y pegalo en las librerias de vuestro proyecto.
+- Re-compile vuestro servidor. Esto es necesario para que el classpath  genere las nuevas rutas y cargue correctamente el engine.
+- Dentro del L2JModsEngine.7z, busca la carpeta llamada 'game', copiala y pegala en tu servidor, respetando las rutas: game/data/scripts/custom/L2JModsEngine.
+- Por último abre vuestro scripts.cfg y pega la línea custom/L2JModsEngine/L2JModsEngineStarter.java.
+
+
+# Instalación del Mod Pack:
+
+- Descarga el mod deseado de ESTA LISTA (link is only available for subscribers).
+- Pega el *.jar descargado en al ruta: game/modsengine/mods folder.
+- Inicia el servidor y el servidor creará los archivos de configuración en la ruta anterior.
+- Ya solo te os quedará configurar los mods a vuestro gusto y listo!
+
+Si tienes algun problema, duda o pregunta, no dudes en consultarnos en nuestra sección de soporte.
+
+http://www.l2jdevs.org
+
+A disfrutar!

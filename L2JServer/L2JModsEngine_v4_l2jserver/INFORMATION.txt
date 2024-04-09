@@ -1,0 +1,37 @@
+﻿.____    ________      ____.________                     
+|    |   \_____  \    |    |\______ \   _______  ________
+|    |    /  ____/    |    | |    |  \_/ __ \  \/ /  ___/
+|    |___/       \/\__|    | |    `   \  ___/\   /\___ \ 
+|_______ \_______ \________|/_______  /\___  >\_//____  >
+        \/       \/                 \/     \/         \/ 
+
+Thank you for trusting us.
+More info in http://www.l2jdevs.org
+
+--------------------------------------------------------------
+
+L2JMods is an add-on, fully written in Java, for L2J servers that allows you add mods without any server modification.
+
+What is a mod? It's a customization of some parts of original game. For example, raid boss events, dress me, achievements system, turn the sky red when a player kills another, etc.
+L2JMods core is free and you can install it in five minutes with the THIS GUIDE --> http://www.l2jdevs.org/forum/index.php?topic=30.0
+
+# Some mods available are:
+
+- Show Stats Opponent System.
+- Anti Drain Mob System.
+- Dead Effects System.
+- Chat System.
+- Treasure Legion Event.
+- Player Online Rewards.
+- Protection System.
+- And so on..
+
+If you want to see the full list, checkout the following here --> http://www.l2jdevs.org/forum/index.php?board=41.0
+
+L2JMods was made with ❤ and we hope you can enjoy it so much!
+
+If you have any trouble, contact us for help.
+
+http://www.l2jdevs.org
+
+Enjoy it!

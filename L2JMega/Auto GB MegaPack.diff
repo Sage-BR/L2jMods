@@ -1,0 +1,277 @@
+### Eclipse Workspace Patch 1.0
+#P Source Mega 11.12.2022
+diff --git java/com/l2jmega/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
+index 7e28c4e..b931271 100644
+--- java/com/l2jmega/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
++++ java/com/l2jmega/gameserver/handler/voicedcommandhandlers/VoicedMenu.java
+@@ -13,65 +13,68 @@
+ import com.l2jmega.gameserver.MissionReset;
+ import com.l2jmega.gameserver.NewZoneVote;
+ import com.l2jmega.gameserver.PartyFarmEvent;
+ import com.l2jmega.gameserver.Restart;
+ import com.l2jmega.gameserver.data.SkillTable;
+ import com.l2jmega.gameserver.data.xml.DressMeData;
+ import com.l2jmega.gameserver.handler.IVoicedCommandHandler;
+ import com.l2jmega.gameserver.model.DressMe;
+ import com.l2jmega.gameserver.model.actor.instance.Player;
+ import com.l2jmega.gameserver.model.olympiad.Olympiad;
+ import com.l2jmega.gameserver.model.zone.ZoneId;
+ import com.l2jmega.gameserver.network.serverpackets.NpcHtmlMessage;
+ import com.l2jmega.gameserver.network.serverpackets.OpenUrl;
+ 
+ import java.sql.Date;
+ import java.text.SimpleDateFormat;
+ import java.util.StringTokenizer;
+ 
+ import com.l2jmega.commons.concurrent.ThreadPool;
+ 
++import net.sf.l2j.gameserver.taskmanager.AutoGoldBar;
+
+ public class VoicedMenu implements IVoicedCommandHandler
+ {
+ 	
+ 	private static final String[] VOICED_COMMANDS =
+ 	{
+ 		"menu",
+ 		"MENU",
+ 		"partyon",
+ 		"tradeon",
+ 		"buffon",
+ 		"messageon",
+ 		"partyoff",
+ 		"tradeoff",
+ 		"buffoff",
+ 		"messageoff",
+ 		"setPartyRefuse",
+ 		"setTradeRefuse",
+ 		"setMessageRefuse",
+ 		"setBuffProtection",
+ 		"optimizeFPS",
+ 		"info",
+ 		"event",
+ 		"bp_changedressmestatus",
+ 		"mission",
+ 		"info_url",
++		"setAutoGb",
+ 		"skins",
+ 		"trySkin",
+ 		"hair",
+ 		"pin",
+ 		"bp_changedressmestatus",
+ 		"disable_Helm",
+ 		"disable_skin"
+ 		
+ 		
+ 	};
+ 	
+ 	@Override
+ 	public boolean useVoicedCommand(String command, Player activeChar, String target)
+ 	{
+ 		
+ 		if (command.equals("menu") || command.equals("MENU"))
+ 			showMenuHtml(activeChar);
+ 		else if (command.equals("partyon"))
+ 		{
+ 			if (activeChar.isPartyInvProt())
+@@ -236,40 +239,54 @@
+ 		}
+ 		else if (command.equals("mission"))
+ 		{
+ 			showMissionHtml(activeChar);
+ 		}
+ 		else if (command.startsWith("info_url")) {
+ 			activeChar.sendPacket(new OpenUrl("" + Config.INFO_URL + ""));
+ 		}
+ 		else if (command.startsWith("hair")) {
+ 			
+ 			if(activeChar.getDress() == null){
+ 				activeChar.sendMessage("You are not wearing a skin.");
+ 				return false;
+ 			}
+ 			
+ 			if (activeChar.getDress() != null){
+ 				activeChar.getDress().setHairId(0);
+ 				activeChar.broadcastUserInfo();
+ 			}
+ 		}
++		else if (command.equalsIgnoreCase("setAutoGb"))
++		{
++			if (activeChar.isAutoGb())
++			{
++				activeChar.setAutoGb(false);
++				AutoGoldBar.getInstance().remove(activeChar);
++			}
++			else
++			{
++				activeChar.setAutoGb(true);
++				AutoGoldBar.getInstance().add(activeChar);
++			}
++			VoicedMenu.showMenuHtml(activeChar);
++		}
+ 		else if (command.startsWith("trySkin")) 
+ 			if(activeChar.isVip()){
+ 				
+ 				StringTokenizer st = new StringTokenizer(command);
+ 				st.nextToken();
+ 				int skinId = Integer.parseInt(st.nextToken());
+ 				
+ 				final DressMe dress = DressMeData.getInstance().getItemId(skinId);
+ 				
+ 				if (dress != null) {
+ 					activeChar.setDress(dress);
+ 					DressMeData.getInstance().reloadPL();
+ 					activeChar.broadcastUserInfo();
+ 				}
+ 				else {
+ 					activeChar.sendMessage("Invalid skin.");
+ 					return false;
+ 				} 
+ 			}
+ 			else{ 
+@@ -301,40 +318,41 @@
+ 				else {
+ 					activeChar.sendMessage("Invalid skin.");
+ 					return false;
+ 				} 
+ 			}
+ 		return true;
+ 	}
+ 	
+ 	static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+ 	
+ 	static void showMenuHtml(Player activeChar)
+ 	{		
+ 		
+ 		NpcHtmlMessage html = new NpcHtmlMessage(0);
+ 		html.setFile("data/html/mods/menu/Menu.htm");
+ 		html.replace("%dat%", (new SimpleDateFormat("dd/MM/yyyy")).format(new Date(System.currentTimeMillis())) );
+ 		html.replace("%time%", (new SimpleDateFormat("HH:mm:ss")).format(new Date(System.currentTimeMillis())) );
+ 		html.replace("%partyRefusal%", activeChar.isPartyInvProt() ? "checked" : "unable");
+ 		html.replace("%tradeRefusal%", activeChar.getTradeRefusal() ? "checked" : "unable");
+ 		html.replace("%messageRefusal%", activeChar.getMessageRefusal() ? "checked" : "unable");
++		html.replace("%setAutoGb%", activeChar.isAutoGb() ? "checked" : "unable");
+ 		html.replace("%dressme%", activeChar.isDressMeEnabled() ? "ON" : "OFF");
+ 		html.replace("%buff%", activeChar.isBuffProtected() ? "checked" : "unable");
+ 		html.replace("%optimize%", activeChar.isOptimizeFPS() ? "checked" : "unable");
+ 		html.replace("%name%", activeChar.getName());
+ 
+ 		if(Config.PVP_EVENT_ENABLED){
+ 			if(PvPEvent.getInstance().isActive())	
+ 			html.replace("%pvp%", "In Progress");
+ 			else	
+ 			html.replace("%pvp%", PvPEventNext.getInstance().getNextTime().toString() );
+ 		}
+ 		if(Config.TVT_EVENT_ENABLED){
+ 			if(TvT.is_inProgress())	
+ 			html.replace("%tvt%", "In Progress");
+ 			else
+ 		    html.replace("%tvt%", TvTEventManager.getInstance().getNextTime().toString() );
+ 		}
+ 		if(Config.CTF_EVENT_ENABLED){
+ 			if(CTF.is_inProgress())	
+ 			html.replace("%ctf%", "In Progress");
+diff --git java/com/l2jmega/gameserver/model/actor/instance/Player.java
+index 584b1b2..05af79d 100644
+--- java/com/l2jmega/gameserver/model/actor/instance/Player.java
++++ java/com/l2jmega/gameserver/model/actor/instance/Player.java
+@@ -14464,21 +14464,32 @@
+ 	private boolean _dressedHelm;
+ 	public boolean isDressMeHelmEnabled() {
+ 		return _dressedHelm;
+ 	}
+ 	
+ 	public void setDressMeHelmEnabled(boolean val) {
+ 		_dressedHelm = val;
+ 	}
+ 	
+ 	private DressMe _dressMe;
+ 	
+ 	public DressMe getDress()
+ 	{
+ 		return _dressMe;
+ 	}
+ 	
+ 	public void setDress(DressMe val)
+ 	{
+ 		_dressMe = val;
+ 	}
++	private boolean _gbforadena = false;
++	public boolean isAutoGb()
++	{
++		return _gbforadena;
++	}
++	public void setAutoGb(boolean gbforadena) 
++	{
++		_gbforadena = gbforadena;
++	}
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/taskmanager/AutoGoldBar.java
+new file mode 100644
+index 0000000..3d5b86b
+--- /dev/null
++++ java/net/sf/l2j/gameserver/taskmanager/AutoGoldBar.java
+@@ -0,0 +1,62 @@
++package net.sf.l2j.gameserver.taskmanager;
++
++import com.l2jmega.Config;
++import com.l2jmega.gameserver.model.actor.Creature;
++import com.l2jmega.gameserver.model.actor.instance.Player;
++import com.l2jmega.gameserver.network.serverpackets.ItemList;
++
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++import com.l2jmega.commons.concurrent.ThreadPool;
++
++public class AutoGoldBar implements Runnable
++{
++	@Override
++	public final void run()
++	{
++		if (_players.isEmpty())
++			return;
++		
++		for (Map.Entry<Player, Long> entry : _players.entrySet())
++		{
++			final Player player = entry.getKey();
++			
++			if (player.getInventory().getInventoryItemCount(57, 0) >= Config.BANKING_SYSTEM_ADENA)
++			{
++				player.getInventory().reduceAdena("Goldbar", Config.BANKING_SYSTEM_ADENA, player, null);
++				player.getInventory().addItem("Goldbar", Config.BANKING_SYSTEM_GOLDBAR_ID, Config.BANKING_SYSTEM_GOLDBARS, player, null);
++				player.getInventory().updateDatabase();
++				player.sendPacket(new ItemList(player, false));
++			}
++		}
++	}
++	
++	private final Map<Player, Long> _players = new ConcurrentHashMap<>();
++	
++	protected AutoGoldBar()
++	{
++		// Run task each 10 second.
++		ThreadPool.scheduleAtFixedRate(this, 1000, 1000);
++	}
++	
++	public final void add(Player player)
++	{
++		_players.put(player, System.currentTimeMillis());
++	}
++	
++	public final void remove(Creature player)
++	{
++		_players.remove(player);
++	}
++	
++	public static final AutoGoldBar getInstance()
++	{
++		return SingletonHolder._instance;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final AutoGoldBar _instance = new AutoGoldBar();
++	}
++}
+\ No newline at end of file

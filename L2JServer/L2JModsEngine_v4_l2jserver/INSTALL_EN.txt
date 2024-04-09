@@ -1,0 +1,27 @@
+﻿Simple and efficient!
+
+The mod engine instantiation consists of two parts, the first is to make the mod engine be loaded on the server and finally, to incorporate the desired mods. The mods are totally configurable from their personal configuration.
+
+# Instalation Mods Engine:
+
+- Download the L2JModsEngine.7z (THIS).
+- Inside the .7z, go to "L2JModsEngine/libs", copy "L2JModsEngine.jar" and paste it inside libs folder in your server project.
+- Re-compile your server files. This is really necessary because now you have the mod jar inside libs folder it'll generate the classpath (if you don't know what I'm talking about, don't worry, just know it's mandatory).
+- Get the new l2jserver.jar, copy and paste it inside your server folder in "game/". You have to replace the old one.
+- Copy L2JModsEngine.jar again and paste it inside libs in your server.
+- Inside the L2JModsEngine.7z, search for the folder 'game', copy and paste it in your server folder. This will add the script to initialize the engine in the following route: game/data/scripts/custom/L2JModsEngine.
+- Last step! Open your scripts.cfg and paste the line custom/L2JModsEngine/L2JModsEngineStarter.java.
+
+
+# Instalation Mod Pack:
+
+- Download mods in the following SECTION (link is only available for subscribers).
+- Paste the mod jars inside game/modsengine/mods folder.
+- When you start the server, if everything went well, you'll see the configuration files generated inside mods folder.
+
+
+If you have any trouble, please, contact us for help.
+
+http://www.l2jdevs.org
+
+Enjoy it!

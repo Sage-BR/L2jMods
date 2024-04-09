@@ -599,7 +599,7 @@ index 3be0c83..3057e52 100644
   */
  package com.l2j4team.gameserver.handler;
  
-+import com.l2j4team.gameserver.handler.voicedcommandhandlers.BossEventCMD;
+ import com.l2j4team.gameserver.handler.voicedcommandhandlers.BossEventCMD;
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedAutoFarm;
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedAutoPotion;
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedBanking;
@@ -607,7 +607,7 @@ index 3be0c83..3057e52 100644
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedReport;
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedStatus;
  import com.l2j4team.gameserver.handler.voicedcommandhandlers.VoicedVoteZone;
--import com.l2j4team.gameserver.handler.voicedcommandhandlers.BossEventCMD;
+ import com.l2j4team.gameserver.handler.voicedcommandhandlers.BossEventCMD;
  
  import java.util.HashMap;
  import java.util.Map;
