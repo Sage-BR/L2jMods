@@ -1,0 +1,97 @@
+### Eclipse Workspace Patch 1.0
+#P aCis_gameserver
+diff --git java/net/sf/l2j/gameserver/model/actor/instance/NoblesseNpc.java
+new file mode 100644
+index 0000000..0aa51ef
+--- /dev/null
++++ java/net/sf/l2j/gameserver/model/actor/instance/NoblesseNpc.java
+@@ -0,0 +1,88 @@
++package net.sf.l2j.gameserver.model.actor.instance;
++
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.model.actor.template.NpcTemplate;
++import net.sf.l2j.gameserver.network.serverpackets.ExShowScreenMessage;
++import net.sf.l2j.gameserver.network.serverpackets.NpcHtmlMessage;
++
++public final class NoblesseNpc extends Folk
++{
++	private static final int BLACK_CROWN = 9210;
++	private static final int GOLD_CROWN = 9211;
++	private static final int RED_CROWN = 9212;
++	private static final int SILVER_CROWN = 9213;
++	private static final int NOBLESSE_TIARA = 7694;
++	
++	public NoblesseNpc(int objectId, NpcTemplate template)
++	{
++		super(objectId, template);
++	}
++	
++	@Override
++	public void onBypassFeedback(Player player, String command)
++	{
++		if (command.startsWith("becomeNoblesse"))
++		{
++			if (player.isNoble())
++			{
++				NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++				html.setFile("data/html/l2jmods/noblessmanager/noblesse-already.htm");
++				
++				player.sendPacket(html);
++				return;
++			}
++			else if (player.getStatus().getLevel() < 78)
++			{
++				NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++				html.setFile("data/html/l2jmods/noblessmanager/noblesse-level.htm");
++				player.sendPacket(html);
++				return;
++			}
++			else if (player.getInventory().getItemByItemId(BLACK_CROWN) == null || player.getInventory().getItemByItemId(GOLD_CROWN) == null || player.getInventory().getItemByItemId(RED_CROWN) == null || player.getInventory().getItemByItemId(SILVER_CROWN) == null)
++			{
++				NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++				html.setFile("data/html/l2jmods/noblessmanager/noblesse-crowns.htm");
++				player.sendPacket(html);
++				return;
++			}
++			else if (player.getPvpKills() < 50)
++			{
++				NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++				html.setFile("data/html/l2jmods/noblessmanager/noblesse-pvpkills.htm");
++				player.sendPacket(html);
++				return;
++			}
++			else
++			{
++				NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++				html.setFile("data/html/l2jmods/noblessmanager/noblesse-successfully.htm");
++				
++				player.destroyItemByItemId("Consume", BLACK_CROWN, 1, player, true);
++				player.destroyItemByItemId("Consume", GOLD_CROWN, 1, player, true);
++				player.destroyItemByItemId("Consume", RED_CROWN, 1, player, true);
++				player.destroyItemByItemId("Consume", SILVER_CROWN, 1, player, true);
++				player.addItem("Loot", NOBLESSE_TIARA, 1, player, true);
++				player.setNoble(true, true);
++				player.sendPacket(html);
++				player.sendPacket(new ExShowScreenMessage("Parabens! Voce virou Nobless!", 6000));
++			}
++		}
++		else
++			super.onBypassFeedback(player, command);
++	}
++	
++	@Override
++	public void showChatWindow(Player player)
++	{
++		NpcHtmlMessage html = new NpcHtmlMessage(getObjectId());
++		html.setFile("data/html/l2jmods/noblessmanager/noblesse.htm");
++		html.replace("%objectId%", String.valueOf(player.getTargetId()));
++		html.replace("%blackcrown%", player.getInventory().getItemByItemId(BLACK_CROWN) == null ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		html.replace("%goldcrown%", player.getInventory().getItemByItemId(GOLD_CROWN) == null ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		html.replace("%redcrown%", player.getInventory().getItemByItemId(RED_CROWN) == null ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		html.replace("%silvercrown%", player.getInventory().getItemByItemId(SILVER_CROWN) == null ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		html.replace("%level%", player.getStatus().getLevel() < 78 ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		html.replace("%pvptonobles%", player.getPvpKills() < 50 ? "l2ui.CheckBox" : "l2ui.CheckBox_checked");
++		player.sendPacket(html);
++	}
++}
+\ No newline at end of file

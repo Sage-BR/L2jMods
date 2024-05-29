@@ -1,0 +1,281 @@
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java b/aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
+index 5992525c..07153c7a 100755
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/GameServer.java
+@@ -88,6 +88,7 @@ import net.sf.l2j.gameserver.taskmanager.AiTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.AttackStanceTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.BoatTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.DecayTaskManager;
++import net.sf.l2j.gameserver.taskmanager.DoubleTitleTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.GameTimeTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.InventoryUpdateTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.ItemInstanceTaskManager;
+@@ -208,6 +209,7 @@ public class GameServer
+ 		WaterTaskManager.getInstance();
+ 		InventoryUpdateTaskManager.getInstance();
+ 		ItemInstanceTaskManager.getInstance();
++		DoubleTitleTaskManager.getInstance();
+ 		
+ 		StringUtil.printSection("Seven Signs");
+ 		SevenSignsManager.getInstance();
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index 929a2e9a..4373afdd 100644
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -3,6 +3,8 @@ package net.sf.l2j.gameserver.handler;
+ import java.util.HashMap;
+ import java.util.Map;
+ 
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.SecondTitle;
++
+ public class VoicedCommandHandler
+ {
+ 	private final Map<Integer, IVoicedCommandHandler> _datatable = new HashMap<>();
+@@ -14,7 +16,7 @@ public class VoicedCommandHandler
+ 	
+ 	protected VoicedCommandHandler()
+ 	{
+-//		registerHandler(new HandlerName());
++		registerHandler(new SecondTitle());
+ 	}
+ 	
+ 	public void registerHandler(IVoicedCommandHandler handler)
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/SecondTitle.java b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/SecondTitle.java
+new file mode 100644
+index 00000000..eeebf687
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/SecondTitle.java
+@@ -0,0 +1,39 @@
++package net.sf.l2j.gameserver.handler.voicedcommandhandlers;
++
++import net.sf.l2j.commons.lang.StringUtil;
++
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.network.SystemMessageId;
++
++public class SecondTitle implements IVoicedCommandHandler
++{
++	private static final String[] VOICED_COMMANDS =
++	{
++		"nick2"
++	};
++	
++	@Override
++	public boolean useVoicedCommand(String command, Player activeChar, String params)
++	{
++		if (activeChar.getTitle().isEmpty())
++			return false;
++		
++		final String nick = params.substring(VOICED_COMMANDS[0].length() + 2);
++		if (!StringUtil.isValidString(nick, "^[a-zA-Z0-9 !@#$&()\\-`.+,/\"]*{0,16}$"))
++		{
++			activeChar.sendPacket(SystemMessageId.NOT_WORKING_PLEASE_TRY_AGAIN_LATER);
++			return false;
++		}
++		
++		activeChar.sendMessage("Nick secundário ativado. Ele começará a ser exibido em breve.");
++		activeChar.setSecondTitle(nick);
++		return true;
++	}
++
++	@Override
++	public String[] getVoicedCommandList()
++	{
++		return VOICED_COMMANDS;
++	}
++}
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Creature.java b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Creature.java
+index 4a0fd47c..84941362 100755
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Creature.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Creature.java
+@@ -935,7 +935,13 @@ public abstract class Creature extends WorldObject
+ 	 */
+ 	public void setTitle(String value)
+ 	{
+-		_title = StringUtil.trim(value, 16, "");
++		final String newTitle = StringUtil.trim(value, 16, "");
++		
++		// Desativar o double title
++		if (getActingPlayer() != null && _title != null && newTitle.isEmpty())
++			getActingPlayer().setSecondTitle(newTitle);
++		
++		_title = newTitle;
+ 	}
+ 	
+ 	/**
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
+index 64610148..136e53d2 100755
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/model/actor/Player.java
+@@ -214,6 +214,7 @@ import net.sf.l2j.gameserver.skills.funcs.FuncHenna;
+ import net.sf.l2j.gameserver.skills.funcs.FuncMaxCpMul;
+ import net.sf.l2j.gameserver.skills.funcs.FuncRegenCpMul;
+ import net.sf.l2j.gameserver.taskmanager.AttackStanceTaskManager;
++import net.sf.l2j.gameserver.taskmanager.DoubleTitleTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.GameTimeTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.PvpFlagTaskManager;
+ import net.sf.l2j.gameserver.taskmanager.ShadowItemTaskManager;
+@@ -460,6 +461,8 @@ public final class Player extends Playable
+ 	private final Set<Integer> _selectedBlocksList = ConcurrentHashMap.newKeySet();
+ 	private final Set<Integer> _selectedFriendList = ConcurrentHashMap.newKeySet();
+ 	
++	private String _doubleTitle;
++	
+ 	/**
+ 	 * Constructor of Player (use Creature constructor).
+ 	 * <ul>
+@@ -5962,6 +5965,9 @@ public final class Player extends Playable
+ 			}
+ 		}
+ 		
++		if (getSecondTitle() != null)
++			DoubleTitleTaskManager.getInstance().add(this);
++		
+ 		// Jail task
+ 		_punishment.handle();
+ 		
+@@ -6291,6 +6297,7 @@ public final class Player extends Playable
+ 			PvpFlagTaskManager.getInstance().remove(this, false);
+ 			GameTimeTaskManager.getInstance().remove(this);
+ 			ShadowItemTaskManager.getInstance().remove(this);
++			DoubleTitleTaskManager.getInstance().remove(this);
+ 			
+ 			// Stop all QuestTimer affected to this Player.
+ 			for (Quest quest : ScriptData.getInstance().getQuests())
+@@ -7154,4 +7161,44 @@ public final class Player extends Playable
+ 	{
+ 		return _selectedBlocksList;
+ 	}
++	
++	public void setSecondTitle(String nick)
++	{
++		if (getSecondTitle() != null && !nick.isEmpty() && (getSecondTitle().equals(nick) || getTitle().equals(nick)))
++			return;
++		
++		if (nick.isEmpty() || nick.isBlank())
++		{
++			// Nick secundário estava ativo no momento em que foi removido
++			if (getSecondTitle().equals(getTitleToBroadcast()))
++			{
++				setTitleToBroadcast(getTitle());
++				broadcastTitleInfo();
++			}
++				
++			DoubleTitleTaskManager.getInstance().remove(this);
++			getMemos().unset("SECOND_TITLE");
++			setTitleToBroadcast(null);
++		}
++		else
++		{
++			getMemos().set("SECOND_TITLE", nick);
++			DoubleTitleTaskManager.getInstance().add(this);
++		}
++	}
++	
++	public String getSecondTitle()
++	{
++		return getMemos().get("SECOND_TITLE");
++	}
++	
++	public void setTitleToBroadcast(String title)
++	{
++		_doubleTitle = title;
++	}
++	
++	public String getTitleToBroadcast()
++	{
++		return getSecondTitle() == null || _doubleTitle == null ? _title : _doubleTitle;
++	}
+ }
+\ No newline at end of file
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/TitleUpdate.java b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/TitleUpdate.java
+index 186d2e59..b11ba630 100755
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/TitleUpdate.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/TitleUpdate.java
+@@ -10,7 +10,7 @@ public class TitleUpdate extends L2GameServerPacket
+ 	public TitleUpdate(Creature cha)
+ 	{
+ 		_objectId = cha.getObjectId();
+-		_title = cha.getTitle();
++		_title = cha.getActingPlayer() != null ? cha.getActingPlayer().getTitleToBroadcast() : cha.getTitle();
+ 	}
+ 	
+ 	@Override
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
+index a18e2685..6547ad4a 100755
+--- a/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/network/serverpackets/UserInfo.java
+@@ -169,7 +169,7 @@ public class UserInfo extends L2GameServerPacket
+ 		writeD(_player.getAppearance().getFace());
+ 		writeD((_player.isGM()) ? 1 : 0);
+ 		
+-		writeS((_player.getPolymorphTemplate() != null) ? "Morphed" : _player.getTitle());
++		writeS((_player.getPolymorphTemplate() != null) ? "Morphed" : _player.getTitleToBroadcast());
+ 		
+ 		writeD(_player.getClanId());
+ 		writeD(_player.getClanCrestId());
+diff --git a/aCis_gameserver/java/net/sf/l2j/gameserver/taskmanager/DoubleTitleTaskManager.java b/aCis_gameserver/java/net/sf/l2j/gameserver/taskmanager/DoubleTitleTaskManager.java
+new file mode 100644
+index 00000000..cfb5b333
+--- /dev/null
++++ b/aCis_gameserver/java/net/sf/l2j/gameserver/taskmanager/DoubleTitleTaskManager.java
+@@ -0,0 +1,57 @@
++package net.sf.l2j.gameserver.taskmanager;
++
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++
++import net.sf.l2j.commons.pool.ThreadPool;
++
++import net.sf.l2j.gameserver.model.actor.Player;
++import net.sf.l2j.gameserver.network.serverpackets.TitleUpdate;
++
++public class DoubleTitleTaskManager implements Runnable
++{
++	private final Set<Player> _players = ConcurrentHashMap.newKeySet();
++	
++	private boolean _sendFirstTitle;
++	
++	protected DoubleTitleTaskManager()
++	{
++		// Execute a cada 5s
++		ThreadPool.scheduleAtFixedRate(this, 5000, 5000);
++	}
++	
++	public void add(Player player)
++	{
++		_players.add(player);
++	}
++	
++	public void remove(Player player)
++	{
++		_players.remove(player);
++	}
++	
++	@Override
++	public void run()
++	{
++		for (Player player : _players)
++		{
++			player.setTitleToBroadcast(_sendFirstTitle ? player.getTitle() : player.getSecondTitle());
++
++			// O UserInfo é realmente necessário?
++			// player.broadcastTitleInfo();
++			player.broadcastPacket(new TitleUpdate(player));
++		}
++		
++		_sendFirstTitle = !_sendFirstTitle;
++	}
++	
++	public static final DoubleTitleTaskManager getInstance()
++	{
++		return SingletonHolder.INSTANCE;
++	}
++	
++	private static class SingletonHolder
++	{
++		protected static final DoubleTitleTaskManager INSTANCE = new DoubleTitleTaskManager();
++	}
++}
+\ No newline at end of file
