@@ -12,8 +12,5 @@ VANPER
 
 
 
-
-
-
 My website: 
-https://top.4teambr.com
+https://4teambr.com
