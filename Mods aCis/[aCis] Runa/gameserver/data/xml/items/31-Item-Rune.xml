@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list>
+	<!-- Rune Item -->
+	<item id="9518" type="EtcItem" name="Rune Coin">
+		<set name="material" val="STEEL" />
+		<set name="etcitem_type" val="RUNE" />
+		<set name="is_destroyable" val="true" />
+		<set name="is_dropable" val="true" />
+		<set name="is_sellable" val="true" />
+		<set name="is_stackable" val="true" />
+	</item>
+		
+</list>

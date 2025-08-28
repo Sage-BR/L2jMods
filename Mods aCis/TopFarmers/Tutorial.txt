@@ -1,0 +1,12 @@
+Criar L2TopFarmInstance.java aqui:
+net.sf.l2j.gameserver.model.actor.instance
+
+Criar a pasta farmrank em:
+Gameserver\data\html\mods
+
+
+criar 2 html com os nomes:
+65529.htm
+topfarm.htm
+
+Criar o Arquivo dentro de Gameserver/config/custom/TopFarmRank.properties

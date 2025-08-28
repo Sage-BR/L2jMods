@@ -1,0 +1,1004 @@
+### Eclipse Workspace Patch 1.0
+#P L2Magnum
+diff --git java/Dev/Runes/Rune.java java/Dev/Runes/Rune.java
+new file mode 100644
+index 0000000..1d16546
+--- /dev/null
++++ java/Dev/Runes/Rune.java
+@@ -0,0 +1,56 @@
++package Dev.Runes;
++
++import net.sf.l2j.gameserver.templates.StatsSet;
++
++public class Rune
++{
++	private final String _name;
++	private final int _id;
++	private final double _xpRate;
++	private final double _spRate;
++
++	private final double _itemDropRate;
++
++	private final int _time;
++
++	public Rune(StatsSet set)
++	{
++		_id = set.getInteger("id", 0);
++		_name = set.getString("name");
++		_xpRate = set.getDouble("xpRate", 1.0);
++		_spRate = set.getDouble("spRate", 1.0);
++		_itemDropRate = set.getDouble("itemDropRate", 1.0);
++		_time = set.getInteger("time", 1);
++	}
++
++	public String getName()
++	{
++		return _name;
++	}
++
++	public int getId()
++	{
++		return _id;
++	}
++
++	public double getXPRate()
++	{
++		return _xpRate;
++	}
++
++	public double getSPRate()
++	{
++		return _spRate;
++	}
++
++	public double getItemDropRate()
++	{
++		return _itemDropRate;
++	}
++
++	public int getTime()
++	{
++		return _time;
++	}
++
++}
+
+diff --git java/Dev/Runes/RuneData.java java/Dev/Runes/RuneData.java
+new file mode 100644
+index 0000000..8b84ff1
+--- /dev/null
++++ java/Dev/Runes/RuneData.java
+@@ -0,0 +1,104 @@
++package Dev.Runes;
++
++import java.io.File;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++
++import org.w3c.dom.Document;
++import org.w3c.dom.Node;
++
++import net.sf.l2j.commons.data.xml.XMLDocument;
++import net.sf.l2j.gameserver.templates.StatsSet;
++
++/**
++ * @author Rouxy
++ */
++public class RuneData extends XMLDocument
++{
++
++	private Map<Integer, Rune> runeData = new HashMap<>();
++
++	public static RuneData getInstance()
++	{
++		return SingleTonHolder._instance;
++	}
++
++	private static class SingleTonHolder
++	{
++		protected static final RuneData _instance = new RuneData();
++	}
++
++	protected RuneData()
++	{
++		load();
++	}
++
++	public void reload()
++	{
++		runeData.clear();
++		load();
++	}
++
++	@Override
++	protected void load()
++	{
++		loadDocument("./data/xml/RuneData.xml");
++		LOG.info("Loaded " + runeData.size() + " Runes.");
++
++	}
++
++	@Override
++	protected void parseDocument(Document doc, File f)
++	{
++		// StatsSet used to feed informations. Cleaned on every entry.
++		final StatsSet set = new StatsSet();
++
++		// First element is never read.
++		final Node n = doc.getFirstChild();
++
++		for (Node o = n.getFirstChild(); o != null; o = o.getNextSibling())
++		{
++			// Parse and feed access levels.
++			if ("rune".equalsIgnoreCase(o.getNodeName()))
++			{
++				// Parse and feed content.
++				parseAndFeed(o.getAttributes(), set);
++
++				Rune rune = new Rune(set);
++
++				runeData.put(set.getInteger("id"), rune);
++
++				set.clear();
++			}
++		}
++	}
++
++	/**
++	 * @param level : The level to check.
++	 * @return the {@link RuneData} based on its level.
++	 */
++	public Rune getRune(int id)
++	{
++
++		return runeData.get(id);
++	}
++
++	public List<Rune> getAllRunes()
++	{
++		return new ArrayList<Rune>(runeData.values());
++
++	}
++
++	public Map<Integer, Rune> getRunes()
++	{
++		return runeData;
++	}
++
++	public void setRunes(Map<Integer, Rune> runeData)
++	{
++		this.runeData = runeData;
++	}
++
++}
+
+diff --git java/Dev/Runes/RunesSystemManager.java java/Dev/Runes/RunesSystemManager.java
+new file mode 100644
+index 0000000..f17c130
+--- /dev/null
++++ java/Dev/Runes/RunesSystemManager.java
+@@ -0,0 +1,146 @@
++package Dev.Runes;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
++import java.util.ArrayList;
++import java.util.concurrent.ScheduledFuture;
++
++import net.sf.l2j.L2DatabaseFactory;
++import net.sf.l2j.gameserver.ThreadPoolManager;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
++import net.sf.l2j.gameserver.model.item.type.EtcItemType;
++import net.sf.l2j.gameserver.network.serverpackets.ExShowScreenMessage;
++import net.sf.l2j.gameserver.network.serverpackets.ExShowScreenMessage.SMPOS;
++import net.sf.l2j.util.variables.Mysql;
++
++/**
++ * 
++ * @author Rouxy
++ *
++ */
++public class RunesSystemManager
++{
++
++	public void deleteRune(L2PcInstance player, ItemInstance runeItem)
++	{
++	    player.deleteTempItem(runeItem.getObjectId());
++
++	    Rune rune = RuneData.getInstance().getRune(runeItem.getItemId());
++	    if (rune != null)
++	    {
++	        // Remove todas as instâncias da runa com o mesmo ID
++	        boolean removed = player.getRunes().removeIf(r -> r.getId() == rune.getId());
++
++	        // Se a runa ativa for essa, desativa
++	        if (player.getActiveRune() != null && player.getActiveRune().getId() == rune.getId())
++	        {
++	            player.setActiveRune(null);
++	        }
++
++	        if (removed)
++	        {
++	            player.sendMessage("Sua runa '" + rune.getName() + "' expirou.");
++	            player.sendPacket(new ExShowScreenMessage("Sua runa '" + rune.getName() + "' expirou!", 5000, SMPOS.BOTTOM_RIGHT, false));
++	        }
++	    }
++	}
++
++
++	class ScheduleDeleteRune implements Runnable
++	{
++		L2PcInstance player;
++		ItemInstance runeItem;
++
++		public ScheduleDeleteRune(L2PcInstance player, ItemInstance runeItem)
++		{
++			this.player = player;
++			this.runeItem = runeItem;
++		}
++
++		@Override
++		public void run()
++		{
++			deleteRune(player, runeItem);
++		}
++	}
++
++
++	public long getExpireTime(ItemInstance rune)
++	{
++		Connection con = null;
++		PreparedStatement offline = null;
++		ResultSet rs = null;
++		long expire_time = 0L;
++		long curr = System.currentTimeMillis();
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			offline = con.prepareStatement("SELECT * FROM runes WHERE obj_id =?");
++			offline.setInt(1, rune.getObjectId());
++			rs = offline.executeQuery();
++
++			while (rs.next())
++			{
++
++				expire_time = rs.getLong("expire_time");
++
++			}
++			if (expire_time - curr <= 0)
++			{
++				return 0L;
++			}
++			con.close();
++			return expire_time - curr;
++
++		}
++		catch (Exception e)
++		{
++
++			e.printStackTrace();
++			return expire_time;
++		}
++		finally
++		{
++			Mysql.closeQuietly(con, offline, rs);
++		}
++	}
++
++	public void addRune(L2PcInstance player, ItemInstance runeItem)
++	{
++	    Rune rune = RuneData.getInstance().getRune(runeItem.getItemId());
++	    if (rune != null)
++	    {
++	        // Remove qualquer runa ativa anterior
++	        if (player.hasRune())
++	        {
++	            player.getRunes().remove(player.getActiveRune());
++	        }
++	        
++	        int totalMinutes = rune.getTime();
++	        int hours = totalMinutes / 60;
++	        int minutes = totalMinutes % 60;
++
++	        String durationMessage = "";
++	        if (hours > 0) {
++	        	durationMessage += hours + " hora" + (hours > 1 ? "s" : "");
++	        }
++	        if (minutes > 0) {
++	        	if (!durationMessage.isEmpty()) {
++	        		durationMessage += " e ";
++	        	}
++	        	durationMessage += minutes + " minuto" + (minutes > 1 ? "s" : "");
++	        }
++
++	        // Mensagem no chat
++	        player.sendMessage("[Runa System]: Foi ativada a '" + rune.getName() + "' por " + durationMessage + ".");
++
++	        // Mensagem visual
++	        player.sendPacket(new ExShowScreenMessage("[Runa System]: '" + rune.getName() + "' ativada por " + durationMessage + "!", 5000, SMPOS.BOTTOM_RIGHT, false));
++
++	        // Adiciona a nova runa e a define como ativa
++	        player.getRunes().add(rune);
++	        player.setActiveRune(rune);
++
++	        // Salva no banco com tempo de expiração em minutos
++	        Mysql.set("REPLACE INTO runes (obj_id, expire_time) VALUES (?,?)", runeItem.getObjectId(), System.currentTimeMillis() + rune.getTime() * 60 * 1000);
++	        
++	        // Salva no banco com tempo de expiração em horas
++	        //Mysql.set("REPLACE INTO runes (obj_id, expire_time) VALUES (?,?)", runeItem.getObjectId(), System.currentTimeMillis() + rune.getTime() * 60 * 60 * 1000);
++
++	        // Agendamento para remoção automática
++	        ScheduledFuture<?> task = ThreadPoolManager.getInstance().scheduleGeneral(
++	            new ScheduleDeleteRune(player, runeItem),
++	            getExpireTime(runeItem)
++	        );
++	        player.getRuneTasks().add(task);
++	    }
++	}
++
++
++
++	public void onPlayerEnter(L2PcInstance player)
++	{
++		if (player.getRunes() == null)
++		{
++			player.setRunes(new ArrayList<>());
++		}
++
++		for (ItemInstance item : player.getInventory().getItems())
++		{
++			if (item.isEtcItem() && item.getItem().getItemType() == EtcItemType.RUNE)
++			{
++				Rune rune = RuneData.getInstance().getRune(item.getItemId());
++				if (rune != null)
++				{
++					long remainingTime = getExpireTime(item);
++
++					if (remainingTime <= 0)
++					{
++						// A runa já expirou enquanto o jogador estava offline
++						player.sendMessage("Sua runa '" + rune.getName() + "' expirou enquanto você estava offline.");
++						player.sendPacket(new ExShowScreenMessage("Sua runa '" + rune.getName() + "' expirou!", 5000, SMPOS.BOTTOM_RIGHT, false));
++						
++						// Remove a runa
++						deleteRune(player, item);
++					}
++					else
++					{
++						// Ainda válida, ativa normalmente
++						player.getRunes().add(rune);
++						player.setActiveRune(rune); // Ativa a runa
++
++						ScheduledFuture<?> task = ThreadPoolManager.getInstance().scheduleGeneral(new ScheduleDeleteRune(player, item), remainingTime);
++						player.getRuneTasks().add(task);
++
++						// Envia mensagem com o tempo restante
++						int totalMinutes = (int)(remainingTime / 1000 / 60);
++						int hours = totalMinutes / 60;
++						int minutes = totalMinutes % 60;
++
++						String durationMsg = "";
++						if (hours > 0)
++							durationMsg += hours + " hora" + (hours > 1 ? "s" : "");
++						if (minutes > 0)
++						{
++							if (!durationMsg.isEmpty())
++								durationMsg += " e ";
++							durationMsg += minutes + " minuto" + (minutes > 1 ? "s" : "");
++						}
++
++						player.sendMessage("[Runa System]: '" + rune.getName() + "' ainda esta ativa por " + durationMsg + ".");
++						player.sendPacket(new ExShowScreenMessage("[Runa System]: '" + rune.getName() + "' ativa por mais " + durationMsg + "!", 5000, SMPOS.BOTTOM_RIGHT, false));
++					}
++				}
++			}
++		}
++	}
++
++
++
++
++	public RunesSystemManager()
++	{
++		RuneData.getInstance();
++	}
++
++	private static class SingleTonHolder
++	{
++		protected static final RunesSystemManager _instance = new RunesSystemManager();
++	}
++
++	public static RunesSystemManager getInstance()
++	{
++		return SingleTonHolder._instance;
++	}
++}
++
+
+diff --git java/net/sf/l2j/gameserver/GameServer.java java/net/sf/l2j/gameserver/GameServer.java
+index f4a0642..28d4312 100644
+--- java/net/sf/l2j/gameserver/GameServer.java
++++ java/net/sf/l2j/gameserver/GameServer.java
+@@ -6,62 +6,60 @@
+  * 
+  * This program is distributed in the hope that it will be useful, but WITHOUT
+  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+  * details.
+  * 
+  * You should have received a copy of the GNU General Public License along with
+  * this program. If not, see <http://www.gnu.org/licenses/>.
+  */
+ package net.sf.l2j.gameserver;
+ 
+
+ import net.sf.l2j.util.DeadLockDetector;
+ import net.sf.l2j.util.IPv4Filter;
++import net.sf.l2j.util.StringUtil;
+ import net.sf.l2j.util.Util;
+ 
+ import org.mmocore.network.SelectorConfig;
+ import org.mmocore.network.SelectorThread;
+ 
++import Dev.Runes.RunesSystemManager;
+ import hwid.Hwid;
+ import phantom.FakePlayerConfig;
+
+ 
+ 		RaidZoneManager.getInstance();
+ 		RouletteData.getInstance();
+ 		DollsTable.getInstance();
++		Util.printSection("Rune System Manager");
++		RunesSystemManager.getInstance();
+ 		
+ 		Util.printSection("Augments");
+ 		AugmentationData.getInstance();
+
+diff --git java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java
+index ac12d7f..7bec776 100644
+--- java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java
++++ java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAdmin.java
+@@ -26,60 +26,61 @@
+ 
+ import Dev.PIX.DonationManager;
++import Dev.Runes.RuneData;
+ import phantom.FakePlayerConfig;
+ 
+ 
+@@ -188,60 +189,65 @@
+ 				else if (type.startsWith("announcement"))
+ 				{
+ 					AnnouncementTable.getInstance().reload();
+ 					activeChar.sendMessage("The content of announcements.xml has been reloaded.");
+ 				}
++				else if (type.startsWith("runes"))
++				{
++					RuneData.getInstance().reload();
++					activeChar.sendMessage("The content of RuneData.xml has been reloaded.");
++				}
+ 				else if (type.startsWith("config"))
+ 				{
+ 					Config.load();
+ 					DonationManager.getInstance().reload();
+ 					activeChar.sendMessage("Configs files have been reloaded.");
+ 				}
+
+diff --git java/net/sf/l2j/gameserver/model/actor/L2Attackable.java java/net/sf/l2j/gameserver/model/actor/L2Attackable.java
+index 06d2906..3b04d88 100644
+--- java/net/sf/l2j/gameserver/model/actor/L2Attackable.java
++++ java/net/sf/l2j/gameserver/model/actor/L2Attackable.java
+@@ -1,101 +1,102 @@
+
+
+
++import Dev.Runes.Rune;
++
+
+ 					
+ 					if (isChampion())
+ 					{
+ 						exp *= Config.CHAMPION_REWARDS;
+ 						sp *= Config.CHAMPION_REWARDS;
+ 					}
+					
+					if (attacker instanceof L2PcInstance)
+					{
+						L2PcInstance a = (L2PcInstance)attacker;
+
+						if (a.isVip())
+						{
+							exp *= Config.VIP_XP_SP_RATE;
+							sp *= Config.VIP_XP_SP_RATE;
+						}
+					}
++					// runes
++					for (Rune rune : attacker.getRunes())
++					{
++						exp *= rune.getXPRate();
++						sp *= rune.getSPRate();
++					}
+ 					exp *= 1 - penalty;
+ 					
+
+ 				
+ 				if (attacker instanceof L2PcInstance)
+ 				{
+ 					L2PcInstance a = (L2PcInstance)attacker;
+ 
+ 					if (a.isVip())
+ 					{
+ 						exp *= Config.VIP_XP_SP_RATE;
+ 						sp *= Config.VIP_XP_SP_RATE;
+ 					}
+ 				}
+-
++				// runes
++				for (Rune rune : attacker.getRunes())
++				{
++					exp *= rune.getXPRate();
++					sp *= rune.getSPRate();
++				}
+ 				if (isChampion())
+ 				{
+ 					exp *= Config.CHAMPION_REWARDS;
+ 					sp *= Config.CHAMPION_REWARDS;
+ 				}
+ 				
+ 			
+ 			// Prepare for next iteration if dropChance > L2DropData.MAX_CHANCE
+ 			dropChance -= DropData.MAX_CHANCE;
+ 		}
+ 		
+ 		if (isChampion())
+ 			if (drop.getItemId() == 57 || (drop.getItemId() >= 6360 && drop.getItemId() <= 6362))
+ 				itemCount *= Config.CHAMPION_ADENAS_REWARDS;
+ 		
++		// runes
++		for (Rune rune : lastAttacker.getRunes())
++		{
++			itemCount *= rune.getItemDropRate();
++		}
++		
+ 		if (!isRaid())
+ 			if (drop.getItemId() >= 6360 && drop.getItemId() <= 6362)
+ 				itemCount *= Config.RATE_DROP_SEAL_STONES;
+ 		
+ 
+ 			if (isChampion())
+ 				if (drop.getItemId() == 57 || (drop.getItemId() >= 6360 && drop.getItemId() <= 6362))
+ 					itemCount *= Config.CHAMPION_ADENAS_REWARDS;
+ 			
+ 			if (!isRaid())
+ 				if (drop.getItemId() >= 6360 && drop.getItemId() <= 6362)
+ 					itemCount *= Config.RATE_DROP_SEAL_STONES;
+ 			
+ 			if (lastAttacker.isTerritoryOwner())
+ 				itemCount *= Config.TERRITORY_BONUS_RATE_DROP_ITEMS;
+ 			
++			// runes
++			for (Rune rune : lastAttacker.getRunes())
++			{
++				itemCount *= rune.getItemDropRate();
++			}
++			
+ 			if (itemCount > 0)
+ 				return new ItemHolder(drop.getItemId(), itemCount, drop.getMinEnchant(), drop.getMaxEnchant(), drop.getEnchantSucess()); 
+ 		}
+ 		return null;
+ 	}
+ 	
+diff --git java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+index f385a81..64f8478 100644
+--- java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
++++ java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+@@ -1,60 +1,60 @@
+ 
+ import net.sf.l2j.util.Rnd;
++import net.sf.l2j.util.variables.Mysql;
+ import net.sf.l2j.util.variables.sub.PlayerVar;
+ import net.sf.l2j.util.variables.sub.PlayerVariables;
+ 
+ import Dev.AutoFarm.AutofarmManager;
+ import Dev.PIX.DonationManager;
++import Dev.Runes.Rune;
+ import phantom.FakePlayer;
+ 
+ 
+ 	@Override
+ 	public void deleteMe()
+ 	{
++		saveCustomStuff();
+ 		if(isAutoFarm())
+ 		{
+ 			AutofarmManager.INSTANCE.onPlayerLogout(this);
+ 		}
+ 		
+ 	    if (isTerritoryCapturing()) 
+ 	    {
+ 	        // Get the territory flag instance
+ 	    	L2TerritoryInstance territoryFlag = getTerritoryFlagInstance();
+ 
+ 	        if (territoryFlag != null && territoryFlag.flagBusy()) 
+ 	            territoryFlag.flagBusy(false);
+ 	    }
+ 	    
+ 		cleanup();
+ 		store();
+ 		super.deleteMe();
+ 	}
+ 	
+ 	private synchronized void cleanup()
+ 	{
+ 		try
+ 		{
+ 			// Put the online status to false
+ 			setOnlineStatus(false, true);
+ 			
+ 			// abort cast & attack and remove the target. Cancels movement aswell.
+ 			abortAttack();
+ 			abortCast();
+ 			stopMove(null);
+@
+ 		private boolean _team2;
+ 		public void setTeamTour2(boolean comm)
+ 		{
+ 			_team2 = comm;
+ 		}
+ 		public boolean isTeamTour2()
+ 		{
+ 			return _team2;
+ 		}
++		public void deleteTempItem(int itemObjectID)
++		{
++			boolean destroyed = false;
++			if (getInventory().getItemByObjectId(itemObjectID) != null)
++			{
++				sendMessage("Your " + ItemTable.getInstance().getTemplate(getInventory().getItemByObjectId(itemObjectID).getItemId()).getName() + " has expired.");
++				destroyItem("tempItemDestroy", itemObjectID, 1, this, true);
++				getInventory().updateDatabase();
++				sendPacket(new ItemList(this, true));
++
++				destroyed = true;
++			}
++
++			if (!destroyed)
++			{
++				Connection con = null;
++				PreparedStatement statement = null;
++				ResultSet rset = null;
++				try
++				{
++					con = L2DatabaseFactory.getInstance().getConnection();
++					statement = con.prepareStatement("DELETE FROM items WHERE object_id=?");
++					statement.setInt(1, itemObjectID);
++					statement.execute();
++				}
++				catch (Exception e)
++				{
++					e.printStackTrace();
++				}
++				finally
++				{
++					Mysql.closeQuietly(con, statement, rset);
++				}
++			}
++		}
++		private List<Rune> runes = new ArrayList<>();
++		private List<ScheduledFuture<?>> runeTasks = new ArrayList<>();
++		public List<Rune> getRunes()
++		{
++			return runes;
++		}
++
++		public void setRunes(List<Rune> runes)
++		{
++			this.runes = runes;
++		}
++
++		public List<ScheduledFuture<?>> getRuneTasks()
++		{
++			return runeTasks;
++		}
++
++		public void setRuneTasks(List<ScheduledFuture<?>> runeTasks)
++		{
++			this.runeTasks = runeTasks;
++		}
++		
++		//precisa de analise para ver oq isso faz.
++		public void saveCustomStuff()
++		{
++			for (ScheduledFuture<?> task : runeTasks)
++			{
++				if (task != null)
++				{
++					task.cancel(true);
++					task = null;
++				}
++			}
++			runeTasks.clear();
++		}
++		
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/model/item/type/EtcItemType.java java/net/sf/l2j/gameserver/model/item/type/EtcItemType.java
+index 9875159..40fb079 100644
+--- java/net/sf/l2j/gameserver/model/item/type/EtcItemType.java
++++ java/net/sf/l2j/gameserver/model/item/type/EtcItemType.java
+@@ -13,46 +13,46 @@
+  * this program. If not, see <http://www.gnu.org/licenses/>.
+  */
+ package net.sf.l2j.gameserver.model.item.type;
+ 
+ public enum EtcItemType implements ItemType
+ {
+ 	NONE,
+ 	ARROW,
+ 	POTION,
+ 	SCRL_ENCHANT_WP,
+ 	SCRL_ENCHANT_AM,
+ 	SCROLL,
+ 	RECIPE,
+ 	MATERIAL,
+ 	PET_COLLAR,
+ 	CASTLE_GUARD,
+ 	LOTTO,
+ 	RACE_TICKET,
+ 	DYE,
+ 	SEED,
+ 	CROP,
+ 	MATURECROP,
+ 	HARVEST,
+ 	SEED2,
+ 	TICKET_OF_LORD,
+ 	LURE,
+ 	BLESS_SCRL_ENCHANT_WP,
+ 	BLESS_SCRL_ENCHANT_AM,
+ 	COUPON,
+ 	ELIXIR,
+-	
++	RUNE,
+ 	// L2J CUSTOM, BACKWARD COMPATIBILITY
+ 	SHOT,
+ 	HERB,
+ 	QUEST;
+ 	
+ 	/**
+ 	 * Returns the ID of the item after applying the mask.
+ 	 * @return int : ID of the item
+ 	 */
+ 	@Override
+ 	public int mask()
+ 	{
+ 		return 0;
+ 	}
+ }
+\ No newline at end of file
+diff --git java/net/sf/l2j/gameserver/model/itemcontainer/ItemContainer.java java/net/sf/l2j/gameserver/model/itemcontainer/ItemContainer.java
+index 02dd47d..36a9e65 100644
+--- java/net/sf/l2j/gameserver/model/itemcontainer/ItemContainer.java
++++ java/net/sf/l2j/gameserver/model/itemcontainer/ItemContainer.java
+@@ -7,60 +7,63 @@
+  * This program is distributed in the hope that it will be useful, but WITHOUT
+  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+  * details.
+  * 
+  * You should have received a copy of the GNU General Public License along with
+  * this program. If not, see <http://www.gnu.org/licenses/>.
+  */
+ package net.sf.l2j.gameserver.model.itemcontainer;
+ 
+ import java.sql.Connection;
+ import java.sql.PreparedStatement;
+ import java.sql.ResultSet;
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.concurrent.CopyOnWriteArrayList;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.L2DatabaseFactory;
+ import net.sf.l2j.gameserver.GameTimeController;
+ import net.sf.l2j.gameserver.datatables.ItemTable;
+ import net.sf.l2j.gameserver.model.L2Object;
+ import net.sf.l2j.gameserver.model.L2World;
+ import net.sf.l2j.gameserver.model.actor.L2Character;
+ import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
+ import net.sf.l2j.gameserver.model.item.instance.ItemInstance;
+ import net.sf.l2j.gameserver.model.item.instance.ItemInstance.ItemLocation;
+ import net.sf.l2j.gameserver.model.item.kind.Item;
++import net.sf.l2j.gameserver.model.item.type.EtcItemType;
++
++import Dev.Runes.RunesSystemManager;
+ 
+ /**
+  * @author Advi
+  */
+ public abstract class ItemContainer
+ {
+ 	protected static final Logger _log = Logger.getLogger(ItemContainer.class.getName());
+ 	
+ 	protected final List<ItemInstance> _items;
+ 	
+ 	protected ItemContainer()
+ 	{
+ 		_items = new CopyOnWriteArrayList<>();
+ 	}
+ 	
+ 	protected abstract L2Character getOwner();
+ 	
+ 	protected abstract ItemLocation getBaseLocation();
+ 	
+ 	public String getName()
+ 	{
+ 		return "ItemContainer";
+ 	}
+ 	
+ 	/**
+ 	 * Returns the ownerID of the inventory
+ 	 * @return int
+ 	 */
+ 	public int getOwnerId()
+ 	{
+@@ -282,60 +285,64 @@
+ 		}
+ 		// If item hasn't be found in inventory, create new one
+ 		else
+ 		{
+ 			for (int i = 0; i < count; i++)
+ 			{
+ 				Item template = ItemTable.getInstance().getTemplate(itemId);
+ 				if (template == null)
+ 				{
+ 					_log.log(Level.WARNING, (actor != null ? "[" + actor.getName() + "] " : "") + "Invalid ItemId requested: ", itemId);
+ 					return null;
+ 				}
+ 				
+ 				item = ItemTable.getInstance().createItem(process, itemId, template.isStackable() ? count : 1, actor, reference);
+ 				item.setOwnerId(getOwnerId());
+ 				item.setLocation(getBaseLocation());
+ 				item.setLastChange(ItemInstance.ADDED);
+ 				
+ 				// Add item in inventory
+ 				addItem(item);
+ 				// Updates database
+ 				item.updateDatabase();
+ 				
+ 				// If stackable, end loop as entire count is included in 1 instance of item
+ 				if (template.isStackable() || !Config.MULTIPLE_ITEM_DROP)
+ 					break;
+ 			}
+ 		}
+ 		
+ 		refreshWeight();
++		if (item.isEtcItem() && item.getItem().getItemType() == EtcItemType.RUNE)
++		{
++			RunesSystemManager.getInstance().addRune(actor, item);
++		}
+ 		return item;
+ 	}
+ 	
+ 			
+diff --git java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+index b2ee036..22b2aa6 100644
+--- java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+ 
++import Dev.Runes.RunesSystemManager;
+ import hwid.Hwid;
+ import hwid.HwidConfig;
+ 
+ 		
+ 		if (Config.PCB_ENABLE)
+ 		{
+ 		    activeChar.showPcBangWindow();
+ 		}
+-        
++		//nao necessario 2 igual
++		RunesSystemManager.getInstance().onPlayerEnter(activeChar);
+ 		// Events On Enter
+ 		CTFEvent.onLogin(activeChar);
+
+diff --git java/net/sf/l2j/util/variables/sub/PlayerVariables.java java/net/sf/l2j/util/variables/sub/PlayerVariables.java
+index ee32970..ffec0d6 100644
+--- java/net/sf/l2j/util/variables/sub/PlayerVariables.java
+@@ -54,77 +54,82 @@
+ 		
+ 		// Avoid possible unsetVar that have elements for login
+ 		if (player == null)
+ 			return;
+ 		
+ 		PlayerVar pv = player.getVariables().remove(name);
+ 		
+ 		
+ 		if (pv != null)
+ 		{
++			if (name.contains("delete_temp_item"))
++				pv.getOwner().deleteTempItem(Integer.parseInt(pv.getValue()));
++		//	if (name.contains("solo_hero")) talvez nao precise else
++			else if (name.contains("solo_hero"))
+ 			{
+ 				pv.getOwner().broadcastCharInfo();
+ 				pv.getOwner().broadcastUserInfo();
+ 			}
+ 			
+ 			Mysql.set("DELETE FROM character_memo_alt WHERE obj_id=? AND name=? LIMIT 1", pv.getOwner().getObjectId(), name);
+ 			
+ 			pv.stopExpireTask();
+ 		}
+ 	}
+ 	
+ 	public static void deleteExpiredVar(L2PcInstance player, String name, String value)
+ 	{
+ 		if (name == null)
+ 			return;
++		
++		if (name.contains("delete_temp_item"))
++			player.deleteTempItem(Integer.parseInt(value));
+ 
+ 		Mysql.set("DELETE FROM character_memo_alt WHERE obj_id=? AND name=? LIMIT 1", player.getObjectId(), name);
+ 	}
+ 	
+	Para Adicionar uma Informação no Drop da Bonificação da Runa
+diff --git java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+
+Referencia 
+
+	public void doAutoLoot(L2Attackable target, ItemHolder item)
+	onde esta
+-	else if (item.getId() == 57)
+-			addAdena("Loot", item.getCount(), target, true);
+-	    else
+-	    {
+-	    	ItemInstance ditem = ItemTable.getInstance().createItem("Loot", item.getId(), item.getCount(), this, target);
+			
+	Troque por
+	
++			else if (item.getId() == 57) // Adena
++		{
++			long amount = item.getCount();
++			long finalAmount = amount;
++
++			if (hasRune())
++			{
++				Rune rune = getActiveRune();
++				double bonusRate = rune.getItemDropRate(); // ex: 1.2 = +20%
++
++				if (bonusRate > 1.0)
++				{
++					long bonusAmount = Math.round(amount * (bonusRate - 1.0));
++					finalAmount += bonusAmount;
++
++					// Mensagem apenas se houver bônus
++					sendMessage("(Runa Bonus: +" + (int)((bonusRate - 1.0) * 100) + "%)");
++				}
++			}
++			
++			// Evita overflow
++			addAdena("Loot", (int) Math.min(finalAmount, Integer.MAX_VALUE), target, true);
++		}
+
+no final do L2PcInstance adicone essas 3 regras
+
++		//Runa Informação no Chat da Chance de Drop
++		private Rune _activeRune;
++
++		public void setActiveRune(Rune rune)
++		{
++			_activeRune = rune;
++		}
++
++		public Rune getActiveRune()
++		{
++			return _activeRune;
++		}
++
++		public boolean hasRune()
++		{
++			return _activeRune != null;
++		}

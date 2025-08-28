@@ -1,0 +1,1 @@
+2	9518	0	3	2	5	0	dropitems.drop_sack_m00			dropitemstex.drop_sack_t00			icon.adenarune_i00					0	0	18	0	0	1		1		ItemSound.itemdrop_sack		2	0	0
