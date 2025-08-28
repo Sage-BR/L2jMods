@@ -1,0 +1,145 @@
+diff --git a/config/CustomMods/SpecialMods.ini b/config/CustomMods/SpecialMods.ini
+index 1c88b2d..5c1f24c 100644
+--- a/config/CustomMods/SpecialMods.ini
++++ b/config/CustomMods/SpecialMods.ini
+@@ -77,3 +77,17 @@
+ CoordenadY = 148144
+ CoordenadZ = -3431
+ 
++#=============================================================
++#                   Remover itens SubClasse
++#=============================================================
++# When you change/add subclass the weapon is unequipped
++# Default: False
++RemoveWeaponSubclass = True
++# When you change/add subclass the chest is unequipped
++# Default: False
++RemoveChestSubclass = True
++# When you change/add subclass the leg is unequipped
++# Default: False
++RemoveLegSubclass = True
++
++
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 890447e..5d0b21c 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -1008,6 +1008,9 @@
+     public static boolean PVP_SUMON;
+     public static String WELCOME_MESSAGE_ANTIHERVY;
+ 	public static boolean ENABLE_ANTI_HEAVY;
++	public static boolean REMOVE_WEAPON_SUBCLASS;
++	public static boolean REMOVE_CHEST_SUBCLASS;
++	public static boolean REMOVE_LEG_SUBCLASS;
+ 	// Karma Punishment
+ 	/** Allow player with karma to be killed in peace zone ? */
+ 	public static boolean ALT_GAME_KARMA_PLAYER_CAN_BE_KILLED_IN_PEACEZONE;
+@@ -2254,6 +2257,9 @@
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + PROTECTION_MODS + " File.");
+ 			}
++			REMOVE_WEAPON_SUBCLASS = Boolean.parseBoolean(ProtectionMods.getProperty("RemoveWeaponSubclass", "False"));
++			REMOVE_CHEST_SUBCLASS = Boolean.parseBoolean(ProtectionMods.getProperty("RemoveChestSubclass", "False"));
++			REMOVE_LEG_SUBCLASS = Boolean.parseBoolean(ProtectionMods.getProperty("RemoveLegSubclass", "False"));
+ 			ENABLE_ANTI_HEAVY = Boolean.parseBoolean(ProtectionMods.getProperty("EnableAntiHeavySystem", "True"));
+ 	        WELCOME_MESSAGE_ANTIHERVY = ProtectionMods.getProperty("ScreenAntiHervyMessageText", "Your Class Can't Equip Heavy Type Armors!");
+ 			STRING_MESSAGE_PHX_ENCHANT = ProtectionMods.getProperty("ScreenEnchantMessageText", "Forbidden to Use Enchant near the bank!");
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java b/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+index e5d657e..3383475 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+@@ -9640,6 +9640,47 @@
+ 	 */
+ 	public boolean addSubClass(int classId, int classIndex)
+ 	{
++		// Remove Item RHAND
++				if (Config.REMOVE_WEAPON_SUBCLASS)
++				{
++					final L2ItemInstance rhand = getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND);
++					if (rhand != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(rhand.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
++				
++				// Remove Item CHEST
++				if (Config.REMOVE_CHEST_SUBCLASS)
++				{
++					final L2ItemInstance chest = getInventory().getPaperdollItem(Inventory.PAPERDOLL_CHEST);
++					if (chest != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(chest.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
++				
++				// Remove Item LEG
++				if (Config.REMOVE_LEG_SUBCLASS)
++				{
++					final L2ItemInstance legs = getInventory().getPaperdollItem(Inventory.PAPERDOLL_LEGS);
++					if (legs != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(legs.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
+ 		if (!_classLock.tryLock())
+ 		{
+ 			return false;
+@@ -9871,6 +9912,46 @@
+ 	 */
+ 	public boolean setActiveClass(int classIndex)
+ 	{
++		// Remove Item RHAND
++				if (Config.REMOVE_WEAPON_SUBCLASS)
++				{
++					final L2ItemInstance rhand = getInventory().getPaperdollItem(Inventory.PAPERDOLL_RHAND);
++					if (rhand != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(rhand.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
++				// Remove Item CHEST
++				if (Config.REMOVE_CHEST_SUBCLASS)
++				{
++					final L2ItemInstance chest = getInventory().getPaperdollItem(Inventory.PAPERDOLL_CHEST);
++					if (chest != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(chest.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
++				
++				// Remove Item LEG
++				if (Config.REMOVE_LEG_SUBCLASS)
++				{
++					final L2ItemInstance legs = getInventory().getPaperdollItem(Inventory.PAPERDOLL_LEGS);
++					if (legs != null)
++					{
++						final L2ItemInstance[] unequipped = getInventory().unEquipItemInBodySlotAndRecord(legs.getItem().getBodyPart());
++						final InventoryUpdate iu = new InventoryUpdate();
++						for (final L2ItemInstance element : unequipped)
++							iu.addModifiedItem(element);
++						sendPacket(iu);
++					}
++				}
+ 		if (!_classLock.tryLock())
+ 		{
+ 			return false;

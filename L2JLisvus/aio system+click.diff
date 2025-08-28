@@ -1,0 +1,863 @@
+diff --git a/config/CustomMods/Donate.ini b/config/CustomMods/Donate.ini
+new file mode 100644
+index 0000000..1b55fd0
+--- /dev/null
++++ b/config/CustomMods/Donate.ini
+@@ -0,0 +1,51 @@
++#=============================================================
++#                        AIO System
++#=============================================================
++# Enable / Disable Aion System
++EnableAioSystem = True
++# Enable / Disable Name Color
++AllowAioNameColor = True
++AioNameColor = 88AA88
++# Enable / Disable Title Color
++AllowAioTitleColor = True
++AioTitleColor = 88AA88
++# List of Aio Skills
++# Format : skillid,skilllvl;skillid2,skilllvl2;....skillidn,skilllvln
++AioSkills = 1085,3;1304,3;1087,3;1354,1;1062,2;1005,3;1243,6;1045,6;1048,6;\
++1311,6;168,3;213,8;1007,3;1309,3;1552,3;1006,3;1229,15;1308,3;1253,3;1284,3;\
++1009,3;1310,4;1363,1;1362,1;1397,3;1292,6;1078,6;307,1;276,1;309,1;274,1;275,1;\
++272,1;277,1;273,1;311,1;366,1;365,1;310,1;271,1;1242,3;1257,3;1353,3;1391,3;\
++1352,1;229,7;228,3;1077,3;1218,33;1059,3;1219,33;1217,33;1388,3;1389,3;1240,3;\
++1086,2;1032,3;1073,2;1036,2;1035,4;1068,3;1003,3;1282,2;1356,1;1355,1;1357,33;\
++1044,3;1182,3;1191,3;1033,3;1189,3;1259,4;1306,6;234,23;1040,3;364,1;264,1;306,1;\
++269,1;270,1;265,1;363,1;349,1;308,1;305,1;304,1;267,1;266,1;268,1;1390,3;1303,2;\
++1204,2;1268,4;1413,1;4699,8;4700,8;4703,8
++# Aio Buffers can speak to Class Master?
++AllowAioUseClassMaster = False
++# Allow AIO in events?
++AllowAioInEvents = False
++
++#Dual Aio
++AllowAIOItem = True
++ItemIdAio = 6580
++
++#=============================================================
++#                        AIO Item 1
++#=============================================================
++#Item Coin 1
++AioCoin = 0
++AioDays = 1
++
++#=============================================================
++#                        AIO Item 2
++#=============================================================
++#Item Coin 2
++AioCoin2 = 0
++AioDays2 = 5
++
++#=============================================================
++#                        AIO Item 3
++#=============================================================
++#Item Coin 3
++AioCoin3 = 0
++AioDays3 = 10
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 38ac517..973b295 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -608,6 +608,22 @@
+ 	public static int VIP_DAYS_ID2;
+ 	public static int VIP_COIN_ID3;
+ 	public static int VIP_DAYS_ID3;
++	public static boolean ENABLE_AIO_SYSTEM;
++	public static Map<Integer, Integer> AIO_SKILLS;
++	public static boolean ALLOW_AIO_NCOLOR;
++	public static int AIO_NCOLOR;
++	public static boolean ALLOW_AIO_TCOLOR;
++	public static int AIO_TCOLOR;
++	public static boolean ALLOW_AIO_ITEM;
++	public static int AIO_ITEMID;
++	public static int AIO_ITEM;
++	public static int AIO_DIAS;
++	public static int AIO_ITEM2;
++	public static int AIO_DIAS2;
++	public static int AIO_ITEM3;
++	public static int AIO_DIAS3;
++	public static boolean ALLOW_AIO_IN_EVENTS;
++	public static boolean ALLOW_AIO_USE_CM;
+ 	/** Accept precise drop calculation ? */
+ 	public static boolean PRECISE_DROP_CALCULATION;
+ 	/** Accept multi-items drop ? */
+@@ -2308,6 +2324,49 @@
+     		VIP_DAYS_ID2 = Integer.parseInt(donate.getProperty("VipCoinDays2", "2"));
+     		VIP_COIN_ID3 = Integer.parseInt(donate.getProperty("VipCoin3", "5557"));
+     		VIP_DAYS_ID3 = Integer.parseInt(donate.getProperty("VipCoinDays3", "3"));
++    		ALLOW_AIO_USE_CM = Boolean.parseBoolean(donate.getProperty("AllowAioUseClassMaster", "False"));
++			ALLOW_AIO_IN_EVENTS = Boolean.parseBoolean(donate.getProperty("AllowAioInEvents", "False"));
++			AIO_ITEM = Integer.parseInt(donate.getProperty("AioCoin", "10"));
++    		AIO_DIAS = Integer.parseInt(donate.getProperty("AioDays", "10"));
++    		AIO_ITEM2 = Integer.parseInt(donate.getProperty("AioCoin2", "10"));
++    		AIO_DIAS2 = Integer.parseInt(donate.getProperty("AioDays2", "10"));
++    		AIO_ITEM3 = Integer.parseInt(donate.getProperty("AioCoin3", "10"));
++    		AIO_DIAS3 = Integer.parseInt(donate.getProperty("AioDays3", "10"));
++    		/** AIO System */
++			ENABLE_AIO_SYSTEM = Boolean.parseBoolean(donate.getProperty("EnableAioSystem", "True"));
++			ALLOW_AIO_NCOLOR = Boolean.parseBoolean(donate.getProperty("AllowAioNameColor", "True"));
++			AIO_NCOLOR = Integer.decode("0x" + donate.getProperty("AioNameColor", "88AA88"));
++			ALLOW_AIO_TCOLOR = Boolean.parseBoolean(donate.getProperty("AllowAioTitleColor", "True"));
++			AIO_TCOLOR = Integer.decode("0x" + donate.getProperty("AioTitleColor", "88AA88"));
++			AIO_ITEMID = Integer.parseInt(donate.getProperty("ItemIdAio", "9945"));
++			ALLOW_AIO_ITEM = Boolean.parseBoolean(donate.getProperty("AllowAIOItem", "False"));
++			if(ENABLE_AIO_SYSTEM) //create map if system is enabled
++			{
++				String[] VipSkillsSplit = donate.getProperty("AioSkills", "").split(";");
++				AIO_SKILLS = new HashMap<>(VipSkillsSplit.length);
++				for (String skill : VipSkillsSplit)
++				{
++					String[] skillSplit = skill.split(",");
++					if (skillSplit.length != 2)
++					{
++						System.out.println("[AIO System]: invalid config property in players.properties -> AioSkills \"" + skill + "\"");
++					}
++					else
++					{
++						try
++						{
++							AIO_SKILLS.put(Integer.parseInt(skillSplit[0]), Integer.parseInt(skillSplit[1]));
++						}
++						catch (NumberFormatException nfe)
++						{
++							if (!skill.equals(""))
++							{
++								System.out.println("[AIO System]: invalid config property in players.props -> AioSkills \"" + skillSplit[0] + "\"" + skillSplit[1]);
++							}
++						}
++					}
++				}
++			}
+ 			
+ 			// Access levels
+ 			Properties accessLevelSettings = new Properties();
+diff --git a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+index 60113c2..3aaf6b7 100644
+--- a/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+@@ -20,6 +20,7 @@
+ 
+ import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAdmin;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAio;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminAnnouncements;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBBS;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminBan;
+@@ -97,6 +98,7 @@
+ 	
+ 	public void load()
+ 	{
++		registerAdminCommandHandler(new AdminAio());
+ 		registerAdminCommandHandler(new AdminVip());
+ 		registerAdminCommandHandler(new AdminAdmin());
+ 		registerAdminCommandHandler(new AdminInvul());
+diff --git a/java/net/sf/l2j/gameserver/handler/ItemHandler.java b/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+index 207e629..56ce4e0 100644
+--- a/java/net/sf/l2j/gameserver/handler/ItemHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/ItemHandler.java
+@@ -18,6 +18,7 @@
+ import java.util.Map;
+ import java.util.logging.Logger;
+ 
++import net.sf.l2j.gameserver.handler.itemhandlers.AioItem;
+ import net.sf.l2j.gameserver.handler.itemhandlers.BeastSoulShot;
+ import net.sf.l2j.gameserver.handler.itemhandlers.BeastSpice;
+ import net.sf.l2j.gameserver.handler.itemhandlers.BeastSpiritShot;
+@@ -79,6 +80,7 @@
+ 	
+ 	public void load()
+ 	{
++		registerItemHandler(new AioItem());
+ 		registerItemHandler(new VipCoin());
+ 		registerItemHandler(new ScrollOfEscape());
+ 		registerItemHandler(new ScrollOfResurrection());
+diff --git a/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAio.java b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAio.java
+new file mode 100644
+index 0000000..4fd9b60
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminAio.java
+@@ -0,0 +1,225 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2, or (at your option)
++ * any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++ * 02111-1307, USA.
++ *
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++package net.sf.l2j.gameserver.handler.admincommandhandlers;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.util.StringTokenizer;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.L2DatabaseFactory;
++import net.sf.l2j.gameserver.datatables.GmListTable;
++import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.model.L2Object;
++import net.sf.l2j.gameserver.model.L2World;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.network.clientpackets.Say2;
++import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
++
++
++public class AdminAio implements IAdminCommandHandler
++{
++	private static String[] _adminCommands = { "admin_setaio2", "admin_removeaio2" };
++	private final static Logger _log = Logger.getLogger(AdminAio.class.getName());
++	
++	@Override
++	public boolean useAdminCommand(String command, L2PcInstance activeChar)
++	{
++		if (command.startsWith("admin_setaio2"))
++		{
++			StringTokenizer str = new StringTokenizer(command);
++			
++			L2Object target = activeChar.getTarget();
++			L2PcInstance player = null;
++			
++			if (target != null && target instanceof L2PcInstance)
++				player = (L2PcInstance)target;
++			else
++				player = activeChar;
++			
++			try
++			{
++				str.nextToken();
++				String time = str.nextToken();
++				if (str.hasMoreTokens())
++				{
++					String playername = time;
++					time = str.nextToken();
++					player = L2World.getInstance().getPlayer(playername);
++					doAio(activeChar, player, playername, time);
++				}
++				else
++				{
++					String playername = player.getName();
++					doAio(activeChar, player, playername, time);
++				}
++			}
++			catch(Exception e)
++			{
++				activeChar.sendMessage("Usage: //setaio <char_name> [time](in days)");
++			}
++			
++			player.broadcastUserInfo();
++			
++			if(player.isAio())
++				return true;
++		}
++		else if(command.startsWith("admin_removeaio2"))
++		{
++			StringTokenizer str = new StringTokenizer(command);
++			
++			L2Object target = activeChar.getTarget();
++			L2PcInstance player = null;
++			
++			if (target instanceof L2PcInstance)
++				player = (L2PcInstance)target;
++			else
++				player = activeChar;
++			
++			try
++			{
++				str.nextToken();
++				
++				if (str.hasMoreTokens())
++				{
++					String playername = str.nextToken();
++					player = L2World.getInstance().getPlayer(playername);
++					removeAio(activeChar, player, playername);
++				}
++				else
++				{
++					String playername = player.getName();
++					removeAio(activeChar, player, playername);
++				}
++			}
++			catch(Exception e)
++			{
++				activeChar.sendMessage("Usage: //removeaio <char_name>");
++			}
++			
++			player.broadcastUserInfo();
++			
++			if(player.isAio())
++				return false;
++		}
++		return false;
++	}
++	
++	public void doAio(L2PcInstance activeChar, L2PcInstance _player, String _playername, String _time)
++	{
++		int days = Integer.parseInt(_time);
++		
++		if (_player == null)
++		{
++			activeChar.sendMessage("Character not found.");
++			return;
++		}
++		if (_player.isAio())
++		{
++			activeChar.sendMessage("Player " + _playername + " is already an AIO.");
++			return;
++		}
++		
++		if(days > 0)
++		{
++			_player.lostAioSkills();
++			_player.setAio(true);
++			_player.setEndTime("aio", days);
++			_player.sendPacket(new CreatureSay(0,Say2.HERO_VOICE,"System","Dear player, you are now an AIO, congratulations."));
++			
++			try (Connection con = L2DatabaseFactory.getInstance().getConnection())
++			{
++				PreparedStatement statement = con.prepareStatement("UPDATE characters SET aio=1, aio_end=? WHERE obj_id=?");
++				statement.setLong(1, _player.getAioEndTime());
++				statement.setInt(2, _player.getObjectId());
++				statement.execute();
++				statement.close();
++				
++				if(Config.ALLOW_AIO_NCOLOR)
++					_player.getAppearance().setNameColor(Config.AIO_NCOLOR);
++				
++				if(Config.ALLOW_AIO_TCOLOR)
++					_player.getAppearance().setTitleColor(Config.AIO_TCOLOR);
++				
++				_player.rewardAioSkills();
++				
++				if(Config.ALLOW_AIO_ITEM)
++				{
++					_player.getInventory().addItem("", Config.AIO_ITEMID, 1, _player, null);
++					_player.getInventory().equipItem(_player.getInventory().getItemByItemId(Config.AIO_ITEMID));
++					
++				}
++				_player.broadcastUserInfo();
++				_player.sendSkillList();
++				
++				GmListTable.broadcastMessageToGMs("GM "+ activeChar.getName()+ " set an AIO status for player "+ _playername + " for " + _time + " day(s)");
++			}
++			catch (Exception e)
++			{
++				_log.log(Level.WARNING,"Something went wrong, check log folder for details", e);
++			}
++		}
++	}
++	
++	public void removeAio(L2PcInstance activeChar, L2PcInstance _player, String _playername)
++	{
++		if (!_player.isAio())
++		{
++			activeChar.sendMessage("Player " + _playername + " is not an AIO.");
++			return;
++		}
++		
++		_player.setAio(false);
++		_player.setAioEndTime(0);
++		
++		try (Connection con = L2DatabaseFactory.getInstance().getConnection())
++		{
++			PreparedStatement statement = con.prepareStatement("UPDATE characters SET Aio=0, Aio_end=0 WHERE obj_id=?");
++			statement.setInt(1, _player.getObjectId());
++			statement.execute();
++			statement.close();
++			
++			_player.lostAioSkills();
++			
++			if(Config.ALLOW_AIO_ITEM)
++			{
++				_player.getInventory().destroyItemByItemId("", Config.AIO_ITEMID, 1, _player, null);
++				_player.getWarehouse().destroyItemByItemId("", Config.AIO_ITEMID, 1, _player, null);
++			}
++			_player.getAppearance().setNameColor(0xFFFF77);
++			_player.getAppearance().setTitleColor(0xFFFF77);
++			_player.broadcastUserInfo();
++			_player.sendSkillList();
++			
++			GmListTable.broadcastMessageToGMs("GM "+activeChar.getName()+" removed AIO status of player "+ _playername);
++		}
++		catch (Exception e)
++		{
++			_log.log(Level.WARNING,"Something went wrong, check log folder for details", e);
++		}
++	}
++	
++	@Override
++	public String[] getAdminCommandList()
++	{
++		return _adminCommands;
++	}
++}
+\ No newline at end of file
+diff --git a/java/net/sf/l2j/gameserver/handler/itemhandlers/AioItem.java b/java/net/sf/l2j/gameserver/handler/itemhandlers/AioItem.java
+new file mode 100644
+index 0000000..87e8fc9
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/itemhandlers/AioItem.java
+@@ -0,0 +1,205 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import java.util.Calendar;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.L2Character;
++import net.sf.l2j.gameserver.model.L2ItemInstance;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.model.actor.instance.L2PlayableInstance;
++import net.sf.l2j.gameserver.network.serverpackets.EtcStatusUpdate;
++
++
++
++/**
++ * 
++ * @author Computer Sarada
++ *
++ */
++public class AioItem implements IItemHandler
++{
++	private static final int ITEM_IDS[] = { Config.AIO_ITEM,  Config.AIO_ITEM2, Config.AIO_ITEM3};
++	
++	@Override
++	public void useItem(L2PlayableInstance playable, L2ItemInstance item)
++	{
++		if (!(playable instanceof L2PcInstance))
++			return;
++		
++		L2PcInstance activeChar = (L2PcInstance)playable;
++		
++		int itemId = item.getItemId();
++		
++		if (itemId == Config.AIO_ITEM)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (!activeChar.isInsideZone(L2Character.ZONE_PEACE))
++			{
++				activeChar.sendMessage("You can only use this item in peace zone..");
++				return;
++			}
++			else if (activeChar.isAio())
++			{
++				activeChar.sendMessage("You Are Aio!.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Use In Vip!.");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isAio())
++				{
++					long daysleft = (activeChar.getAioEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("aio", (int)(daysleft + Config.AIO_DIAS));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.AIO_DIAS + " day of AIO.");
++				}
++				else
++				{
++					activeChar.setAio(true);
++					activeChar.setEndTime("aio", Config.AIO_DIAS);
++					activeChar.sendMessage("Congrats, you just became AIO per " + Config.AIO_DIAS + " day.");
++				}
++				
++				if (Config.ALLOW_AIO_NCOLOR && activeChar.isAio())
++					activeChar.getAppearance().setNameColor(Config.AIO_NCOLOR);
++				
++				if (Config.ALLOW_AIO_TCOLOR && activeChar.isAio()) 
++					activeChar.getAppearance().setTitleColor(Config.AIO_TCOLOR);
++				activeChar.getStat().addExp(activeChar.getStat().getExpForLevel(79));
++				activeChar.rewardAioSkills();
++				if(Config.ALLOW_AIO_ITEM)
++				{
++					activeChar.getInventory().addItem("", Config.AIO_ITEMID, 1, activeChar, null);
++					activeChar.getInventory().equipItem(activeChar.getInventory().getItemByItemId(Config.AIO_ITEMID));
++					
++				}
++				
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++		
++		else if (itemId == Config.AIO_ITEM2)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (!activeChar.isInsideZone(L2Character.ZONE_PEACE)){
++				activeChar.sendMessage("You can only use this item in peace zone..");
++				return;
++			}
++			else if (activeChar.isAio())
++			{
++				activeChar.sendMessage("You Are Aio!.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Use In Vip!.");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isAio())
++				{
++					long daysleft = (activeChar.getAioEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("aio", (int)(daysleft + Config.AIO_DIAS2));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.AIO_DIAS2 + " day of AIO.");
++				}
++				else
++				{
++					activeChar.setAio(true);
++					activeChar.setEndTime("aio", Config.AIO_DIAS2);
++					activeChar.sendMessage("Congrats, you just became AIO per " + Config.AIO_DIAS2 + " day.");
++				}
++				
++				if (Config.ALLOW_AIO_NCOLOR && activeChar.isAio())
++					activeChar.getAppearance().setNameColor(Config.AIO_NCOLOR);
++				
++				if (Config.ALLOW_AIO_TCOLOR && activeChar.isAio()) 
++					activeChar.getAppearance().setTitleColor(Config.AIO_TCOLOR);
++				activeChar.getStat().addExp(activeChar.getStat().getExpForLevel(79));
++				activeChar.rewardAioSkills();
++				if(Config.ALLOW_AIO_ITEM)
++				{
++					activeChar.getInventory().addItem("", Config.AIO_ITEMID, 1, activeChar, null);
++					activeChar.getInventory().equipItem(activeChar.getInventory().getItemByItemId(Config.AIO_ITEMID));
++					
++				}
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++		
++		else if (itemId == Config.AIO_ITEM3)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (activeChar.isAio())
++			{
++				activeChar.sendMessage("You Are Aio!.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Use In Vip!.");
++				return;
++			}
++			else if (!activeChar.isInsideZone(L2Character.ZONE_PEACE)){
++				activeChar.sendMessage("You can only use this item in peace zone..");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isAio())
++				{
++					long daysleft = (activeChar.getAioEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("aio", (int)(daysleft + Config.AIO_DIAS3));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.AIO_DIAS3 + " day of AIO.");
++				}
++				else
++				{
++					activeChar.setAio(true);
++					activeChar.setEndTime("aio", Config.AIO_DIAS3);
++					activeChar.sendMessage("Congrats, you just became AIO per " + Config.AIO_DIAS3 + " day.");
++				}
++				
++				if (Config.ALLOW_AIO_NCOLOR && activeChar.isAio())
++					activeChar.getAppearance().setNameColor(Config.AIO_NCOLOR);
++				
++				if(Config.ALLOW_AIO_ITEM)
++				{
++					activeChar.getInventory().addItem("", Config.AIO_ITEMID, 1, activeChar, null);
++					activeChar.getInventory().equipItem(activeChar.getInventory().getItemByItemId(Config.AIO_ITEMID));
++					
++				}
++				if (Config.ALLOW_AIO_TCOLOR && activeChar.isAio()) 
++					activeChar.getAppearance().setTitleColor(Config.AIO_TCOLOR);
++				activeChar.getStat().addExp(activeChar.getStat().getExpForLevel(79));
++				activeChar.rewardAioSkills();
++				
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++	}
++	
++	@Override
++	public int[] getItemIds()
++	{
++		return ITEM_IDS;
++	}
++}
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/L2ClassMasterInstance.java b/java/net/sf/l2j/gameserver/model/actor/instance/L2ClassMasterInstance.java
+index 55d7862..aa17768 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/L2ClassMasterInstance.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/L2ClassMasterInstance.java
+@@ -59,6 +59,11 @@
+     @Override
+     public void onBypassFeedback(L2PcInstance player, String command)
+     {
++    	if (player.isAio() && !Config.ALLOW_AIO_USE_CM)
++		{
++			player.sendMessage("Aio Buffers Can't Speak To Class Masters.");
++			return;
++		}
+         if (command.startsWith("1stClass"))
+         {
+             showHtmlMenu(player, getObjectId(), 1);
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java b/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+index 62335b8..ede6cda 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+@@ -227,8 +227,8 @@
+ 	private static final String DELETE_SKILL_SAVE = "DELETE FROM character_skills_save WHERE char_obj_id=? AND class_index=?";
+ 	
+ 	private static final String INSERT_CHARACTER = "INSERT INTO characters (account_name,obj_Id,char_name,level,maxHp,curHp,maxCp,curCp,maxMp,curMp,face,hairStyle,hairColor,sex,exp,sp,karma,pvpkills,pkkills,clanid,race,classid,deletetime,cancraft,title,accesslevel,online,clan_privs,wantspeace,base_class,nobless,last_recom_date) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+-	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,face=?,hairStyle=?,hairColor=?,sex=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,clan_privs=?,wantspeace=?,clan_join_expiry_time=?,clan_create_expiry_time=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,nobless=?,last_recom_date=?,varka_ketra_ally=?,aio_buffer=?,newbie_at=?,char_name=?, vip=?,vip_end=? WHERE obj_Id=?";
+-	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, name_color, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, face, hairStyle, hairColor, sex, heading, x, y, z, exp, sp, karma, pvpkills, pkkills, clanid, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, clan_join_expiry_time, clan_create_expiry_time, base_class, onlinetime, in_jail, jail_timer, nobless, last_recom_date, varka_ketra_ally, aio_buffer, newbie_at, vip,vip_end FROM characters WHERE obj_Id=?";
++	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,face=?,hairStyle=?,hairColor=?,sex=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,clan_privs=?,wantspeace=?,clan_join_expiry_time=?,clan_create_expiry_time=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,nobless=?,last_recom_date=?,varka_ketra_ally=?,aio_buffer=?,newbie_at=?,char_name=?, vip=?,vip_end=?, aio=?,aio_end=? WHERE obj_Id=?";
++	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, name_color, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, face, hairStyle, hairColor, sex, heading, x, y, z, exp, sp, karma, pvpkills, pkkills, clanid, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, clan_join_expiry_time, clan_create_expiry_time, base_class, onlinetime, in_jail, jail_timer, nobless, last_recom_date, varka_ketra_ally, aio_buffer, newbie_at, vip,vip_end, aio,aio_end FROM characters WHERE obj_Id=?";
+ 	private static final String RESTORE_CHAR_SUBCLASSES = "SELECT class_id,exp,sp,level,class_index FROM character_subclasses WHERE char_obj_id=? ORDER BY class_index ASC";
+ 	private static final String ADD_CHAR_SUBCLASS = "INSERT INTO character_subclasses (char_obj_id,class_id,exp,sp,level,class_index) VALUES (?,?,?,?,?,?)";
+ 	private static final String UPDATE_CHAR_SUBCLASS = "UPDATE character_subclasses SET exp=?,sp=?,level=?,class_id=? WHERE char_obj_id=? AND class_index =?";
+@@ -440,6 +440,9 @@
+ 	/** VIP System */
+ 	private boolean _isVip = false;
+ 	private long _vip_endTime = 0;
++	/** AIO System */
++	private boolean _isAio = false;
++	private long _aio_endTime = 0;
+ 	private ClassId _skillLearningClassId;
+ 	
+ 	// Hennas
+@@ -6564,6 +6567,8 @@
+ 					player.setNewbieAt(rset.getLong("newbie_at"));
+ 				    player.setVip(rset.getInt("vip") == 1 ? true : false);
+ 				    player.setVipEndTime(rset.getLong("vip_end"));
++				    player.setAio(rset.getInt("aio") == 1 ? true : false);
++					player.setAioEndTime(rset.getLong("aio_end"));
+ 				    
+ 					// Set the x,y,z position of the L2PcInstance and make it invisible
+ 					player.setXYZInvisible(rset.getInt("x"), rset.getInt("y"), rset.getInt("z"));
+@@ -6913,6 +6918,8 @@
+ 			statement.setString(++i, getName());
+ 			statement.setInt(++i, isVip() ? 1 : 0);
+ 			statement.setLong(++i, getVipEndTime());
++			statement.setInt(++i, isAio() ? 1 : 0);
++            statement.setLong(++i, getAioEndTime());
+ 			statement.setInt(++i, getObjectId());
+ 			statement.execute();
+ 		}
+@@ -7091,8 +7098,72 @@
+ 			_log.warning("Could not store char effect data: " + e);
+ 		}
+ 	}
++	/**
++	 * Aio System Start.
++	 * @return true, if is aio
++	 */
++	public boolean isAio()
++	{
++		return _isAio;
++	}
+ 	
+ 	/**
++	 * Sets the aio.
++	 * @param val the new aio
++	 */
++	public void setAio(boolean val)
++	{
++		_isAio = val;
++		
++	}
++	/**
++	 * Reward aio skills.
++	 */
++	public void rewardAioSkills()
++	{
++		L2Skill skill;
++		for (final Integer skillid : Config.AIO_SKILLS.keySet())
++		{
++			final int skilllvl = Config.AIO_SKILLS.get(skillid);
++			skill = SkillTable.getInstance().getInfo(skillid, skilllvl);
++			if (skill != null)
++			{
++				addSkill(skill, true);
++			}
++		}
++		sendMessage("GM give to you Aio's skills");
++	}
++	
++	/**
++	 * Lost aio skills.
++	 */
++	public void lostAioSkills()
++	{
++		L2Skill skill;
++		for (final Integer skillid : Config.AIO_SKILLS.keySet())
++		{
++			final int skilllvl = Config.AIO_SKILLS.get(skillid);
++			skill = SkillTable.getInstance().getInfo(skillid, skilllvl);
++			removeSkill(skill);
++		}
++	}
++	/**
++	 * Sets the aio end time.
++	 * @param val the new aio end time
++	 */
++	public void setAioEndTime(long val)
++	{
++		_aio_endTime = val;
++	}
++	/**
++	 * Gets the aio end time.
++	 * @return the aio end time
++	 */
++	public long getAioEndTime()
++	{
++		return _aio_endTime;
++	}
++	/**
+ 	 * Return True if the L2PcInstance is on line.<BR>
+ 	 * <BR>
+ 	 * @return 
+@@ -7128,6 +7199,8 @@
+ 		
+ 		if(process.equals("vip"))
+ 			_vip_endTime = end_day;
++		if(process.equals("aio"))
++			_aio_endTime = end_day;
+ 	}
+ 	/**
+ 	 * Add a skill to the L2PcInstance _skills and its Func objects to the calculator set of the L2PcInstance and save update in the character_skills table of the database.<BR>
+diff --git a/java/net/sf/l2j/gameserver/model/actor/instance/L2VillageMasterInstance.java b/java/net/sf/l2j/gameserver/model/actor/instance/L2VillageMasterInstance.java
+index 8e9f755..b2cbfb7 100644
+--- a/java/net/sf/l2j/gameserver/model/actor/instance/L2VillageMasterInstance.java
++++ b/java/net/sf/l2j/gameserver/model/actor/instance/L2VillageMasterInstance.java
+@@ -65,7 +65,11 @@
+         String cmdParams = "";
+ 
+         if (commandStr.length >= 2) cmdParams = commandStr[1];
+-
++        if (player.isAio() && !Config.ALLOW_AIO_USE_CM)
++		{
++			player.sendMessage("Aio Buffers Can't Speak To Village Masters.");
++			return;
++		}
+         if (actualCommand.equalsIgnoreCase("create_clan"))
+         {
+             if (cmdParams.isEmpty())
+diff --git a/java/net/sf/l2j/gameserver/model/eventgame/TvTEvent.java b/java/net/sf/l2j/gameserver/model/eventgame/TvTEvent.java
+index 264e100..e7e2060 100644
+--- a/java/net/sf/l2j/gameserver/model/eventgame/TvTEvent.java
++++ b/java/net/sf/l2j/gameserver/model/eventgame/TvTEvent.java
+@@ -21,6 +21,7 @@
+ import java.util.concurrent.ScheduledFuture;
+ import java.util.logging.Logger;
+ 
++import net.sf.l2j.Config;
+ import net.sf.l2j.gameserver.Announcements;
+ import net.sf.l2j.gameserver.ThreadPoolManager;
+ import net.sf.l2j.gameserver.datatables.DoorTable;
+@@ -613,7 +614,10 @@
+ 			player.sendMessage("TvT Registration is not in progress.");
+ 			return;
+ 		}
+-		
++		if (player.isAio() && !Config.ALLOW_AIO_IN_EVENTS)
++		{
++			player.sendMessage("AIO charactes are not allowed to participate in events :/");
++		}
+ 		if (player.isFestivalParticipant())
+ 		{
+ 			player.sendMessage("Festival participants cannot register to the event.");
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+index 00f8a9d..ff5f296 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+@@ -248,6 +248,17 @@
+ 		{
+ 			Broadcast.gameAnnounceToOnlinePlayers("The Hero Player "+activeChar.getName()+" Is Online!");
+ 		}
++		
++
++		if(activeChar.isAio())
++			onEnterAio(activeChar);
++
++		if(Config.ALLOW_AIO_NCOLOR && activeChar.isAio())
++			activeChar.getAppearance().setNameColor(Config.AIO_NCOLOR);
++
++		if(Config.ALLOW_AIO_TCOLOR && activeChar.isAio())
++			activeChar.getAppearance().setTitleColor(Config.AIO_TCOLOR);
++		
+ 		if(activeChar.isVip())
+ 			onEnterVip(activeChar);
+ 		
+@@ -349,6 +360,30 @@
+ 		activeChar.sendMessage("Next Restart: " + Restart.getInstance().getRestartNextTime());
+ 	}
+ 
++	private static void onEnterAio(L2PcInstance activeChar)
++	{
++		long now = Calendar.getInstance().getTimeInMillis();
++		long endDay = activeChar.getAioEndTime();
++		if(now > endDay)
++		{
++			activeChar.setAio(false);
++			activeChar.setAioEndTime(0);
++			activeChar.lostAioSkills();
++			if(Config.ALLOW_AIO_ITEM)
++			{
++				activeChar.getInventory().destroyItemByItemId("", Config.AIO_ITEMID, 1, activeChar, null);
++				activeChar.getWarehouse().destroyItemByItemId("", Config.AIO_ITEMID, 1, activeChar, null);
++			}
++			activeChar.sendPacket(new CreatureSay(0,Say2.PARTY,"System","Your AIO period ends."));
++		}
++		else
++		{
++			Date dt = new Date(endDay);
++			if(activeChar.isAio())
++				activeChar.sendMessage("Your AIO period ends at: " + dt);
++		}
++	}
++	
+ 	private static void onEnterVip(L2PcInstance activeChar)
+ 	{
+ 		long now = Calendar.getInstance().getTimeInMillis();
+
+
+
+
+SQL E DATAPACK
+
+	<command name="admin_setaio2" val="100"/>
+	<command name="admin_removeaio2" val="100"/>
+
+ALTER TABLE `characters` ADD COLUMN `aio` decimal(1,0) NOT NULL DEFAULT 0 AFTER `vip_end`;
+ALTER TABLE `characters` ADD COLUMN `aio_end` decimal(20,0) NOT NULL DEFAULT 0 AFTER `aio`;

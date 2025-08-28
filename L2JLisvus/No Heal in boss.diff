@@ -1,0 +1,68 @@
+diff --git a/config/CustomMods/BossSettings.ini b/config/CustomMods/BossSettings.ini
+new file mode 100644
+index 0000000..506e96a
+--- /dev/null
++++ b/config/CustomMods/BossSettings.ini
+@@ -0,0 +1,8 @@
++#=============================================================
++#                   Enable Heal in Boss?
++#=============================================================
++# If True: Player can heal RB
++# If False: Player can't heal RB
++# Default: True
++PlayersCanHealRb = False
++
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 42da413..60ee3c2 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -311,6 +311,7 @@
+ 	public static String RAID_BOSS_DATE_FORMAT;
+ 	public static String RAID_BOSS_IDS;
+ 	public static List<Integer> LIST_RAID_BOSS_IDS;
++	public static boolean PLAYERS_CAN_HEAL_RB;
+ 	/** Buffer */
+ 	public static int BUFFER_MAX_SCHEMES;
+ 	public static int BUFFER_MAX_SKILLS;
+@@ -2892,6 +2893,7 @@
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + GRAND_BOSS_FILE + " File.");
+ 			}
++			PLAYERS_CAN_HEAL_RB = Boolean.parseBoolean(grandBossSettings.getProperty("PlayersCanHealRb", "True"));
+ 			RAID_BOSS_INFO_PAGE_LIMIT = Integer.parseInt(grandBossSettings.getProperty("RaidBossInfoPageLimit", "15"));
+ 			RAID_BOSS_DROP_PAGE_LIMIT = Integer.parseInt(grandBossSettings.getProperty("RaidBossDropPageLimit", "15"));
+ 			RAID_BOSS_DATE_FORMAT = grandBossSettings.getProperty("RaidBossDateFormat", "MMM dd, HH:mm");
+diff --git a/java/net/sf/l2j/gameserver/model/L2Character.java b/java/net/sf/l2j/gameserver/model/L2Character.java
+index 1a207fd..c251897 100644
+--- a/java/net/sf/l2j/gameserver/model/L2Character.java
++++ b/java/net/sf/l2j/gameserver/model/L2Character.java
+@@ -45,6 +45,7 @@
+ import net.sf.l2j.gameserver.model.actor.instance.L2ControlTowerInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2DoorInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2FriendlyMobInstance;
++import net.sf.l2j.gameserver.model.actor.instance.L2GrandBossInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2GuardInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2MinionInstance;
+ import net.sf.l2j.gameserver.model.actor.instance.L2MonsterInstance;
+@@ -1193,6 +1194,7 @@
+ 	 */
+ 	public void doCast(L2Skill skill)
+ 	{
++		final L2Character activeChar = this;
+ 		if (!checkDoCastConditions(skill))
+ 		{
+ 			getAI().notifyEvent(CtrlEvent.EVT_CANCEL);
+@@ -1393,7 +1395,12 @@
+ 		// Send a Server->Client packet MagicSkillUse with target, displayId, level, hitTime, reuseDelay
+ 		// to the L2Character AND to all L2PcInstance in the _KnownPlayers of the L2Character
+ 		broadcastPacket(new MagicSkillUse(this, target, displayId, level, hitTime, reuseDelay, !skill.isMagic() && crit));
+-		
++		// Player can't heal rb config
++		if (!Config.PLAYERS_CAN_HEAL_RB && activeChar instanceof L2PcInstance && (target instanceof L2RaidBossInstance || target instanceof L2GrandBossInstance) && (skill.getSkillType() == SkillType.HEAL || skill.getSkillType() == SkillType.HEAL_PERCENT))
++		{
++			this.sendPacket(new ActionFailed());
++			return;
++		}
+ 		// Send skill cast messages to the L2Character
+ 		if ((this instanceof L2PcInstance) && (magicId != 1312))
+ 		{

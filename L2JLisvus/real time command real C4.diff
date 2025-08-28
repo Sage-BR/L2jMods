@@ -1,0 +1,115 @@
+diff --git a/config/CustomMods/Commands.ini b/config/CustomMods/Commands.ini
+index 761ced6..1263957 100644
+--- a/config/CustomMods/Commands.ini
++++ b/config/CustomMods/Commands.ini
+@@ -39,3 +39,9 @@
+ # This is the amount of Adena someone will get when they do the .withdraw command, and also the same amount they will lose when they do .deposit
+ BankingAdenaCount = 500000000
+ 
++#===================================================
++#             Enable Command Real Time
++#===================================================
++#Active Command: .time
++EnableCommandRealTime = True
++
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 273ef87..5d063c8 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -125,6 +125,7 @@
+ 	public static int BOSS_CUSTOM_NOBLES_ID;
+ 	public static int DISTANCE_FOR_RENEWAL_NOBLES_PARTY;
+ 	public static boolean ENABLE_COMMAND_MENU;
++	public static boolean ENABLE_COMMAND_TIME;
+ 	public static boolean ENABLE_COMMAND_CLAN_NOTICES;
+ 	public static boolean BANKING_SYSTEM_ENABLED;
+ 	public static int BANKING_SYSTEM_GOLDBARS;
+@@ -2528,6 +2529,7 @@
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + COMMANDS + " File.");
+ 			}
++			ENABLE_COMMAND_TIME = Boolean.parseBoolean(Commands.getProperty("EnableCommandRealTime", "false"));
+ 			ENABLE_COMMAND_MENU = Boolean.parseBoolean(Commands.getProperty("EnableCommandMenu", "false"));
+ 			ENABLE_COMMAND_CLAN_NOTICES = Boolean.parseBoolean(Commands.getProperty("EnableCommandClanNotice", "false"));
+ 			BANKING_SYSTEM_ENABLED = Boolean.parseBoolean(Commands.getProperty("BankingEnabled", "false"));
+diff --git a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+index 77d6134..16021ce 100644
+--- a/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
++++ b/java/net/sf/l2j/gameserver/handler/VoicedCommandHandler.java
+@@ -22,6 +22,7 @@
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.BankingCmd;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.ChangePassword;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.Shiff_Mod;
++import net.sf.l2j.gameserver.handler.voicedcommandhandlers.TimeReal;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.TvTCommand;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.VoiceExperience;
+ import net.sf.l2j.gameserver.handler.voicedcommandhandlers.VoicedBossSpawn;
+@@ -58,6 +59,10 @@
+ 		registerVoicedCommandHandler(new VoiceExperience());
+ 		registerVoicedCommandHandler(new Wedding());
+ 		registerVoicedCommandHandler(new Shiff_Mod());
++		if(Config.ENABLE_COMMAND_TIME)
++		{
++			registerVoicedCommandHandler(new TimeReal());
++		}
+ 		if(Config.ENABLE_COMMAND_MENU)
+ 		{
+ 			registerVoicedCommandHandler(new VoicedMenu());
+diff --git a/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/TimeReal.java b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/TimeReal.java
+new file mode 100644
+index 0000000..99d38e4
+--- /dev/null
++++ b/java/net/sf/l2j/gameserver/handler/voicedcommandhandlers/TimeReal.java
+@@ -0,0 +1,51 @@
++/*
++ * This program is free software: you can redistribute it and/or modify it under
++ * the terms of the GNU General Public License as published by the Free Software
++ * Foundation, either version 3 of the License, or (at your option) any later
++ * version.
++ * 
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
++ * details.
++ * 
++ * You should have received a copy of the GNU General Public License along with
++ * this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++package net.sf.l2j.gameserver.handler.voicedcommandhandlers;
++
++import java.text.SimpleDateFormat;
++import java.util.Date;
++
++import net.sf.l2j.gameserver.handler.IVoicedCommandHandler;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++
++/**
++ * 
++ * @author Sarada
++ *
++ */
++public class TimeReal implements IVoicedCommandHandler
++{
++    private static String[] _voicedCommands =
++    {
++        "time",
++    }; 
++
++    @Override
++	public boolean useVoicedCommand(String command, L2PcInstance activeChar, String target)
++    {
++    		String RealTime = (new SimpleDateFormat("H:mm")).format(new Date());
++    	    activeChar.sendMessage("It's "+RealTime+" in the real world.");
++    	        
++ 
++		return false;
++    	
++    }
++
++    @Override
++	public String[] getVoicedCommandList()
++    {
++        return _voicedCommands;
++    }
++}
+

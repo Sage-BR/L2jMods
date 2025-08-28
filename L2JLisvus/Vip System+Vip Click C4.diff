@@ -1,0 +1,815 @@
+### Eclipse Workspace Patch 1.0
+#P Lisvus_GameServer
+Index: config/CustomMods/Donate.ini
+===================================================================
+--- config/CustomMods/Donate.ini	(nonexistent)
++++ config/CustomMods/Donate.ini	(working copy)
+@@ -0,0 +1,43 @@
++#=============================================================
++#                        VIP System
++#=============================================================
++EnableVipSystem = True
++
++# Enable / Disable Name Color
++AllowVipNameColor = True
++VipNameColor = 88AA88
++
++# Enable / Disable Title Color
++AllowVipTitleColor = True
++VipTitleColor = 88AA88
++
++# VIP Xp/Sp Rate
++VIPXpSpRate = 1.5
++# VIP Adena rate
++VIPAdenaRate = 1.5
++# VIP drop rate
++VIPDropRate = 1.5
++# VIP spoil rate
++VIPSpoilRate = 1.5
++
++#=============================================================
++#                        VIP Item 1
++#=============================================================
++#Item Coin 1
++VipCoin = 0
++VipCoinDays = 1
++
++#=============================================================
++#                        VIP Item 2
++#=============================================================
++#Item Coin 2
++VipCoin2 = 0
++VipCoinDays2 = 30
++
++#=============================================================
++#                        VIP Item 3
++#=============================================================
++#Item Coin 3
++VipCoin3 = 0
++VipCoinDays3 = 45
++
+Index: java/net/sf/l2j/gameserver/model/L2Attackable.java
+===================================================================
+--- java/net/sf/l2j/gameserver/model/L2Attackable.java	(revision 730)
++++ java/net/sf/l2j/gameserver/model/L2Attackable.java	(working copy)
+@@ -663,7 +663,16 @@
+ 							exp = tmp[0];
+ 							exp *= 1 - penalty;
+ 							sp = tmp[1];
++							if (attacker instanceof L2PcInstance)
++							{
++								L2PcInstance a = (L2PcInstance)attacker;
++								
++								if (a.isVip())
++								{
++									exp *= Config.VIP_XP_SP_RATE;
++									sp *= Config.VIP_XP_SP_RATE;
++								}
++							}
+ 							if (Config.CHAMPION_ENABLE && isChampion())
+ 							{
+ 								exp *= Config.CHAMPION_REWARDS;
+@@ -785,7 +794,16 @@
+ 						tmp = calculateExpAndSp(levelDiff, partyDmg);
+ 						exp = tmp[0];
+ 						sp = tmp[1];
++						if (attacker instanceof L2PcInstance)
++						{
++							L2PcInstance a = (L2PcInstance)attacker;
++							
++							if (a.isVip())
++							{
++								exp *= Config.VIP_XP_SP_RATE;
++								sp *= Config.VIP_XP_SP_RATE;
++							}
++						}
+ 						if (Config.CHAMPION_ENABLE && isChampion())
+ 						{
+ 							exp *= Config.CHAMPION_REWARDS;
+@@ -1106,14 +1124,26 @@
+ 		if (drop.getItemId() == Inventory.ADENA_ID)
+ 		{
+ 			dropChance *= Config.RATE_DROP_ADENA;
++			if (lastAttacker.isVip())
++			{
++				dropChance *= Config.VIP_ADENA_RATE;
++			}
+ 		}
+ 		else if (isSweep)
+ 		{
+ 			dropChance *= Config.RATE_DROP_SPOIL;
++			if (lastAttacker.isVip())
++			{
++				dropChance *= Config.VIP_SPOIL_RATE;
++			}
+ 		}
+ 		else
+ 		{
+ 			dropChance *= isRaid() ? Config.RATE_BOSS_DROP_ITEMS : Config.RATE_DROP_ITEMS;
++			if (lastAttacker.isVip())
++			{
++				dropChance *= Config.VIP_DROP_RATE;
++			}
+ 		}
+ 		
+ 		if (Config.CHAMPION_ENABLE && isChampion())
+@@ -1281,10 +1311,18 @@
+ 			if (drop.getItemId() == Inventory.ADENA_ID)
+ 			{
+ 				dropChance *= Config.RATE_DROP_ADENA;
++				if (lastAttacker.isVip())
++				{
++					dropChance *= Config.VIP_ADENA_RATE;
++				}
+ 			}
+ 			else
+ 			{
+ 				dropChance *= isRaid() ? Config.RATE_BOSS_DROP_ITEMS : Config.RATE_DROP_ITEMS;
++				if (lastAttacker.isVip())
++				{
++					dropChance *= Config.VIP_DROP_RATE;
++				}
+ 			}
+ 			
+ 			if (Config.CHAMPION_ENABLE && isChampion())
+Index: java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java
+===================================================================
+--- java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java	(revision 730)
++++ java/net/sf/l2j/gameserver/model/actor/instance/L2PcInstance.java	(working copy)
+@@ -227,8 +227,8 @@
+ 	private static final String DELETE_SKILL_SAVE = "DELETE FROM character_skills_save WHERE char_obj_id=? AND class_index=?";
+ 	
+ 	private static final String INSERT_CHARACTER = "INSERT INTO characters (account_name,obj_Id,char_name,level,maxHp,curHp,maxCp,curCp,maxMp,curMp,face,hairStyle,hairColor,sex,exp,sp,karma,pvpkills,pkkills,clanid,race,classid,deletetime,cancraft,title,accesslevel,online,clan_privs,wantspeace,base_class,nobless,last_recom_date) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+-	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,face=?,hairStyle=?,hairColor=?,sex=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,clan_privs=?,wantspeace=?,clan_join_expiry_time=?,clan_create_expiry_time=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,nobless=?,last_recom_date=?,varka_ketra_ally=?,aio_buffer=?,newbie_at=?,char_name=? WHERE obj_Id=?";
+-	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, name_color, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, face, hairStyle, hairColor, sex, heading, x, y, z, exp, sp, karma, pvpkills, pkkills, clanid, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, clan_join_expiry_time, clan_create_expiry_time, base_class, onlinetime, in_jail, jail_timer, nobless, last_recom_date, varka_ketra_ally, aio_buffer, newbie_at FROM characters WHERE obj_Id=?";
++	private static final String UPDATE_CHARACTER = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,face=?,hairStyle=?,hairColor=?,sex=?,heading=?,x=?,y=?,z=?,exp=?,sp=?,karma=?,pvpkills=?,pkkills=?,rec_have=?,rec_left=?,clanid=?,race=?,classid=?,deletetime=?,title=?,accesslevel=?,online=?,clan_privs=?,wantspeace=?,clan_join_expiry_time=?,clan_create_expiry_time=?,base_class=?,onlinetime=?,in_jail=?,jail_timer=?,nobless=?,last_recom_date=?,varka_ketra_ally=?,aio_buffer=?,newbie_at=?,char_name=?, vip=?,vip_end=? WHERE obj_Id=?";
++	private static final String RESTORE_CHARACTER = "SELECT account_name, obj_Id, char_name, name_color, level, maxHp, curHp, maxCp, curCp, maxMp, curMp, face, hairStyle, hairColor, sex, heading, x, y, z, exp, sp, karma, pvpkills, pkkills, clanid, race, classid, deletetime, cancraft, title, rec_have, rec_left, accesslevel, online, char_slot, lastAccess, clan_privs, wantspeace, clan_join_expiry_time, clan_create_expiry_time, base_class, onlinetime, in_jail, jail_timer, nobless, last_recom_date, varka_ketra_ally, aio_buffer, newbie_at, vip,vip_end FROM characters WHERE obj_Id=?";
+ 	private static final String RESTORE_CHAR_SUBCLASSES = "SELECT class_id,exp,sp,level,class_index FROM character_subclasses WHERE char_obj_id=? ORDER BY class_index ASC";
+ 	private static final String ADD_CHAR_SUBCLASS = "INSERT INTO character_subclasses (char_obj_id,class_id,exp,sp,level,class_index) VALUES (?,?,?,?,?,?)";
+ 	private static final String UPDATE_CHAR_SUBCLASS = "UPDATE character_subclasses SET exp=?,sp=?,level=?,class_id=? WHERE char_obj_id=? AND class_index =?";
+@@ -437,7 +437,9 @@
+ 	
+ 	private final Set<L2PcInstance> _snoopListener = ConcurrentHashMap.newKeySet(1);
+ 	private final Set<L2PcInstance> _snoopedPlayer = ConcurrentHashMap.newKeySet(1);
++	/** VIP System */
++	private boolean _isVip = false;
++	private long _vip_endTime = 0;
+ 	private ClassId _skillLearningClassId;
+ 	
+ 	// Hennas
+@@ -6550,7 +6552,9 @@
+ 					
+ 					// Set character newbie time
+ 					player.setNewbieAt(rset.getLong("newbie_at"));
++				    player.setVip(rset.getInt("vip") == 1 ? true : false);
++				    player.setVipEndTime(rset.getLong("vip_end"));
++				    
+ 					// Set the x,y,z position of the L2PcInstance and make it invisible
+ 					player.setXYZInvisible(rset.getInt("x"), rset.getInt("y"), rset.getInt("z"));
+ 					
+@@ -6897,6 +6901,8 @@
+ 			statement.setInt(++i, isAIOBuffer() ? 1 : 0);
+ 			statement.setLong(++i, getNewbieAt());
+ 			statement.setString(++i, getName());
++			statement.setInt(++i, isVip() ? 1 : 0);
++			statement.setLong(++i, getVipEndTime());
+ 			statement.setInt(++i, getObjectId());
+ 			statement.execute();
+ 		}
+@@ -7085,7 +7091,34 @@
+ 	{
+ 		return _isOnline;
+ 	}
++	public boolean isVip()
++	{
++		return _isVip;
++	}
+ 	
++	public void setVip(boolean val)
++	{
++		_isVip = val;
++	}
++	
++	public long getVipEndTime()
++	{
++		return _vip_endTime;
++	}
++	
++	public void setVipEndTime(long val)
++	{
++		_vip_endTime = val;
++	}
++	public void setEndTime(String process, int val)
++	{
++		Calendar calendar = Calendar.getInstance();
++		calendar.add(Calendar.DAY_OF_MONTH, val);
++		long end_day = calendar.getTimeInMillis();
++		
++		if(process.equals("vip"))
++			_vip_endTime = end_day;
++	}
+ 	/**
+ 	 * Add a skill to the L2PcInstance _skills and its Func objects to the calculator set of the L2PcInstance and save update in the character_skills table of the database.<BR>
+ 	 * <BR>
+Index: java/net/sf/l2j/Config.java
+===================================================================
+--- java/net/sf/l2j/Config.java	(revision 730)
++++ java/net/sf/l2j/Config.java	(working copy)
+@@ -45,6 +45,9 @@
+ {
+ 	private final static Logger _log = Logger.getLogger(Config.class.getName());
+ 	
++	/**Custom Properties */
++	public static final String VIP_DONATE= "./config/CustomMods/Donate.ini";
++	
+ 	/** Properties file for access level configurations */
+ 	public static final String ACCESS_LEVELS_FILE = "./config/AccessLevels.properties";
+ 	/** Properties file for alternative configurations */
+@@ -578,7 +581,22 @@
+ 	public static int SAVE_DROPPED_ITEM_INTERVAL;
+ 	/** Clear all items stored in ItemsOnGround table */
+ 	public static boolean CLEAR_DROPPED_ITEM_TABLE;
+-	
++	/** VIP System */
++	public static boolean ENABLE_VIP_SYSTEM;
++	public static boolean ALLOW_VIP_NCOLOR;
++	public static int VIP_NCOLOR;
++	public static boolean ALLOW_VIP_TCOLOR;
++	public static int VIP_TCOLOR;
++	public static float VIP_XP_SP_RATE;
++	public static float VIP_ADENA_RATE;
++	public static float VIP_DROP_RATE;
++	public static float VIP_SPOIL_RATE;
++	public static int VIP_COIN_ID1;
++	public static int VIP_DAYS_ID1;
++	public static int VIP_COIN_ID2;
++	public static int VIP_DAYS_ID2;
++	public static int VIP_COIN_ID3;
++	public static int VIP_DAYS_ID3;
+ 	/** Accept precise drop calculation ? */
+ 	public static boolean PRECISE_DROP_CALCULATION;
+ 	/** Accept multi-items drop ? */
+@@ -2249,6 +2267,34 @@
+ 			PVP_NORMAL_TIME = Integer.parseInt(pvpSettings.getProperty("PvPVsNormalTime", "15000"));
+ 			PVP_PVP_TIME = Integer.parseInt(pvpSettings.getProperty("PvPVsPvPTime", "30000"));
+ 			
++			
++			// Donate Properties
++			Properties donate = new Properties();
++			try (InputStream is = new FileInputStream(new File(VIP_DONATE)))
++			{
++				donate.load(is);
++			}
++			catch (Exception e)
++			{
++				e.printStackTrace();
++				throw new Error("Failed to Load " + VIP_DONATE + " File.");
++			}
++			ENABLE_VIP_SYSTEM = Boolean.parseBoolean(donate.getProperty("EnableVipSystem", "True"));
++			ALLOW_VIP_NCOLOR = Boolean.parseBoolean(donate.getProperty("AllowVipNameColor", "True"));
++			VIP_NCOLOR = Integer.decode("0x" + donate.getProperty("VipNameColor", "88AA88"));
++			ALLOW_VIP_TCOLOR = Boolean.parseBoolean(donate.getProperty("AllowVipTitleColor", "True"));
++			VIP_TCOLOR = Integer.decode("0x" + donate.getProperty("VipTitleColor", "88AA88"));
++			VIP_XP_SP_RATE = Float.parseFloat(donate.getProperty("VIPXpSpRate", "1.5"));
++			VIP_ADENA_RATE = Float.parseFloat(donate.getProperty("VIPAdenaRate", "1.5"));
++			VIP_DROP_RATE = Float.parseFloat(donate.getProperty("VIPDropRate", "1.5"));
++			VIP_SPOIL_RATE = Float.parseFloat(donate.getProperty("VIPSpoilRate", "1.5"));
++			VIP_COIN_ID1 = Integer.parseInt(donate.getProperty("VipCoin", "6392"));
++    		VIP_DAYS_ID1 = Integer.parseInt(donate.getProperty("VipCoinDays", "1"));
++    		VIP_COIN_ID2 = Integer.parseInt(donate.getProperty("VipCoin2", "6393"));
++    		VIP_DAYS_ID2 = Integer.parseInt(donate.getProperty("VipCoinDays2", "2"));
++    		VIP_COIN_ID3 = Integer.parseInt(donate.getProperty("VipCoin3", "5557"));
++    		VIP_DAYS_ID3 = Integer.parseInt(donate.getProperty("VipCoinDays3", "3"));
++			
+ 			// Access levels
+ 			Properties accessLevelSettings = new Properties();
+ 			try (InputStream is = new FileInputStream(new File(ACCESS_LEVELS_FILE)))
+Index: java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java
+===================================================================
+--- java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java	(revision 730)
++++ java/net/sf/l2j/gameserver/handler/AdminCommandHandler.java	(working copy)
+@@ -70,6 +70,7 @@
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTeleport;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminTest;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminUnblockIp;
++import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminVip;
+ import net.sf.l2j.gameserver.handler.admincommandhandlers.AdminZone;
+ 
+ /**
+@@ -96,6 +97,7 @@
+ 	
+ 	public void load()
+ 	{
++		registerAdminCommandHandler(new AdminVip());
+ 		registerAdminCommandHandler(new AdminAdmin());
+ 		registerAdminCommandHandler(new AdminInvul());
+ 		registerAdminCommandHandler(new AdminDelete());
+Index: java/net/sf/l2j/gameserver/handler/itemhandlers/VipCoin.java
+===================================================================
+--- java/net/sf/l2j/gameserver/handler/itemhandlers/VipCoin.java	(nonexistent)
++++ java/net/sf/l2j/gameserver/handler/itemhandlers/VipCoin.java	(working copy)
+@@ -0,0 +1,150 @@
++package net.sf.l2j.gameserver.handler.itemhandlers;
++
++import java.util.Calendar;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.gameserver.handler.IItemHandler;
++import net.sf.l2j.gameserver.model.L2ItemInstance;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.model.actor.instance.L2PlayableInstance;
++import net.sf.l2j.gameserver.network.serverpackets.EtcStatusUpdate;
++
++/**
++ * 
++ * @author Computer Sarada
++ *
++ */
++public class VipCoin implements IItemHandler
++{
++	private static final int ITEM_IDS[] = { Config.VIP_COIN_ID1,  Config.VIP_COIN_ID2, Config.VIP_COIN_ID3};
++	
++	@Override
++	public void useItem(final L2PlayableInstance playable, final L2ItemInstance item)
++	{
++		if (!(playable instanceof L2PcInstance))
++			return;
++		
++		L2PcInstance activeChar = (L2PcInstance)playable;
++		
++		int itemId = item.getItemId();
++		
++		if (itemId == Config.VIP_COIN_ID1)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Are Vip!.");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isVip())
++				{
++					long daysleft = (activeChar.getVipEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("vip", (int)(daysleft + Config.VIP_DAYS_ID1));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.VIP_DAYS_ID1 + " day of VIP.");
++				}
++				else
++				{
++					activeChar.setVip(true);
++					activeChar.setEndTime("vip", Config.VIP_DAYS_ID1);
++					activeChar.sendMessage("Congrats, you just became VIP per " + Config.VIP_DAYS_ID1 + " day.");
++				}
++				
++				if (Config.ALLOW_VIP_NCOLOR && activeChar.isVip())
++					activeChar.getAppearance().setNameColor(Config.VIP_NCOLOR);
++				
++				if (Config.ALLOW_VIP_TCOLOR && activeChar.isVip()) 
++					activeChar.getAppearance().setTitleColor(Config.VIP_TCOLOR);
++				
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++		
++		else if (itemId == Config.VIP_COIN_ID2)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Are Vip!.");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isVip())
++				{
++					long daysleft = (activeChar.getVipEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("vip", (int)(daysleft + Config.VIP_DAYS_ID2));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.VIP_DAYS_ID2 + " day of VIP.");
++				}
++				else
++				{
++					activeChar.setVip(true);
++					activeChar.setEndTime("vip", Config.VIP_DAYS_ID2);
++					activeChar.sendMessage("Congrats, you just became VIP per " + Config.VIP_DAYS_ID2 + " day.");
++				}
++				
++				if (Config.ALLOW_VIP_NCOLOR && activeChar.isVip())
++					activeChar.getAppearance().setNameColor(Config.VIP_NCOLOR);
++				
++				if (Config.ALLOW_VIP_TCOLOR && activeChar.isVip()) 
++					activeChar.getAppearance().setTitleColor(Config.VIP_TCOLOR);
++				
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++		
++		else if (itemId == Config.VIP_COIN_ID3)
++		{
++			if (activeChar.isInOlympiadMode())
++			{
++				activeChar.sendMessage("This item cannot be used on Olympiad Games.");
++				return;
++			}
++			else if (activeChar.isVip())
++			{
++				activeChar.sendMessage("You Are Vip!.");
++				return;
++			}
++			if (activeChar.destroyItem("Consume", item.getObjectId(), 1, null, false))
++			{
++				if (activeChar.isVip())
++				{
++					long daysleft = (activeChar.getVipEndTime() - Calendar.getInstance().getTimeInMillis()) / 86400000L;
++					activeChar.setEndTime("vip", (int)(daysleft + Config.VIP_DAYS_ID3));
++					activeChar.sendMessage("Congratulations, You just received another " + Config.VIP_DAYS_ID3 + " day of VIP.");
++				}
++				else
++				{
++					activeChar.setVip(true);
++					activeChar.setEndTime("vip", Config.VIP_DAYS_ID3);
++					activeChar.sendMessage("Congrats, you just became VIP per " + Config.VIP_DAYS_ID3 + " day.");
++				}
++				
++				if (Config.ALLOW_VIP_NCOLOR && activeChar.isVip())
++					activeChar.getAppearance().setNameColor(Config.VIP_NCOLOR);
++				
++				if (Config.ALLOW_VIP_TCOLOR && activeChar.isVip()) 
++					activeChar.getAppearance().setTitleColor(Config.VIP_TCOLOR);
++				
++				activeChar.broadcastUserInfo();
++				activeChar.sendPacket(new EtcStatusUpdate(activeChar));
++			}
++		}
++	}
++	@Override
++	public int[] getItemIds()
++	{
++		return ITEM_IDS;
++	}
++}
+Index: config/CustomMods/Donate.ini
+===================================================================
+--- config/CustomMods/Donate.ini	(nonexistent)
++++ config/CustomMods/Donate.ini	(working copy)
+@@ -0,0 +1,43 @@
++#=============================================================
++#                        VIP System
++#=============================================================
++EnableVipSystem = True
++
++# Enable / Disable Name Color
++AllowVipNameColor = True
++VipNameColor = 88AA88
++
++# Enable / Disable Title Color
++AllowVipTitleColor = True
++VipTitleColor = 88AA88
++
++# VIP Xp/Sp Rate
++VIPXpSpRate = 1.5
++# VIP Adena rate
++VIPAdenaRate = 1.5
++# VIP drop rate
++VIPDropRate = 1.5
++# VIP spoil rate
++VIPSpoilRate = 1.5
++
++#=============================================================
++#                        VIP Item 1
++#=============================================================
++#Item Coin 1
++VipCoin = 0
++VipCoinDays = 1
++
++#=============================================================
++#                        VIP Item 2
++#=============================================================
++#Item Coin 2
++VipCoin2 = 0
++VipCoinDays2 = 30
++
++#=============================================================
++#                        VIP Item 3
++#=============================================================
++#Item Coin 3
++VipCoin3 = 0
++VipCoinDays3 = 45
++
+Index: java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+===================================================================
+--- java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java	(revision 730)
++++ java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java	(working copy)
+@@ -14,7 +14,9 @@
+  */
+ package net.sf.l2j.gameserver.network.clientpackets;
+ 
++import java.sql.Date;
+ import java.util.Base64;
++import java.util.Calendar;
+ import java.util.Collection;
+ import java.util.logging.Logger;
+ 
+@@ -43,6 +45,7 @@
+ import net.sf.l2j.gameserver.model.quest.Quest;
+ import net.sf.l2j.gameserver.model.quest.QuestState;
+ import net.sf.l2j.gameserver.network.L2GameClient.GameClientState;
++import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
+ import net.sf.l2j.gameserver.network.serverpackets.Die;
+ import net.sf.l2j.gameserver.network.serverpackets.EtcStatusUpdate;
+ import net.sf.l2j.gameserver.network.serverpackets.ExStorageMaxCount;
+@@ -216,17 +219,17 @@
+ 		// Default enter world message
+ 		sendPacket(new SystemMessage(SystemMessage.WELCOME_TO_LINEAGE_II));
+
+ 		SevenSigns.getInstance().sendCurrentPeriodMsg(activeChar);
+ 		Announcements.getInstance().showAnnouncements(activeChar);
++		
++		if(activeChar.isVip())
++			onEnterVip(activeChar);
++		
++		if(Config.ALLOW_VIP_NCOLOR && activeChar.isVip())
++			activeChar.getAppearance().setNameColor(Config.VIP_NCOLOR);
++		
++		if(Config.ALLOW_VIP_TCOLOR && activeChar.isVip())
++			activeChar.getAppearance().setTitleColor(Config.VIP_TCOLOR);
+ 
+ 		String serverNews = HtmCache.getInstance().getHtm("data/html/servnews.htm");
+ 		if (serverNews != null)
+@@ -301,6 +304,24 @@
+ 		}
+ 	}
+ 
++	private static void onEnterVip(L2PcInstance activeChar)
++	{
++		long now = Calendar.getInstance().getTimeInMillis();
++		long endDay = activeChar.getVipEndTime();
++		if(now > endDay)
++		{
++			activeChar.setVip(false);
++			activeChar.setVipEndTime(0);
++			activeChar.sendPacket(new CreatureSay(0,Say2.PARTY,"System","Your VIP period ends."));
++		}
++		else
++		{
++			Date dt = new Date(endDay);
++			if(activeChar.isVip())
++				activeChar.sendMessage("Your VIP period ends at: " + dt);
++		}
++	}
++
+ 	private final boolean isDualBoxingAllowed(L2PcInstance activeChar)
+ 	{
+ 		if (Config.MAX_CLIENTS_PER_IP <= 0)
+Index: java/net/sf/l2j/gameserver/handler/ItemHandler.java
+===================================================================
+--- java/net/sf/l2j/gameserver/handler/ItemHandler.java	(revision 730)
++++ java/net/sf/l2j/gameserver/handler/ItemHandler.java	(working copy)
+@@ -48,6 +48,7 @@
+ import net.sf.l2j.gameserver.handler.itemhandlers.SpecialXMas;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SpiritShot;
+ import net.sf.l2j.gameserver.handler.itemhandlers.SummonItems;
++import net.sf.l2j.gameserver.handler.itemhandlers.VipCoin;
+ import net.sf.l2j.gameserver.handler.itemhandlers.WorldMap;
+ 
+ /**
+@@ -78,6 +79,7 @@
+ 	
+ 	public void load()
+ 	{
++		registerItemHandler(new VipCoin());
+ 		registerItemHandler(new ScrollOfEscape());
+ 		registerItemHandler(new ScrollOfResurrection());
+ 		registerItemHandler(new SoulShots());
+Index: java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminVip.java
+===================================================================
+--- java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminVip.java	(nonexistent)
++++ java/net/sf/l2j/gameserver/handler/admincommandhandlers/AdminVip.java	(working copy)
+@@ -0,0 +1,206 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2, or (at your option)
++ * any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++ * 02111-1307, USA.
++ *
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++package net.sf.l2j.gameserver.handler.admincommandhandlers;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.util.StringTokenizer;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++import net.sf.l2j.Config;
++import net.sf.l2j.L2DatabaseFactory;
++import net.sf.l2j.gameserver.datatables.GmListTable;
++import net.sf.l2j.gameserver.handler.IAdminCommandHandler;
++import net.sf.l2j.gameserver.model.L2Object;
++import net.sf.l2j.gameserver.model.L2World;
++import net.sf.l2j.gameserver.model.actor.instance.L2PcInstance;
++import net.sf.l2j.gameserver.network.clientpackets.Say2;
++import net.sf.l2j.gameserver.network.serverpackets.CreatureSay;
++
++public class AdminVip implements IAdminCommandHandler
++{
++	private static String[] _adminCommands = { "admin_setvip", "admin_removevip" };
++	private final static Logger _log = Logger.getLogger(AdminVip.class.getName());
++	
++	@Override
++	public boolean useAdminCommand(String command, L2PcInstance activeChar)
++	{
++		if (command.startsWith("admin_setvip"))
++		{
++			StringTokenizer str = new StringTokenizer(command);
++			
++			L2Object target = activeChar.getTarget();
++			L2PcInstance player = null;
++			
++			if (target != null && target instanceof L2PcInstance)
++				player = (L2PcInstance)target;
++			else
++				player = activeChar;
++			
++			try
++			{
++				str.nextToken();
++				String time = str.nextToken();
++				if (str.hasMoreTokens())
++				{
++					String playername = time;
++					time = str.nextToken();
++					player = L2World.getInstance().getPlayer(playername);
++					doVip(activeChar, player, playername, time);
++				}
++				else
++				{
++					String playername = player.getName();
++					doVip(activeChar, player, playername, time);
++				}
++			}
++			catch(Exception e)
++			{
++				activeChar.sendMessage("Usage: //setvip <char_name> [time](in days)");
++			}
++			
++			player.broadcastUserInfo();
++			
++			if(player.isVip())
++				return true;
++		}
++		else if(command.startsWith("admin_removevip"))
++		{
++			StringTokenizer str = new StringTokenizer(command);
++			
++			L2Object target = activeChar.getTarget();
++			L2PcInstance player = null;
++			
++			if (target instanceof L2PcInstance)
++				player = (L2PcInstance)target;
++			else
++				player = activeChar;
++			
++			try
++			{
++				str.nextToken();
++				
++				if (str.hasMoreTokens())
++				{
++					String playername = str.nextToken();
++					player = L2World.getInstance().getPlayer(playername);
++					removeVip(activeChar, player, playername);
++				}
++				else
++				{
++					String playername = player.getName();
++					removeVip(activeChar, player, playername);
++				}
++			}
++			catch(Exception e)
++			{
++				activeChar.sendMessage("Usage: //removevip <char_name>");
++			}
++			
++			player.broadcastUserInfo();
++			
++			if(player.isVip())
++				return false;
++		}
++		return false;
++	}
++	
++	public void doVip(L2PcInstance activeChar, L2PcInstance _player, String _playername, String _time)
++	{
++		int days = Integer.parseInt(_time);
++		
++		if (_player == null)
++		{
++			activeChar.sendMessage("Character not found.");
++			return;
++		}
++		if (_player.isVip())
++		{
++			activeChar.sendMessage("Player " + _playername + " is already an VIP.");
++			return;
++		}
++		
++		if(days > 0)
++		{
++			_player.setVip(true);
++			_player.setEndTime("vip", days);
++			_player.sendPacket(new CreatureSay(0,Say2.HERO_VOICE,"System","Dear player, you are now an VIP, congratulations."));
++			
++			try (Connection con = L2DatabaseFactory.getInstance().getConnection())
++			{
++				PreparedStatement statement = con.prepareStatement("UPDATE characters SET vip=1, vip_end=? WHERE obj_id=?");
++				statement.setLong(1, _player.getVipEndTime());
++				statement.setInt(2, _player.getObjectId());
++				statement.execute();
++				statement.close();
++				
++				if(Config.ALLOW_VIP_NCOLOR)
++					_player.getAppearance().setNameColor(Config.VIP_NCOLOR);
++				
++				if(Config.ALLOW_VIP_TCOLOR)
++					_player.getAppearance().setTitleColor(Config.VIP_TCOLOR);
++				
++				_player.broadcastUserInfo();
++				
++				GmListTable.broadcastMessageToGMs("GM "+ activeChar.getName()+ " set an VIP status for player "+ _playername + " for " + _time + " day(s)");
++			}
++			catch (Exception e)
++			{
++				_log.log(Level.WARNING,"Something went wrong, check log folder for details", e);
++			}
++		}
++	}
++	
++	public void removeVip(L2PcInstance activeChar, L2PcInstance _player, String _playername)
++	{
++		if (!_player.isVip())
++		{
++			activeChar.sendMessage("Player " + _playername + " is not an VIP.");
++			return;
++		}
++		
++		_player.setVip(false);
++		_player.setVipEndTime(0);
++		
++		try (Connection con = L2DatabaseFactory.getInstance().getConnection())
++		{
++			PreparedStatement statement = con.prepareStatement("UPDATE characters SET Vip=0, Vip_end=0 WHERE obj_id=?");
++			statement.setInt(1, _player.getObjectId());
++			statement.execute();
++			statement.close();
++			
++			_player.getAppearance().setNameColor(0xFFFF77);
++			_player.getAppearance().setTitleColor(0xFFFF77);
++			_player.broadcastUserInfo();
++			
++			GmListTable.broadcastMessageToGMs("GM "+activeChar.getName()+" removed Vip status of player "+ _playername);
++		}
++		catch (Exception e)
++		{
++			_log.log(Level.WARNING,"Something went wrong, check log folder for details", e);
++		}
++	}
++	
++	@Override
++	public String[] getAdminCommandList()
++	{
++		return _adminCommands;
++	}
++}
+\ No newline at end of file
+
+Datapack SQL
+
+ALTER TABLE `characters` ADD COLUMN `vip` decimal(1,0) NOT NULL DEFAULT 0 AFTER `newbie_at`;
+ALTER TABLE `characters` ADD COLUMN `vip_end` decimal(20,0) NOT NULL DEFAULT 0 AFTER `vip`;
+
+adminCommandRights.xml
+<command name="admin_setvip" val="100"/>
+<command name="admin_removevip" val="100"/>

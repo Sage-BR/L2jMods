@@ -1,0 +1,121 @@
+diff --git a/config/CustomMods/SpecialMods.ini b/config/CustomMods/SpecialMods.ini
+index dbcd88c..7f85fbc 100644
+--- a/config/CustomMods/SpecialMods.ini
++++ b/config/CustomMods/SpecialMods.ini
+@@ -46,3 +46,9 @@
+ # Announce Leader Clan Is On 
+ AnnounceCastleLords = False
+ 
++#===================================================
++#		Annuncie Top PvP Y Pk
++#===================================================
++# Announce TOPS PVP E PK. default = false
++AnnounceTops = False
++
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 973b295..8aedc48 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -279,6 +279,7 @@
+ 	public static int[] AUTO_LOOT_LIST_EXCLUDE_ITEMS;
+ 	public static boolean ENABLE_NO_DROP_ITEMS_AUTOPICKUP;
+ 	public static boolean ANNOUNCE_CASTLE_LORDS;
++	public static boolean ANNOUNCE_TOPS;
+ 	/** Minimum number of player to participate in SevenSigns Festival */
+ 	public static int ALT_FESTIVAL_MIN_PLAYER;
+ 	
+@@ -2237,6 +2238,7 @@
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + SPECIAL_MODS + " File.");
+ 			}
++			ANNOUNCE_TOPS = Boolean.parseBoolean(Special.getProperty("AnnounceTops", "False"));
+ 			ANNOUNCE_CASTLE_LORDS = Boolean.parseBoolean(Special.getProperty("AnnounceCastleLords", "False"));
+ 			ENABLE_NO_DROP_ITEMS_AUTOPICKUP = Boolean.parseBoolean(Special.getProperty("EnableNoPickUpItems", "False"));
+ 			AUTO_LOOT_EXCLUDE_ITEMS = Special.getProperty("AutoLootExcludeItems", "1341,1342,1343,1344,1345");
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+index ff5f296..cfe0935 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/EnterWorld.java
+@@ -14,13 +14,17 @@
+  */
+ package net.sf.l2j.gameserver.network.clientpackets;
+ 
++import java.sql.Connection;
+ import java.sql.Date;
++import java.sql.PreparedStatement;
++import java.sql.ResultSet;
+ import java.util.Base64;
+ import java.util.Calendar;
+ import java.util.Collection;
+ import java.util.logging.Logger;
+ 
+ import net.sf.l2j.Config;
++import net.sf.l2j.L2DatabaseFactory;
+ import net.sf.l2j.gameserver.Announcements;
+ import net.sf.l2j.gameserver.Restart;
+ import net.sf.l2j.gameserver.SevenSigns;
+@@ -238,6 +242,11 @@
+ 		{
+ 			Olympiad.olympiadEnd(activeChar);
+ 		}
++		if(Config.ANNOUNCE_TOPS && !activeChar.isGM() && !activeChar.isVip() && !activeChar.isAio())
++		{
++			announceTopPvp(activeChar);
++			announceTopPk(activeChar);
++		}
+ 		if (Config.ANNOUNCE_CASTLE_LORDS && !activeChar.isGM())
+ 			notifyCastleOwner(activeChar);
+ 		if(Config.ANNOUNCE_VIP && activeChar.isVip() && !activeChar.isGM())
+@@ -341,6 +350,52 @@
+ 		}
+ 	}
+ 
++	private void announceTopPvp(L2PcInstance activeChar)
++	{
++		String name = null;
++		Connection con = null;
++		PreparedStatement statement = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			statement = con.prepareStatement("SELECT char_name,pvpkills FROM characters WHERE accesslevel=0 ORDER BY pvpkills DESC LIMIT 1");
++			ResultSet rset = statement.executeQuery();
++			while (rset.next())
++			{
++				name = rset.getString("char_name");
++				if (activeChar.getName().equals(name))
++					Broadcast.gameAnnounceToOnlinePlayers("Top PvP Player " + name +" Is Now Online !");
++			}
++			rset.close();
++			statement.close();
++		}
++		catch (Exception e)
++		{}
++	}
++	
++	private void announceTopPk(L2PcInstance activeChar)
++	{
++		String name = null;
++		Connection con = null;
++		PreparedStatement statement = null;
++		try
++		{
++			con = L2DatabaseFactory.getInstance().getConnection();
++			statement = con.prepareStatement("SELECT char_name,pkkills FROM characters WHERE accesslevel=0 ORDER BY pkkills DESC LIMIT 1");
++			ResultSet rset = statement.executeQuery();
++			while (rset.next())
++			{
++				name = rset.getString("char_name");
++				if (activeChar.getName().equals(name))
++					Broadcast.gameAnnounceToOnlinePlayers("Top PK Player " + name +" Is Now Online !");
++			}
++			rset.close();
++			statement.close();
++		}
++		catch (Exception e)
++		{}
++	}
++
+ 	private void notifyCastleOwner(final L2PcInstance activeChar)
+ 	{
+ 		final L2Clan clan = activeChar.getClan();

@@ -1,0 +1,66 @@
+diff --git a/config/CustomMods/ProtectionMods.ini b/config/CustomMods/ProtectionMods.ini
+index 809afa8..719cb42 100644
+--- a/config/CustomMods/ProtectionMods.ini
++++ b/config/CustomMods/ProtectionMods.ini
+@@ -33,4 +33,17 @@
+ ScreenEnchantMessageText = Forbidden to Use Enchant near the bank!
+ 
+ 
++#=============================================================
++#                   Anti Hervy System
++#=============================================================
++# Enable or Disable anti-heavy system.
++# Dagger, tyrant, and bow classes won't be able to equip heavy type armours.
++EnableAntiHeavySystem = True
++
++#Screen Message Anti Hervy Class user
++ScreenAntiHervyMessageText = Your Class Can't Equip Heavy Type Armors!
++
++
++
++
+ 
+diff --git a/java/net/sf/l2j/Config.java b/java/net/sf/l2j/Config.java
+index 7f0f5ef..890447e 100644
+--- a/java/net/sf/l2j/Config.java
++++ b/java/net/sf/l2j/Config.java
+@@ -1006,6 +1006,8 @@
+ 	public static String STRING_MESSAGE_PHX_ENCHANT;
+ 	public static boolean PVP_SAME_IP;
+     public static boolean PVP_SUMON;
++    public static String WELCOME_MESSAGE_ANTIHERVY;
++	public static boolean ENABLE_ANTI_HEAVY;
+ 	// Karma Punishment
+ 	/** Allow player with karma to be killed in peace zone ? */
+ 	public static boolean ALT_GAME_KARMA_PLAYER_CAN_BE_KILLED_IN_PEACEZONE;
+@@ -2252,6 +2254,8 @@
+ 				e.printStackTrace();
+ 				throw new Error("Failed to Load " + PROTECTION_MODS + " File.");
+ 			}
++			ENABLE_ANTI_HEAVY = Boolean.parseBoolean(ProtectionMods.getProperty("EnableAntiHeavySystem", "True"));
++	        WELCOME_MESSAGE_ANTIHERVY = ProtectionMods.getProperty("ScreenAntiHervyMessageText", "Your Class Can't Equip Heavy Type Armors!");
+ 			STRING_MESSAGE_PHX_ENCHANT = ProtectionMods.getProperty("ScreenEnchantMessageText", "Forbidden to Use Enchant near the bank!");
+ 	        PHX_ENCHANT_WAREHOUSE = Boolean.parseBoolean(ProtectionMods.getProperty("EnableProtectionEnchantWarehouse", "false"));
+ 			BOTS_PREVENTION = Boolean.parseBoolean(ProtectionMods.getProperty("EnableBotsPrevention", "false"));
+diff --git a/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java b/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
+index f6fa51f..1edce62 100644
+--- a/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
++++ b/java/net/sf/l2j/gameserver/network/clientpackets/UseItem.java
+@@ -151,7 +151,16 @@
+ 					return;
+ 			}
+ 		}
+-		
++		if (Config.ENABLE_ANTI_HEAVY && item.getItemType() == L2ArmorType.HEAVY) {
++			if (activeChar.getClassId().getId() == 48 || activeChar.getClassId().getId() == 114 || activeChar.getClassId().getId() == 109
++				|| activeChar.getClassId().getId() == 37 || activeChar.getClassId().getId() == 108 || activeChar.getClassId().getId() == 36
++				|| activeChar.getClassId().getId() == 102 || activeChar.getClassId().getId() == 24 || activeChar.getClassId().getId() == 101
++				|| activeChar.getClassId().getId() == 23 || activeChar.getClassId().getId() == 93 || activeChar.getClassId().getId() == 8
++				|| activeChar.getClassId().getId() == 92 || activeChar.getClassId().getId() == 9) {
++				activeChar.sendMessage(Config.WELCOME_MESSAGE_ANTIHERVY);
++				return;
++			}
++		}
+ 		if (activeChar.isFishing() && ((itemId < 6535) || (itemId > 6540)))
+ 		{
+ 			// You cannot do anything else while fishing
